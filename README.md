@@ -1,6 +1,6 @@
 # 🕹️ PlushyPocket-Game
 
-<img width="800" height="426" alt="Logo" src="https://github.com/user-attachments/assets/17812111-b914-47e4-abb4-626a834a4536" />
+<img width="400" height="200" alt="Logo" src="https://github.com/user-attachments/assets/17812111-b914-47e4-abb4-626a834a4536" />
 
 > **An interactive phygital experience for MINISO** — where the physical store meets an immersive digital world through collaborative minigames, real-time sensors, and instant rewards.
 
