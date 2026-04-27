@@ -1,0 +1,26 @@
+{
+  "name": "plushypocket-game",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">\r   <img width=\"500\" src=\"https://github.com/user-attachments/assets/17812111-b914-47e4-abb4-626a834a4536\" />\r </p>",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lauuurars/PlushyPocket-Game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lauuurars/PlushyPocket-Game/issues"
+  },
+  "homepage": "https://github.com/lauuurars/PlushyPocket-Game#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14"
+  }
+}
