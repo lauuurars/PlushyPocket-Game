@@ -39,3 +39,4 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+node_modules
