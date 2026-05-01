@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 
-import partedearriba from '../../assets/marcoHammerMole/partedearriba.svg';
-import partedeabajo from '../../assets/marcoHammerMole/partedeabajotopos.svg';
-import ladoizquierdo from '../../assets/marcoHammerMole/ladoizquierdotopos.svg';
+import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
+import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
+import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
 
 const HammerMoleGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);

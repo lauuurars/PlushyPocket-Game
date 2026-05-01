@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
-import HammerMoleGame from './islands/hammer/HammerMoleGame'
-import FlappyGame from './islands/flappy/FlappyGame'
+import HammerMoleGame from './desktop/islands/hammer/HammerMoleGame'
+import FlappyGame from './desktop/islands/flappy/FlappyGame'
 
 function App() {
   return (

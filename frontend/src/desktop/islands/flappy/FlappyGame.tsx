@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Ocean from './Ocean';
-import type { ObstacleData, Column } from '../../../src/types/flappyTypes';
+import type { ObstacleData, Column } from '../../../types/flappyTypes';
 
 // Assets
-import boatPart from '../../assets/flappybird/boatPart.svg';
-import boatPart2 from '../../assets/flappybird/boatPart2.svg';
-import woodenbench from '../../assets/flappybird/woodenbench.svg';
-import woodenbench2 from '../../assets/flappybird/woodenbench2.svg';
-import woodenbench3 from '../../assets/flappybird/woodenbench3.svg';
+import boatPart from '../../../assets/flappybird/boatPart.svg';
+import boatPart2 from '../../../assets/flappybird/boatPart2.svg';
+import woodenbench from '../../../assets/flappybird/woodenbench.svg';
+import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
+import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
 
 const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 
@@ -189,7 +189,7 @@ const FlappyGame: React.FC = () => {
             <iframe
                 width="0"
                 height="0"
-                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04&start=19"
+                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04&"
                 frameBorder="0"
                 allow="autoplay"
                 className="hidden"
