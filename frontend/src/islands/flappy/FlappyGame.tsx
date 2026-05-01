@@ -184,6 +184,17 @@ const FlappyGame: React.FC = () => {
                     )}
                 </React.Fragment>
             ))}
+
+            {/* Le agregue musiquita jajaaj */}
+            <iframe
+                width="0"
+                height="0"
+                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04&start=19"
+                frameBorder="0"
+                allow="autoplay"
+                className="hidden"
+                title="Background Music"
+            ></iframe>
         </div>
     );
 };
