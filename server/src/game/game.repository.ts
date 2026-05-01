@@ -25,6 +25,16 @@ const findRewardById = async (id: string): Promise<Reward | null> => {
 
 import crypto from "crypto"
 
+const listGameRewards = async (): Promise<Reward[]> => {
+    const { data, error } = await SupabaseClient
+        .from("rewards")
+        .select("id, reward_name, reward_type")
+        .neq("reward_type", "character")
+
+    if (error) throw new Error(error.message)
+    return (data ?? []) as Reward[]
+}
+
 const grantRewardToWinner = async (dto: FinishGameDTO): Promise<UserReward> => {
     const newId = crypto.randomUUID()
     const { data, error } = await SupabaseClient
@@ -45,5 +55,6 @@ const grantRewardToWinner = async (dto: FinishGameDTO): Promise<UserReward> => {
 export default {
     findUserById,
     findRewardById,
+    listGameRewards,
     grantRewardToWinner,
 }

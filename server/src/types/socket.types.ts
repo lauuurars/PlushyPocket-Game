@@ -1,3 +1,37 @@
+export type ClientType = "screen" | "player" 
+
+export type PlayerRole = "P1" | "P2"
+
+export type RoomStatus = "CREATED" | "WAITING_PLAYERS" | "READY" | "IN_GAME" | "RESULTS"
+
+export type RewardType = "bonus" | "discount" | "character"
+export type RewardStatus = "active" | "redeemed" | "expired"
+
+export interface ScreenCreateRoomPayload {
+    minigameId: string
+}
+
+export interface RoomCreatedPayload {
+    roomId: string
+    minigameId: string
+    status: RoomStatus
+}
+
+export interface PlayerInfoPayload {
+    userId: string
+    username: string
+    characterId: string
+    role: PlayerRole
+}
+
+export interface RoomUpdatePayload {
+    roomId: string
+    minigameId: string
+    status: RoomStatus
+    players: PlayerInfoPayload[]
+    playersInRoom: number
+}
+
 export interface PlayerJoinPayload {
     userId: string;
     username: string;
@@ -10,13 +44,15 @@ export interface PlayerActionPayload {
     characterId: string;
     action: string;
     timestamp: number;
+    roomId?: string
+    payload?: Record<string, unknown>
 }
 
 export interface GameStartPayload {
     roomId: string;
-    players: string[]; // array de users.id  
+    players: PlayerInfoPayload[];
+    minigameId: string
 }
-
 
 export interface GameEndPayload {
     roomId: string;
@@ -24,10 +60,7 @@ export interface GameEndPayload {
     loserId: string;    // users.id del perdedor
 }
 
-export type RewardType = "bonus" | "discount" | "character"
-export type RewardStatus = "active" | "redeemed" | "expired";
-
-// info q el servidor envía al ganador
+export type GameOverPayload = GameEndPayload
 
 export interface RewardAssignedPayload {
     userId: string;       
@@ -35,4 +68,26 @@ export interface RewardAssignedPayload {
     rewardName: string;   
     rewardType: RewardType;  
     status: RewardStatus; 
+}
+
+export type RoomPlayer = {
+    userId: string
+    username: string
+    characterId: string
+    role: PlayerRole
+    socketId: string
+}
+
+export type Room = {
+    roomId: string
+    minigameId: string
+    status: RoomStatus
+    screenSocketId: string | null
+    players: RoomPlayer[]
+}
+
+export type SocketSession = {
+    clientType: ClientType
+    roomId?: string
+    userId?: string
 }
