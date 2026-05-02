@@ -144,7 +144,7 @@ const FlappyGame: React.FC = () => {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="fixed top-0 left-0 w-screen h-[100dvh] object-cover -scale-x-100 z-[1]"
+                className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-1"
             />
 
             <div className="z-30 relative">

@@ -47,28 +47,28 @@ const HammerMoleGame: React.FC = () => {
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="fixed top-0 left-0 w-screen h-[100dvh] object-cover -scale-x-100 z-[1]"
+                className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-1"
             />
 
             {/* Marco de arriba */}
             <img
                 src={partedearriba}
                 alt="Marco Superior"
-                className="fixed top-[-140px] left-0 w-screen h-auto z-20 pointer-events-none"
+                className="fixed -top-35 left-0 w-screen h-auto z-20 pointer-events-none"
             />
 
             {/* Marco de abajo */}
             <img
                 src={partedeabajo}
                 alt="Marco Inferior"
-                className="fixed bottom-[-120px] left-0 w-screen h-auto z-20 pointer-events-none"
+                className="fixed -bottom-30 left-0 w-screen h-auto z-20 pointer-events-none"
             />
 
             {/* Marco de la izquierda */}
             <img
                 src={ladoizquierdo}
                 alt="Marco Izquierdo"
-                className="fixed top-0 left-[-10px] h-screen w-auto z-10 pointer-events-none"
+                className="fixed top-0 -left-2.5 h-screen w-auto z-10 pointer-events-none"
             />
 
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 
 const Ocean: React.FC = () => {
   return (
-    <div className="fixed bottom-[-45px] left-[-5%] w-[110%] z-20 pointer-events-none overflow-hidden">
+    <div className="fixed -bottom-11.25 left-[-5%] w-[110%] z-20 pointer-events-none overflow-hidden">
       <style>
         {`
           @keyframes wave-sway-front {
