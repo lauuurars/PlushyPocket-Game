@@ -14,7 +14,7 @@ const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 
 const FlappyGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number | null>(null);
 
     // Configuración Estricta
     const SPEED = 6;
