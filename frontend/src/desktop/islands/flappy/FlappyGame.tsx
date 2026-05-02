@@ -123,7 +123,7 @@ const FlappyGame: React.FC = () => {
             const lastCol = prev.reduce((p, c) => (p.x > c.x ? p : c));
 
             return prev.map(col => {
-                let newX = col.x - SPEED;
+                const newX = col.x - SPEED;
                 if (newX < -500) {
                     return generateColumn(col.id, rightmostX + MIN_HORIZONTAL_SPACING, lastCol.lastPosUsed);
                 }
@@ -136,7 +136,7 @@ const FlappyGame: React.FC = () => {
     useEffect(() => {
         requestRef.current = requestAnimationFrame(animate);
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-    }, []);
+    }, );
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
