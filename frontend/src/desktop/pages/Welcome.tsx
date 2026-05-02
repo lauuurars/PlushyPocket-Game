@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Music4, Volume2, VolumeX } from "lucide-react";
 
 import Background from "../../assets/welcome/Background.svg";
 import Logo from "../../assets/welcome/Plushy-Logo.png";
@@ -11,6 +12,7 @@ import Estrella3 from "../../assets/welcome/Estrella3.svg";
 import Flor from "../../assets/welcome/Flor.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
+import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3"
 import { VioletButton } from "../../components/VioletButton";
 
 // --- elemento decorativo flotante -------------------
@@ -37,16 +39,45 @@ function FloatingElement({ src, alt, style, animationClass, size, delay = "0s" }
 }
 
 export default function Welcome() {
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+    const [isMuted, setIsMuted] = useState(false);
+    const [startedMusic, setStartedMusic] = useState(false);
     const [ready, setReady] = useState(false);
     const navigate = useNavigate();
 
     // delay para animación
 
     useEffect(() => {
-        
         const t = setTimeout(() => setReady(true), 100);
         return () => clearTimeout(t);
     }, []);
+
+    //  background music :D
+    useEffect(() => {
+        const audio = new Audio(BackgroundMusic);
+        audio.loop = true;
+        audio.volume = 0.4;
+        audioRef.current = audio;
+
+        return () => {
+            audio.pause();
+            audio.src = "";
+        }
+    }, [])
+
+    const toggleMute = () => {
+        const audioMute = audioRef.current
+        if (!audioMute) return;
+
+        if (!startedMusic) {
+            audioMute.play().catch(console.error)
+            setStartedMusic(true);
+            setIsMuted(false);
+        } else {
+            audioMute.muted = !audioMute.muted
+            setIsMuted(!isMuted)
+        }
+    };
 
     return (
         <>
@@ -133,6 +164,37 @@ export default function Welcome() {
                     }} />
                 </div>
 
+                {/* botón mute */}
+                <button
+                    onClick={toggleMute}
+                    style={{
+                        position: "absolute",
+                        top: "20px",
+                        right: "40px",
+                        zIndex: 10,
+                        background: "rgba(255,255,255,0.2)",
+                        border: "2px solid rgba(255,255,255,0.4)",
+                        borderRadius: "50%",
+                        width: "42px",
+                        height: "42px",
+                        cursor: "pointer",
+                        fontSize: "1.2rem",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backdropFilter: "blur(6px)",
+                    }}
+                >
+                    {!startedMusic ? (
+                        <Music4 className="h-5 w-5 text-white" />
+                    ) : isMuted ? (
+                        <VolumeX className="h-5 w-5 text-white" />
+                    ) : (
+                        <Volume2 className="h-5 w-5 text-white" />
+                    )}
+                </button>
+
+
                 {/* ── elementos decorativossss ── */}
                 <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
 
@@ -218,9 +280,9 @@ export default function Welcome() {
                         className={`anim-fade-up ${ready ? "" : "opacity-0"}`}
                         style={{ animationDelay: "0.55s" }}
                     >
-                        <VioletButton 
-                            text="Let's Play" 
-                            onClick={() => navigate("/home")} 
+                        <VioletButton
+                            text="Let's Play"
+                            onClick={() => navigate("/home")}
                             icon={<svg
                                 width="28"
                                 height="28"
@@ -229,7 +291,7 @@ export default function Welcome() {
                                 xmlns="http://www.w3.org/2000/svg"
                             >
                                 <path d="M8 5v14l11-7z" />
-                        </svg>} />
+                            </svg>} />
                     </div>
                 </div>
 
