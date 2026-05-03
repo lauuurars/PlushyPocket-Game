@@ -9,7 +9,7 @@ export const GamePoints: React.FC<GamePointsProps> = ({ points }) => {
         <div className="
             flex items-center justify-center
             bg-[#ED1C24] 
-            text-white 
+            text-[#FAFAFA] 
             px-12 py-3 
             rounded-full 
             font-bold 
