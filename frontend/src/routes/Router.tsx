@@ -4,6 +4,7 @@ import FlappyGame from "../desktop/islands/flappy/FlappyGame";
 import HammerMoleGame from "../desktop/islands/hammer/HammerMoleGame";
 import CakeGame from "../desktop/islands/cake/CakeGame";
 import QRGame from "../phone/pages/QRGame";
+import QRCharacter from "../phone/pages/QRCharacter";
 
 const router = createBrowserRouter(
     [
@@ -14,7 +15,7 @@ const router = createBrowserRouter(
         {
             path: "/flappy-boat",
             Component: FlappyGame
-        }, 
+        },
         {
             path: "/hammer-mole",
             Component: HammerMoleGame
@@ -28,7 +29,13 @@ const router = createBrowserRouter(
         {
             path: "/qr-game",
             Component: QRGame
+        },
+
+        {
+            path: "/qr-character",
+            Component: QRCharacter
         }
+
     ]
 )
 
