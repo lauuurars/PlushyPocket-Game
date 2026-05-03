@@ -7,6 +7,7 @@ import cinnamoroll from '../../../assets/marcoHammerMole/cinnamoroll.svg';
 import kuromi from '../../../assets/marcoHammerMole/kuromi.svg';
 import myMelody from '../../../assets/marcoHammerMole/myMelody.svg';
 import pompompurin from '../../../assets/marcoHammerMole/pompompurin.svg';
+import GamePoints from '../../../components/GamePoints';
 
 const charactersList: Character[] = [
     { name: 'Cinnamoroll', image: cinnamoroll },
@@ -29,6 +30,7 @@ const SIDE_CONFIG: Record<Side, { rotation: number, offset: string, ranges: numb
 const HammerMoleGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [activeCharacters, setActiveCharacters] = useState<ActiveCharacter[]>([]);
+    const [score, setScore] = useState(0);
 
     useEffect(() => {
         let stream: MediaStream | null = null;
@@ -58,22 +60,22 @@ const HammerMoleGame: React.FC = () => {
         };
 
         const interval = setInterval(() => {
-            const count = Math.floor(Math.random() * 3) + 1; 
+            const count = Math.floor(Math.random() * 3) + 1;
             const newActive: ActiveCharacter[] = [];
             const usedSides = new Set<string>();
 
             for (let i = 0; i < count; i++) {
                 // Filtramos la lista para que no salga el mismo personaje dos veces
-                const availableChars = charactersList.filter(c => 
+                const availableChars = charactersList.filter(c =>
                     !newActive.some(active => active.character.name === c.name)
                 );
-                
+
                 if (availableChars.length === 0) break;
 
                 const char = availableChars[Math.floor(Math.random() * availableChars.length)];
                 let side: Side;
                 let attempts = 0;
-                
+
                 // Aseguramos que no salgan en el mismo lado
                 do {
                     side = sides[Math.floor(Math.random() * sides.length)];
@@ -97,7 +99,7 @@ const HammerMoleGame: React.FC = () => {
                 newActive.push({ id: Math.random(), character: char, position: pos, side });
             }
             setActiveCharacters(newActive);
-        }, 1500); 
+        }, 1500);
 
         return () => clearInterval(interval);
     }, []);
@@ -120,6 +122,15 @@ const HammerMoleGame: React.FC = () => {
 
             <video ref={videoRef} autoPlay playsInline className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-0" />
 
+            {/* Contadores de puntos*/}
+            <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
+                <GamePoints points={score} />
+            </div>
+
+            <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
+                <GamePoints points={score} />
+            </div>
+
             {activeCharacters.map((active) => {
                 const config = SIDE_CONFIG[active.side];
                 return (
@@ -140,7 +151,7 @@ const HammerMoleGame: React.FC = () => {
                         <img
                             src={active.character.image}
                             alt={active.character.name}
-                            className="h-full w-auto object-contain" 
+                            className="h-full w-auto object-contain"
                             style={{
                                 transform: `rotate(${config.rotation}deg)`,
                                 transformOrigin: 'center'

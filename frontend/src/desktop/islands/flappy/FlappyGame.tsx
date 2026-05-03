@@ -8,6 +8,7 @@ import boatPart2 from '../../../assets/flappybird/boatPart2.svg';
 import woodenbench from '../../../assets/flappybird/woodenbench.svg';
 import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
 import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
+import GamePoints from '../../../components/GamePoints';
 
 const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 
@@ -15,6 +16,7 @@ const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 const FlappyGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const requestRef = useRef<number | null>(null);
+    const [score, setScore] = useState(0);
 
     // Configuración Estricta
     const SPEED = 6;
@@ -136,7 +138,7 @@ const FlappyGame: React.FC = () => {
     useEffect(() => {
         requestRef.current = requestAnimationFrame(animate);
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-    }, );
+    },);
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -146,6 +148,15 @@ const FlappyGame: React.FC = () => {
                 playsInline
                 className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-1"
             />
+
+            {/* Contadores de puntos*/}
+            <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
+                <GamePoints points={score} />
+            </div>
+
+            <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
+                <GamePoints points={score} />
+            </div>
 
             <div className="z-30 relative">
                 <Ocean />
