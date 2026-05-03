@@ -16,6 +16,11 @@ const router = createBrowserRouter(
         {
             path: "/hammer-mole",
             Component: HammerMoleGame
+        },
+
+        {
+            path: "/cake",
+           
         }
     ]
 )
