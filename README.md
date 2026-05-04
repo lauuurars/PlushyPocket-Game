@@ -16,7 +16,7 @@ The game addresses a real retail challenge: **low visibility of new collections 
  
 ---
  
-## 🎮 How It Works
+## 🎮 How It Works?
  
 ```
 Customer scans QR code  →  Phone becomes a controller  →  Game appears on store display

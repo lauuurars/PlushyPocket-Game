@@ -7,6 +7,9 @@ import SignUp from "../phone/register/SignUp";
 import LogIn from "../phone/register/LogIn";
 import AuthCallback from "../phone/register/AuthCallback";
 import Age from "../phone/register/Age";
+import CakeGame from "../desktop/islands/cake/CakeGame";
+import QRGame from "../phone/pages/QRGame";
+import QRCharacter from "../phone/pages/QRCharacter";
 
 const router = createBrowserRouter(
     [
@@ -42,7 +45,19 @@ const router = createBrowserRouter(
             path: "/age",
             Component: Age,
         },
+        {
+            path: "/cake",
+            Component: CakeGame
+        },
+        {
+            path: "/qr-game",
+            Component: QRGame
+        },
+        {
+            path: "/qr-character",
+            Component: QRCharacter
+        }
     ]
 )
 
-export default router;  
+export default router;
