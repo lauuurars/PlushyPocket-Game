@@ -1,0 +1,5 @@
+@import "tailwindcss";
+
+:root {
+    font-family: 'Nunito', system-ui, 'Segoe UI', Roboto, sans-serif;
+}
