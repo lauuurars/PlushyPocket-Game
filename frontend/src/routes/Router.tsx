@@ -7,6 +7,7 @@ import QRGame from "../phone/pages/QRGame";
 import QRCharacter from "../phone/pages/QRCharacter";
 import StartGame from "../desktop/pages/StartGame";
 import HomePhone from "../phone/pages/HomePage";
+import Navbar from "../components/mobile/Navbar";
 
 const router = createBrowserRouter(
     [
@@ -45,6 +46,9 @@ const router = createBrowserRouter(
         {
             path: "/home-phone",
             Component: HomePhone
+        {
+            path: "/navbar",
+            Component: Navbar
         }
 
     ]
