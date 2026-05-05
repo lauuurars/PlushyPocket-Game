@@ -130,7 +130,6 @@ export default function StartGame() {
                 <h1
                     className="absolute left-1/2 top-[clamp(28px,8.5svh,116px)] w-[min(92vw,740px)] -translate-x-1/2 text-center 
                     text-[clamp(30px,4.8vw,80px)] leading-[0.9] tracking-[-1px] text-[#FAFAFA] font-bold"
-                    style={{ fontFamily: "'Baloo 2', sans-serif" }}
                 >
                     Ready for a new adventure?
                 </h1>
