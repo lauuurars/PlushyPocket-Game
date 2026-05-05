@@ -9,6 +9,7 @@ import Ocean from "../../assets/homePhone/oceanHome.svg";
 import Palmtree from "../../assets/homePhone/palmtree.svg";
 import Sand from "../../assets/homePhone/sand.svg";
 import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3";
+import Navbar from "../../components/mobile/Navbar";
 
 const HomePhone = () => {
     const [username, setUsername] = useState("Martin");
@@ -173,7 +174,9 @@ const HomePhone = () => {
                 isOpen={showPopup}
                 onClose={() => setShowPopup(false)}
             />
+            <Navbar />
         </div>
+
     );
 };
 

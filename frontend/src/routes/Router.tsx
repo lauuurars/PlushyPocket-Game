@@ -46,10 +46,9 @@ const router = createBrowserRouter(
         {
             path: "/home-phone",
             Component: HomePhone
-        {
-            path: "/navbar",
-            Component: Navbar
-        }
+
+        },
+
 
     ]
 )
