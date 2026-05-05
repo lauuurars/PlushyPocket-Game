@@ -21,7 +21,7 @@ app.use('/api/auth', AuthRouter);
 const rawServer = createServer(app)
 initializeSockets(rawServer);
 
-const PORT = process.env.PORT ?? 8080;
+const PORT = process.env.PORT ?? 8080; 
 rawServer.listen(PORT, () => {
   console.log(`PlushyPocket server running :P ${PORT}`);
 });
