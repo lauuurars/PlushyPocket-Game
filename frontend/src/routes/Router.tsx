@@ -5,6 +5,8 @@ import HammerMoleGame from "../desktop/islands/hammer/HammerMoleGame";
 import CakeGame from "../desktop/islands/cake/CakeGame";
 import QRGame from "../phone/pages/QRGame";
 import QRCharacter from "../phone/pages/QRCharacter";
+import StartGame from "../desktop/pages/StartGame";
+import PartyRoom from "../desktop/pages/PartyRoom";
 
 const router = createBrowserRouter(
     [
@@ -34,6 +36,14 @@ const router = createBrowserRouter(
         {
             path: "/qr-character",
             Component: QRCharacter
+        },
+        {
+            path: "/start-game",
+            Component: StartGame
+        },
+        {
+            path: "/party-room",
+            Component: PartyRoom
         }
 
     ]
