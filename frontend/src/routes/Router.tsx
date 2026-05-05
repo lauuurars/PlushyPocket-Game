@@ -11,6 +11,7 @@ import CakeGame from "../desktop/islands/cake/CakeGame";
 import QRGame from "../phone/pages/QRGame";
 import QRCharacter from "../phone/pages/QRCharacter";
 import StartGame from "../desktop/pages/StartGame";
+import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 
 const router = createBrowserRouter(
@@ -63,6 +64,10 @@ const router = createBrowserRouter(
             path: "/start-game",
             Component: StartGame
         },
+        {
+            path: "/choose-character",
+            Component: ChooseCharacter
+        }
 
         {
             path: "/home-phone",
