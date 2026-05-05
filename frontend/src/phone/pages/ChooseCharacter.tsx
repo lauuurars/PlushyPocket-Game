@@ -20,7 +20,7 @@ export default function ChooseCharacter() {
 
             <div
                 aria-hidden
-                className="absolute left-1/2 -top-107.5 h-215 w-215 -translate-x-1/2 rounded-full bg-[#ED1C24]"
+                className="absolute left-1/2 -top-140.5 h-215 w-215 -translate-x-1/2 rounded-full bg-[#ED1C24]"
             />
 
             <div className="relative z-10 flex h-full w-full flex-col items-center">
