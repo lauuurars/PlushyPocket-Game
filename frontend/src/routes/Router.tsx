@@ -67,8 +67,7 @@ const router = createBrowserRouter(
         {
             path: "/choose-character",
             Component: ChooseCharacter
-        }
-
+        },
         {
             path: "/home-phone",
             Component: HomePhone
