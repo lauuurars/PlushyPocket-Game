@@ -21,7 +21,7 @@ const HomePhone = () => {
 
     useEffect(() => {
         setReady(true);
-        // Try to get username from local storage if it exists
+        // guardar el username 
         const storedName = localStorage.getItem("username");
         if (storedName) {
             setUsername(storedName);
@@ -98,32 +98,44 @@ const HomePhone = () => {
                 }
             `}</style>
 
-            {/* Clouds */}
+            {/* nubesitas */}
             <div className="absolute top-[20%] left-[80%] w-[120px] animate-cloud-slow opacity-80">
-                <img src={Cloud} alt="" className="w-full" />
-            </div>
-            <div className="absolute top-[15%] right-[65%] w-[150px] animate-cloud-fast opacity-90" style={{ animationDelay: '-2s' }}>
-                <img src={Cloud2} alt="" className="w-full" />
+                <img src={Cloud}
+                    alt=""
+                    className="w-full" />
             </div>
 
-            {/* Palm Tree */}
+            <div className="absolute top-[15%] right-[65%] w-[150px] animate-cloud-fast opacity-90"
+                style={{ animationDelay: '-2s' }}>
+                <img src={Cloud2}
+                    alt=""
+                    className="w-full" />
+            </div>
+
+            {/* Palmerita */}
             <div className="absolute left-[-15%] bottom-[12%] w-[60%] z-35 animate-sway">
-                <img src={Palmtree} alt="" className="w-full" />
+                <img src={Palmtree}
+                    alt=""
+                    className="w-full" />
             </div>
 
-            {/* Ocean */}
+            {/* Aguita */}
             <div className="absolute bottom-[20%] left-0 w-full z-20 overflow-hidden">
-                <img src={Ocean} alt="" className="min-w-[105vw] h-[300px] object-cover animate-wave" style={{ marginBottom: '-2px' }} />
+                <img src={Ocean}
+                    alt=""
+                    className="min-w-[105vw] h-[300px] object-cover animate-wave"
+                    style={{ marginBottom: '-2px' }} />
             </div>
 
-            {/* Sand */}
             <div className="absolute bottom-0 left-0 w-full z-30">
                 <img src={Sand} alt="" className="w-full object-cover" />
             </div>
 
             {/* Mochi*/}
             <div className="absolute left-1/2 bottom-[10%] -translate-x-1/2 w-[75%] z-40 animate-mochi">
-                <img src={Mochi} alt="Mochi" className="w-full" />
+                <img src={Mochi}
+                    alt="Mochi"
+                    className="w-full" />
             </div>
 
 
@@ -156,10 +168,10 @@ const HomePhone = () => {
                 </div>
             </div>
 
-            {/* Pop-up Overlay */}
-            <UnlockItemPopup 
-                isOpen={showPopup} 
-                onClose={() => setShowPopup(false)} 
+            {/* Pop up :P  */}
+            <UnlockItemPopup
+                isOpen={showPopup}
+                onClose={() => setShowPopup(false)}
             />
         </div>
     );
