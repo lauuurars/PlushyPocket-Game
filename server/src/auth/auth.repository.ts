@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
 import type { Session, User } from "@supabase/supabase-js"
 
-import { SupabaseClient } from "../config/supabase"
+import { SupabaseAdminClient, SupabaseClient } from "../config/supabase"
 
 const supabaseUrl = process.env.SUPABASE_URL!
 const supabaseAnonKey = process.env.SUPABASE_PUBLISHABLE_KEY!
@@ -28,6 +28,42 @@ const signUpWithEmail = async (
     password: string,
     userMetadata?: Record<string, unknown>,
 ): Promise<SignUpResult> => {
+
+    if (SupabaseAdminClient) {
+        const { data: adminData, error: adminErr } =
+            await SupabaseAdminClient.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true,
+                user_metadata: userMetadata ?? {},
+            })
+
+        if (adminErr) {
+            return { user: null, session: null, error: adminErr }
+        }
+
+        const user = adminData?.user ?? null
+
+        const signedIn = await signInWithPassword(email, password)
+        if (signedIn.error || !signedIn.session) {
+            return {
+                user,
+                session: null,
+                error:
+                    signedIn.error ??
+                    new Error(
+                        "Cuenta creada pero no se pudo abrir sesión — revisa el login o la contraseña.",
+                    ),
+            }
+        }
+
+        return {
+            user: signedIn.user ?? user,
+            session: signedIn.session,
+            error: null,
+        }
+    }
+
     const { data, error } = await SupabaseClient.auth.signUp({
         email,
         password,

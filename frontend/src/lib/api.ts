@@ -1,5 +1,16 @@
 import { supabase } from "./supabaseClient";
 
+/** `public.users.id` (UUID de Auth), útil para el juego y APIs que referencian `users`. */
+export const LOCAL_STORAGE_DB_USER_ID_KEY = "plushyPocket_dbUserId";
+
+export function persistDatabaseUserId(userId: string): void {
+    try {
+        localStorage.setItem(LOCAL_STORAGE_DB_USER_ID_KEY, userId);
+    } catch {
+        // private mode / disabled storage — ignore
+    }
+}
+
 function serverBase(): string {
     return (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
 }
@@ -129,6 +140,7 @@ export async function fetchAuthMe(accessToken: string): Promise<AuthMeResponse> 
     if (data.id == null || typeof data.id !== "string") {
         throw new Error("Invalid response from server");
     }
+    persistDatabaseUserId(data.id);
     return data as AuthMeResponse;
 }
 
@@ -139,6 +151,10 @@ export async function persistSupabaseSession(session: AuthSessionPayload): Promi
     });
     if (error) {
         throw new Error(error.message);
+    }
+    const { data } = await supabase.auth.getUser();
+    if (data.user?.id) {
+        persistDatabaseUserId(data.user.id);
     }
 }
 
