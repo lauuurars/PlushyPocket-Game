@@ -13,20 +13,18 @@ export default function ChooseCharacter() {
         <div className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA] md:hidden">
             <img
                 src={BgChoose}
-                alt=""
-                aria-hidden
                 className="absolute inset-0 h-full w-full object-cover"
             />
 
             <div
                 aria-hidden
-                className="absolute left-1/2 -top-140.5 h-215 w-215 -translate-x-1/2 rounded-full bg-[#ED1C24]"
+                className="absolute left-1/2 -top-140.5 h-212 w-160 -translate-x-1/2 rounded-full bg-[#ED1C24]"
             />
 
             <div className="relative z-10 flex h-full w-full flex-col items-center">
-                <div className="pt-27.5 text-center">
+                <div className="pt-20 text-center">
                     <h1
-                        className="mx-auto w-65 text-[40px] font-extrabold leading-9.25 tracking-[-1px] text-[#FAFAFA]"
+                        className="mx-auto w-65 text-[43px] font-extrabold leading-9.25 tracking-[-1px] text-[#FAFAFA]"
                         style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
                     >
                         Choose your character
@@ -36,22 +34,24 @@ export default function ChooseCharacter() {
                         style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
                     >
                         <span>Select your character to begin your </span>
-                        <span className="font-semibold">adventure</span>
+                        <span className="font-bold">adventure</span>
                     </p>
                 </div>
 
-                <div className="mt-21.5 w-full px-8.5">
+                <div className="mt-21.5 w-full px-10">
                     <div className="flex w-full items-start justify-between">
                         <CharacterCard
                             name="Mochi"
                             imageSrc={Mochi}
                             bgColor="#6EC6F6"
+                            imageAlign="bottom"
                             onClick={navigateToPlaceholder}
                         />
                         <CharacterCard
                             name="Misu"
                             imageSrc={Misu}
                             bgColor="#F9DA55"
+                            imageAlign="bottom"
                             onClick={navigateToPlaceholder}
                         />
                     </div>
@@ -61,6 +61,7 @@ export default function ChooseCharacter() {
                             name="Yuki"
                             imageSrc={Yuki}
                             bgColor="#915FDF"
+                            imageAlign="bottom"
                             onClick={navigateToPlaceholder}
                         />
                     </div>
