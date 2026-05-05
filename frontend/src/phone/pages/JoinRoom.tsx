@@ -152,10 +152,10 @@ export default function JoinRoom({ roomCode = "5173" }: SalaJuegoProps) {
                             className={ready ? "anim-fade-up" : "opacity-0" }
                             style={{
                                 fontFamily: "'Nunito', sans-serif",
-                                fontWeight: 500,
-                                fontSize: "clamp(1rem, 4vw, 1.2rem)",
-                                color: "rgba(255,255,255,0.88)",
-                                marginTop: "clamp(12px, 4vw, 20px)",
+                                fontWeight: 600,
+                                fontSize: "clamp(17px, 4vw, 1.2rem)",
+                                color: "rgba(255,255,255)",
+                                marginTop: "clamp(20px, 4vw, 20px)",
                                 lineHeight: 1.5,
                                 animationDelay: "0.3s",
                                 textAlign: "center",
