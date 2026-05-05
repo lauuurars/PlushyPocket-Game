@@ -47,7 +47,7 @@ const QRCharacter: React.FC = () => {
             <div id="reader" className="absolute inset-0 w-full h-full z-0"></div>
 
             {/* Círculo rojo*/}
-            <div className="absolute -top-[45%]  right-[-92%] -translate-x-1/2 w-[140vw] aspect-square bg-[#ED1C24] rounded-full flex items-end justify-center pb-12 z-20 shadow-2xl">
+            <div className="absolute -top-[45%]  right-[-92%] -translate-x-1/2 w-[140vw] aspect-square bg-[#ED1C24] rounded-full flex items-end justify-center pb-12 z-20">
                 <h1 className="text-[#FAFAFA] text-4xl font-bold leading-tight text-center px-10 mb-8">
                     Scan your QR <br /> code!
                 </h1>

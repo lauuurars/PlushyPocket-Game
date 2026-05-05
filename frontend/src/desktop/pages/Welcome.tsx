@@ -81,10 +81,8 @@ export default function Welcome() {
 
     return (
         <>
-            {/* animaciones de svg */}
+            
             <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
-
         @keyframes floatY {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50%       { transform: translateY(-12px) rotate(4deg); }
