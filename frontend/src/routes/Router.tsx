@@ -58,7 +58,6 @@ const router = createBrowserRouter(
         {
             path: "/qr-character",
             Component: QRCharacter
-        }
         },
         {
             path: "/start-game",
@@ -68,10 +67,7 @@ const router = createBrowserRouter(
         {
             path: "/home-phone",
             Component: HomePhone
-
         },
-
-
     ]
 )
 
