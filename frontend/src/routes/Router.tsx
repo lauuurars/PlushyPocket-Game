@@ -21,6 +21,7 @@ import Profile from "../phone/pages/Profile";
 import Rewards from "../phone/pages/Rewards";
 import { supabase } from "../lib/supabaseClient";
 import ShoutCake from "../phone/islands/cake/ShoutCake";
+import Results from "../desktop/pages/Results";
 
 type Viewport = "pc" | "mobile";
 
@@ -78,6 +79,11 @@ const router = createBrowserRouter(
             Component: Welcome,
             loader: requireViewport("pc"),
         },
+        {
+            path: "/welcome",
+            Component: Welcome,
+            loader: requireViewport("pc"),
+        },
         // Flappy boat - PC
         {
             path: "/flappy-boat",
@@ -106,6 +112,10 @@ const router = createBrowserRouter(
         {
             path: "/home",
             Component: Home,
+        },
+                {
+            path: "/results",
+            Component: Results
         },
         // Loading - mobile
         {
@@ -189,7 +199,7 @@ const router = createBrowserRouter(
         {
             path: "/blocked-characters",
             Component: BlockedCharacters
-        }
+        },
     ]
 )
 
