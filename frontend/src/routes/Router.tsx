@@ -13,10 +13,8 @@ import StartGame from "../desktop/pages/StartGame";
 import Home from "../desktop/pages/Home";
 import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
-import ChooseCharacter from "../phone/pages/ChooseCharacter";
-import HomePhone from "../phone/pages/HomePage";
-import Characters from "../phone/pages/Characters";
-import BlockedCharacters from "../phone/pages/BlockedCharacters";
+import Characters from '../phone/pages/Characters';
+import BlockedCharacters from '../phone/pages/BlockedCharacters';
 import JoinRoom from "../phone/pages/JoinRoom";
 import WaitingRoom from "../phone/pages/WaitingRoom";
 import Profile from "../phone/pages/Profile";
@@ -184,6 +182,14 @@ const router = createBrowserRouter(
             Component: ShoutCake,
             //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
+        {
+            path: "/characters",
+            Component: Characters 
+        },
+        {
+            path: "/blocked-characters",
+            Component: BlockedCharacters
+        }
     ]
 )
 
