@@ -15,6 +15,7 @@ import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 import JoinRoom from "../phone/pages/JoinRoom";
 import WaitingRoom from "../phone/pages/WaitingRoom";
+import Rewards from "../phone/pages/Rewards";
 
 const router = createBrowserRouter(
     [
@@ -81,7 +82,10 @@ const router = createBrowserRouter(
         {
             path: "/waiting-room",
             Component: WaitingRoom
-            
+        },
+        {
+            path: "/rewards",
+            Component: Rewards
         }
     ]
 )
