@@ -14,6 +14,7 @@ import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 import JoinRoom from "../phone/pages/JoinRoom";
 import WaitingRoom from "../phone/pages/WaitingRoom";
+import Rewards from "../phone/pages/Rewards";
 import { supabase } from "../lib/supabaseClient";
 
 type Viewport = "pc" | "mobile";
@@ -156,6 +157,10 @@ const router = createBrowserRouter(
         {
             path: "/waiting-room",
             Component: WaitingRoom
+        },
+        {
+            path: "/rewards",
+            Component: Rewards
             ,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         }
