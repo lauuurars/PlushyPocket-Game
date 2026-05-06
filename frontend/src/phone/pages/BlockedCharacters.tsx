@@ -7,7 +7,7 @@ import Navbar from "../../components/mobile/Navbar";
 interface Character {
     id: string;
     name: string;
-    img_url: string; // Columna real en Supabase
+    img_url: string; 
     is_blocked: boolean;
     bg_color?: string;
 }
@@ -15,7 +15,9 @@ interface Character {
 const CHARACTER_COLORS = ["#76D6FF", "#FF7BE2", "#FFE23F", "#925FDF"];
 
 const getImageUrl = (char: any) => {
-    // Usamos img_url que es el nombre real de la columna
+    
+
+
     const path = char.img_url || char.url || char.image || char.image_url;
 
     if (!path) return null;
@@ -57,7 +59,7 @@ export default function BlockedCharacters() {
 
     return (
         <div className="relative min-h-svh w-screen overflow-x-hidden bg-[#ED1C24] md:hidden">
-            {/* Burbuja blanca */}
+   
             <div
                 style={{
                     position: "absolute",
@@ -85,7 +87,7 @@ export default function BlockedCharacters() {
                     paddingBottom: "120px",
                 }}
             >
-                {/* Título — envuelto en un div de altura fija para sincronizar con la página de bloqueados */}
+               
                 <div style={{ height: "90px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <h1
                         style={{
@@ -102,10 +104,10 @@ export default function BlockedCharacters() {
                     </h1>
                 </div>
 
-                {/* Espacio sincronizado con la página de bloqueados */}
+              
                 <div style={{ height: "30px" }} />
 
-                {/* Toggle Buttons */}
+
                 <div
                     style={{
                         display: "flex",
@@ -180,7 +182,7 @@ export default function BlockedCharacters() {
                             <MiniCharacterCard
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
-                                bgColor="#343434" // Fondo gris fijo para bloqueados
+                                bgColor="#343434" 
                                 onClick={() => console.log(`Blocked ${char.name}`)}
                                 isLocked={true}
                             />
