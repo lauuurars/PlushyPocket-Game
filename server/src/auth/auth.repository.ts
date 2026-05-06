@@ -117,32 +117,51 @@ const clientWithUserJwt = (accessToken: string) =>
         },
     })
 
-type ProfileAgeResult = {
+type ProfileRowResult = {
     age: number | null
+    character_selected: string | null
+    profile_picture_path: string | null
     error: Error | null
 }
 
-const getUserProfileAge = async (
+const getUserProfileRow = async (
     accessToken: string,
     userId: string,
-): Promise<ProfileAgeResult> => {
+): Promise<ProfileRowResult> => {
     const client = clientWithUserJwt(accessToken)
-    const { data, error } = await client.from("users").select("age").eq("id", userId).maybeSingle()
+    const { data, error } = await client
+        .from("users")
+        .select("age, character_selected, profile_picture_path")
+        .eq("id", userId)
+        .maybeSingle()
 
     if (error) {
-        return { age: null, error: new Error(error.message) }
+        return {
+            age: null,
+            character_selected: null,
+            profile_picture_path: null,
+            error: new Error(error.message),
+        }
     }
     if (!data) {
-        return { age: null, error: null }
+        return { age: null, character_selected: null, profile_picture_path: null, error: null }
     }
-    const raw = data.age
-    if (raw === null || raw === undefined) {
-        return { age: null, error: null }
+
+    const rawAge = data.age
+    let age: number | null = null
+    if (rawAge !== null && rawAge !== undefined && typeof rawAge === "number") {
+        age = rawAge
     }
-    if (typeof raw !== "number") {
-        return { age: null, error: null }
-    }
-    return { age: raw, error: null }
+
+    const ch = data.character_selected as unknown
+    const character_selected =
+        typeof ch === "string" ? ch : ch != null ? String(ch) : null
+
+    const pathRaw = data.profile_picture_path as unknown
+    const profile_picture_path =
+        typeof pathRaw === "string" ? pathRaw : pathRaw != null ? String(pathRaw) : null
+
+    return { age, character_selected, profile_picture_path, error: null }
 }
 
 const updateUserAge = async (
@@ -167,10 +186,41 @@ const updateUserAge = async (
     return { error: null }
 }
 
+const updateUserCharacterSelection = async (
+    accessToken: string,
+    userId: string,
+    characterSelected: string,
+    profilePicturePath: string,
+): Promise<UpdateAgeResult> => {
+    const client = clientWithUserJwt(accessToken)
+    const { data, error } = await client
+        .from("users")
+        .update({
+            character_selected: characterSelected,
+            profile_picture_path: profilePicturePath,
+        })
+        .eq("id", userId)
+        .select("id")
+
+    if (error) {
+        return { error: new Error(error.message) }
+    }
+    if (!data?.length) {
+        return {
+            error: new Error(
+                "No user profile row to update — check that public.users has a row for this account.",
+            ),
+        }
+    }
+
+    return { error: null }
+}
+
 export default {
     signUpWithEmail,
     signInWithPassword,
     getUserFromAccessToken,
-    getUserProfileAge,
+    getUserProfileRow,
     updateUserAge,
+    updateUserCharacterSelection,
 }

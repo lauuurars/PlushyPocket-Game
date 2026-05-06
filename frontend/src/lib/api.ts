@@ -58,9 +58,13 @@ export type BackendAuthSuccess = {
     session: AuthSessionPayload | null;
 };
 
-/** Respuesta de `GET /api/auth/me` (incluye edad en `users`). */
+/** Respuesta de `GET /api/auth/me` (perfil en `public.users`). */
 export type AuthMeResponse = BackendAuthUser & {
     age: number | null;
+    character_selected: string | null;
+    character_display_name: string | null;
+    profile_picture_path: string | null;
+    profile_picture_public_url: string | null;
 };
 
 const MIN_RECORDED_AGE = 1;
@@ -76,6 +80,13 @@ export function isRecordedAgeComplete(
         age >= MIN_RECORDED_AGE &&
         age <= MAX_RECORDED_AGE
     );
+}
+
+/** Ya eligió personaje en `public.users.character_selected`. */
+export function isCharacterSelectionComplete(
+    character_selected: string | null | undefined,
+): character_selected is string {
+    return typeof character_selected === "string" && character_selected.length > 0;
 }
 
 async function readJson(res: Response): Promise<unknown> {
@@ -158,6 +169,15 @@ export async function persistSupabaseSession(session: AuthSessionPayload): Promi
     }
 }
 
+/** URL pública del objeto en el bucket `profilepicture` (misma base que el proyecto). */
+export function profilePicturePublicUrl(storagePath: string): string {
+    const base = (import.meta.env.VITE_SUPABASE_URL ?? "").replace(/\/$/, "");
+    if (!base) {
+        return "";
+    }
+    return `${base}/storage/v1/object/public/profilepicture/${encodeURIComponent(storagePath)}`;
+}
+
 /** Guarda `age` en la fila `users` de Supabase vía el backend (JWT del usuario). */
 export async function updatePlayerAge(age: number): Promise<void> {
     const {
@@ -178,5 +198,28 @@ export async function updatePlayerAge(age: number): Promise<void> {
     const data = (await readJson(res)) as { error?: string };
     if (!res.ok) {
         throw new Error(data.error ?? `Could not save age (${res.status})`);
+    }
+}
+
+/** Guarda personaje elegido (`character_selected` + clave en bucket `profilepicture`). */
+export async function updatePlayerCharacter(characterName: string): Promise<void> {
+    const {
+        data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+        throw new Error("You need to be signed in to save your character.");
+    }
+    const baseUrl = requireServerBase();
+    const res = await fetch(`${baseUrl}/api/auth/character`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ character_name: characterName }),
+    });
+    const data = (await readJson(res)) as { error?: string };
+    if (!res.ok) {
+        throw new Error(data.error ?? `Could not save character (${res.status})`);
     }
 }

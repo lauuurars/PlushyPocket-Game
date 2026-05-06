@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { fetchAuthMe, isRecordedAgeComplete } from "../../lib/api";
+import { fetchAuthMe, isCharacterSelectionComplete, isRecordedAgeComplete } from "../../lib/api";
 import { supabase } from "../../lib/supabaseClient";
 
 /**
@@ -25,9 +25,15 @@ export default function AuthCallback() {
                 }
                 try {
                     const me = await fetchAuthMe(session.access_token);
-                    navigate(isRecordedAgeComplete(me.age) ? "/" : "/age", {
-                        replace: true,
-                    });
+                    if (!isRecordedAgeComplete(me.age)) {
+                        navigate("/age", { replace: true });
+                        return;
+                    }
+                    if (!isCharacterSelectionComplete(me.character_selected)) {
+                        navigate("/choose-character", { replace: true });
+                        return;
+                    }
+                    navigate("/", { replace: true });
                 } catch {
                     setMessage("Something went wrong. Try again.");
                 }

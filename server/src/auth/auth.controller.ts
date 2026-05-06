@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 
 import AuthService from "./auth.service"
-import type { LoginDTO, RegisterDTO, UpdateAgeDTO } from "../types/auth.types"
+import type { LoginDTO, RegisterDTO, UpdateAgeDTO, UpdateCharacterDTO } from "../types/auth.types"
 
 const register = async (req: Request, res: Response) => {
     try {
@@ -77,9 +77,36 @@ const updateAge = async (req: Request, res: Response) => {
     }
 }
 
+const updateCharacter = async (req: Request, res: Response) => {
+    try {
+        const header = req.headers.authorization
+        const token = header?.startsWith("Bearer ") ? header.slice(7) : null
+
+        if (!token) {
+            res.status(401).json({ error: "Missing Bearer token" })
+            return
+        }
+
+        const body = req.body as UpdateCharacterDTO
+        await AuthService.updateCharacterForBearerToken(token, body)
+        res.status(204).send()
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Could not save character"
+        const lowered = message.toLowerCase()
+        const status =
+            lowered.includes("invalid session") ||
+            lowered.includes("jwt") ||
+            lowered.includes("bearer")
+                ? 401
+                : 400
+        res.status(status).json({ error: message })
+    }
+}
+
 export default {
     register,
     login,
     me,
     updateAge,
+    updateCharacter,
 }
