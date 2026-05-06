@@ -2,7 +2,7 @@ export interface Player {
     id: string
     username: string
     email: string
-    age: number
+    age: number | null
 }
 
 export interface StartGameResponse {
