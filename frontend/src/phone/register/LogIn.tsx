@@ -4,8 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import Background1 from "../../assets/onboarding/background1.svg";
 import {
   authRedirectUrl,
-  fetchAuthMe,
-  isRecordedAgeComplete,
   loginWithBackend,
   persistSupabaseSession,
   signInWithGoogle,
@@ -77,8 +75,7 @@ export default function LogIn() {
         return;
       }
       await persistSupabaseSession(result.session);
-      const me = await fetchAuthMe(result.session.access_token);
-      navigate(isRecordedAgeComplete(me.age) ? "/" : "/age", { replace: true });
+      navigate("/home-phone", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

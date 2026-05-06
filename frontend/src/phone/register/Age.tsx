@@ -74,7 +74,7 @@ export default function Age() {
     setLoading(true);
     try {
       await updatePlayerAge(selectedAge);
-      navigate("/", { replace: true });
+      navigate("/choose-character", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
