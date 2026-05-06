@@ -1,14 +1,41 @@
-import { useState } from "react";
+import { useMemo } from "react";
 import { Gamepad2, Gift, House, LayoutGrid, User } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-type NavKey = "home" | "grid" | "game" | "gift" | "user";
+type NavKey = "home" | "characters" | "game" | "gift" | "user";
 
-export default function Navbar() {
-    const [active, setActive] = useState<NavKey>("home");
+type NavbarProps = {
+    routes?: Partial<Record<NavKey, string>>;
+};
 
-    const navigateToPlaceholder = (key: NavKey) => {
-        setActive(key);
-        window.history.pushState(null, "", "/#");
+export default function Navbar({ routes }: NavbarProps) {
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    const mergedRoutes = useMemo<Partial<Record<NavKey, string>>>(() => {
+        return {
+            home: "/home-phone",
+            gift: "/rewards",
+            user: "/profile",
+            game: "/qr-game",
+            characters: "/characters",
+            ...routes,
+        };
+    }, [routes]);
+
+    const active = useMemo<NavKey>(() => {
+        const pathname = location.pathname;
+        const matchKey = (Object.keys(mergedRoutes) as NavKey[]).find((key) => {
+            const target = mergedRoutes[key];
+            if (!target) return false;
+            return pathname === target || pathname.startsWith(`${target}/`);
+        });
+        return matchKey ?? "home";
+    }, [location.pathname, mergedRoutes]);
+
+    const navigateTo = (key: NavKey) => {
+        const target = mergedRoutes[key];
+        if (target) navigate(target);
     };
 
     const iconClass = (key: NavKey) =>
@@ -23,7 +50,7 @@ export default function Navbar() {
                             <button
                                 type="button"
                                 aria-label="Home"
-                                onClick={() => navigateToPlaceholder("home")}
+                                onClick={() => navigateTo("home")}
                                 className="h-[clamp(30px,8vw,36px)] w-[clamp(60px,8vw,36px)]"
                             >
                                 <House className={`h-full w-full ${iconClass("home")}`} />
@@ -32,10 +59,10 @@ export default function Navbar() {
                             <button
                                 type="button"
                                 aria-label="Apps"
-                                onClick={() => navigateToPlaceholder("grid")}
+                                onClick={() => navigateTo("characters")}
                                 className="h-[clamp(30px,8vw,36px)] w-[clamp(30px,8vw,36px)]"
                             >
-                                <LayoutGrid className={`h-full w-full ${iconClass("grid")}`} />
+                                <LayoutGrid className={`h-full w-full ${iconClass("characters")}`} />
                             </button>
                         </div>
 
@@ -45,7 +72,7 @@ export default function Navbar() {
                             <button
                                 type="button"
                                 aria-label="Rewards"
-                                onClick={() => navigateToPlaceholder("gift")}
+                                onClick={() => navigateTo("gift")}
                                 className="h-[clamp(30px,8vw,36px)] w-[clamp(10px,8vw,36px)]"
                             >
                                 <Gift className={`h-full w-full ${iconClass("gift")}`} />
@@ -54,7 +81,7 @@ export default function Navbar() {
                             <button
                                 type="button"
                                 aria-label="Profile"
-                                onClick={() => navigateToPlaceholder("user")}
+                                onClick={() => navigateTo("user")}
                                 className="h-[clamp(30px,8vw,36px)] w-[clamp(60px,8vw,36px)]"
                             >
                                 <User className={`h-full w-full ${iconClass("user")}`} />
@@ -66,7 +93,7 @@ export default function Navbar() {
                 <button
                     type="button"
                     aria-label="Game"
-                    onClick={() => navigateToPlaceholder("game")}
+                    onClick={() => navigateTo("game")}
                     className="absolute left-1/2 top-0 flex h-[clamp(78px,20vw,96px)] w-[clamp(78px,20vw,96px)] -translate-x-1/2 items-center justify-center rounded-full border-[6px] border-[#FAFAFA] bg-[#ED1C24]"
                 >
                     <Gamepad2
