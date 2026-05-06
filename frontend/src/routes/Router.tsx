@@ -13,6 +13,8 @@ import QRCharacter from "../phone/pages/QRCharacter";
 import StartGame from "../desktop/pages/StartGame";
 import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
+import Characters from "../phone/pages/Characters";
+import BlockedCharacters from "../phone/pages/BlockedCharacters";
 
 const router = createBrowserRouter(
     [
@@ -71,6 +73,14 @@ const router = createBrowserRouter(
         {
             path: "/home-phone",
             Component: HomePhone
+        },
+        {
+            path: "/characters",
+            Component: Characters
+        },
+        {
+            path: "/blocked-characters",
+            Component: BlockedCharacters
         },
     ]
 )
