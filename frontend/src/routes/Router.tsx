@@ -157,15 +157,16 @@ const router = createBrowserRouter(
         //waiting-room - mobile
         {
             path: "/waiting-room",
-            Component: WaitingRoom
+            Component: WaitingRoom,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/profile",
             Component: Profile
+        },
+        {
             path: "/rewards",
             Component: Rewards
-            ,
-            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         }
     ]
 )
