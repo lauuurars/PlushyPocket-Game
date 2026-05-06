@@ -40,7 +40,7 @@ export type AuthMePayload = AuthUserPayload & {
     character_selected: string | null
     /** Nombre mostrado del personaje (p. ej. Mochi); null si no hay selección. */
     character_display_name: string | null
-    /** Clave del objeto en el bucket `profilepicture` (p. ej. Mochi.png). */
+    /** Clave del objeto en el bucket `profilepicture` (p. ej. Mochi.svg). */
     profile_picture_path: string | null
     /** URL pública de Storage para `profile_picture_path`. */
     profile_picture_public_url: string | null

@@ -1,185 +1,250 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import BgParty from "../../assets/startGame/Bg Party.svg?url";
-import Estrella3 from "../../assets/welcome/Estrella3.svg";
-import Flor from "../../assets/welcome/Flor.svg";
+import Rayo from "../../assets/welcome/Rayo.svg";
+import { fetchPartyRoomUserProfile, type PartyResultsNavState, type PartyUserDisplay } from "../../lib/api";
+import { MOCK_PARTY_PLAYER2, PARTY_TRANSITION_MS, PLAYER_1_FIXED_AVATAR_URL } from "../partyMocks";
 
 interface PartyRoomProps {
-    roomCode?: string;        // ej: "5173"
-    islandName?: string;      // ej: "Sanrio Island"
+    roomCode?: string;
+    islandName?: string;
 }
 
-export default function PartyRoom({
-    roomCode = "5173",
-    islandName = "Sanrio Island",
-}: PartyRoomProps) {
-    const [ready, setReady] = useState(false);
+export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Island" }: PartyRoomProps) {
+    const navigate = useNavigate();
+    const [scale, setScale] = useState(1);
+    const [profile, setProfile] = useState<PartyUserDisplay | null>(null);
+    const profileRef = useRef<PartyUserDisplay | null>(null);
+
+    profileRef.current = profile;
+
+    const player1Name = profile?.displayName ?? "Player";
 
     useEffect(() => {
-        const t = setTimeout(() => setReady(true), 80);
-        return () => clearTimeout(t);
+        void fetchPartyRoomUserProfile().then(setProfile);
     }, []);
 
+    useEffect(() => {
+        const updateScale = () => {
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const next = Math.min(vw / 1512, vh / 982, 1);
+            setScale(next);
+        };
+
+        updateScale();
+        window.addEventListener("resize", updateScale);
+        return () => window.removeEventListener("resize", updateScale);
+    }, []);
+
+    useEffect(() => {
+        const tid = window.setTimeout(() => {
+            const p = profileRef.current;
+            const p1Name = p?.displayName ?? "Player";
+            const w: 1 | 2 = Math.random() < 0.5 ? 1 : 2;
+
+            const state: PartyResultsNavState = {
+                roomCode,
+                winnerPlayer: w,
+                winnerName: w === 1 ? p1Name : MOCK_PARTY_PLAYER2.name,
+                player1Name: p1Name,
+                player2Name: MOCK_PARTY_PLAYER2.name,
+                player1AvatarUrls: [PLAYER_1_FIXED_AVATAR_URL],
+                player2AvatarUrl: MOCK_PARTY_PLAYER2.avatarUrl,
+            };
+
+            navigate("/results", { replace: true, state });
+        }, PARTY_TRANSITION_MS);
+
+        return () => clearTimeout(tid);
+    }, [navigate, roomCode]);
+
     return (
-        <>
-            <style>{`
-        @keyframes fade-down {
-            0%   { opacity: 0; transform: translateY(-16px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fade-up-soft {
-            0%   { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes title-pop {
-            0%   { opacity: 0; transform: scale(0.88) translateY(10px); }
-            65%  { opacity: 1; transform: scale(1.04) translateY(-4px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        @keyframes floatA {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50%       { transform: translateY(-10px) rotate(8deg); }
-        }
-        @keyframes floatB {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50%       { transform: translateY(-8px) rotate(-6deg); }
-        }
-        @keyframes scatter {
-            0%   { opacity: 0; transform: scale(0) rotate(-20deg); }
-            70%  { opacity: 1; transform: scale(1.15) rotate(5deg); }
-            100% { opacity: 1; transform: scale(1) rotate(0deg); }
-        }
-
-        .anim-fade-down   { animation: fade-down    0.55s ease both; }
-        .anim-title-pop   { animation: title-pop    0.7s cubic-bezier(.34,1.56,.64,1) both; }
-        .anim-fade-up     { animation: fade-up-soft 0.6s ease both; }
-        .anim-scatter-a   { animation: scatter      0.55s cubic-bezier(.34,1.56,.64,1) both, floatA 4s ease-in-out 0.6s infinite; }
-        .anim-scatter-b   { animation: scatter      0.55s cubic-bezier(.34,1.56,.64,1) both, floatB 3.6s ease-in-out 0.6s infinite; }
-    `}</style>
-
-            {/* wrapper */}
-            <div
-                className="relative w-full h-screen overflow-hidden flex flex-col"
-                style={{ minHeight: "100svh" }}
-            >
-                {/* ------------- fondo */}
+        <div
+            className="flex w-screen items-center justify-center overflow-hidden bg-[#ED1C24]"
+            style={{ height: "100svh" }}
+        >
+            <div className="relative" style={{ width: 1512 * scale, height: 982 * scale }}>
                 <div
-                    aria-hidden
+                    className="absolute left-0 top-0"
                     style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundImage: `url("${BgParty}")`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        backgroundRepeat: "no-repeat",
-                        zIndex: 0,
+                        width: 1512,
+                        height: 982,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "top left",
                     }}
-                />
-
-                {/*  -------- elementos decorativoooss ------ */}
-                <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
-
-                    {/* ------ estrella ----- */}
-                    <img
-                        src={Estrella3}
-                        alt=""
-                        width={70}
-                        height={70}
-                        className={ready ? "anim-scatter-a" : "opacity-0"}
+                >
+                    <div
+                        aria-hidden
                         style={{
                             position: "absolute",
-                            top: "28%",
-                            left: "12%",
-                            animationDelay: "0.4s",
+                            inset: 0,
+                            backgroundImage: `url("${BgParty}")`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                            zIndex: 0,
                         }}
                     />
 
-                    {/* ----------- flor ---------- */}
-                    <img
-                        src={Flor}
-                        alt=""
-                        width={64}
-                        height={64}
-                        className={ready ? "anim-scatter-b" : "opacity-0"}
-                        style={{
-                            position: "absolute",
-                            top: "8%",
-                            right: "12%",
-                            animationDelay: "0.5s",
-                        }}
-                    />
-                </div>
-
-                {/*  ------------- room label ------ */}
-                <div
-                    className="relative"
-                    style={{ zIndex: 3, padding: "28px 36px 0" }}
-                >
-                    <p
-                        className={ready ? "anim-fade-down" : "opacity-0"}
-                        style={{
-                            fontFamily: "'Nunito', sans-serif",
-                            fontWeight: 800,
-                            fontSize: "clamp(0.95rem, 1.8vw, 1.5rem)",
-                            color: "white",
-                            letterSpacing: "0.01em",
-                            animationDelay: "0.05s",
-                            margin: 0,
-                        }}
-                    >
-                        Party Room - {roomCode}
-                    </p>
-                </div>
-
-                <div
-                    className="relative flex flex-col items-center justify-center flex-1"
-                    style={{ zIndex: 3, marginTop: "-370px" }}
-                >
-                    {/* ------------- título ------------ */}
-                    <h1
-                        className={ready ? "anim-title-pop" : "opacity-0"}
-                        style={{
-                            fontFamily: "'Baloo 2', cursive",
-                            fontWeight: 800,
-                            fontSize: "clamp(2.8rem, 7vw, 6rem)",
-                            color: "white",
-                            textAlign: "center",
-                            lineHeight: 1.05,
-                            margin: 0,
-                            animationDelay: "0.15s",
-                        }}
-                    >
-                        Welcome Players!
-                    </h1>
-
-                    {/* -------------- texto -------------- */}
-                    <p
-                        className={ready ? "anim-fade-up" : "opacity-0"}
-                        style={{
-                            fontFamily: "'Nunito', sans-serif",
-                            fontWeight: 500,
-                            fontSize: "clamp(1rem, 2.2vw, 1.4rem)",
-                            color: "rgba(255,255,255,0.92)",
-                            textAlign: "center",
-                            marginTop: "20px",
-                            lineHeight: 1.5,
-                            animationDelay: "0.35s",
-                        }}
-                    >
-                        Your next adventure together
-                        <br />
-                        starts in{" "}
-                        <strong
+                    <div className="relative w-full" style={{ zIndex: 2, height: 982 }}>
+                        <div
+                            className="absolute text-[#FAFAFA]"
                             style={{
-                                fontFamily: "'Baloo 2', cursive",
+                                top: "62px",
+                                left: "79px",
+                                fontFamily: "'Baloo 2', system-ui, sans-serif",
                                 fontWeight: 700,
-                                color: "white",
+                                fontSize: "35px",
+                                letterSpacing: "-1px",
+                                lineHeight: "72px",
                             }}
                         >
-                            {islandName}
-                        </strong>
-                    </p>
+                            Party Room - {roomCode}
+                        </div>
+
+                        <img
+                            src={Rayo}
+                            alt=""
+                            aria-hidden
+                            className="absolute"
+                            style={{
+                                top: "97px",
+                                left: "416px",
+                                width: "31px",
+                                height: "auto",
+                                transform: "rotate(12deg)",
+                            }}
+                        />
+
+                        <p
+                            className="absolute m-0 text-center text-[#FFFDF6]"
+                            style={{
+                                top: "190px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "420px",
+                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                fontWeight: 700,
+                                fontSize: "40px",
+                                letterSpacing: "-1.04px",
+                                lineHeight: "1.1",
+                            }}
+                        >
+                            Your next adventure starts in{" "}
+                            <strong className="font-extrabold">{islandName}</strong>
+                        </p>
+
+                        <div
+                            className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
+                            style={{ top: "307px", width: "min(1050px, 80vw)" }}
+                        >
+                            <div className="relative flex flex-col items-center">
+                                <div
+                                    className="relative overflow-hidden rounded-full"
+                                    style={{
+                                        width: "296px",
+                                        height: "296px",
+                                        border: "12px solid #FAFAFA",
+                                        backgroundColor: "rgba(250,250,250,0.12)",
+                                    }}
+                                >
+                                    <img
+                                        src={PLAYER_1_FIXED_AVATAR_URL}
+                                        alt=""
+                                        className="h-full w-full object-contain object-center"
+                                        draggable={false}
+                                    />
+                                </div>
+
+                                <p
+                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "41px",
+                                        letterSpacing: "-0.77px",
+                                        lineHeight: "61px",
+                                    }}
+                                >
+                                    Player 1
+                                </p>
+                                <p
+                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 600,
+                                        fontSize: "23px",
+                                        letterSpacing: "-0.43px",
+                                        lineHeight: "34px",
+                                    }}
+                                >
+                                    {player1Name}
+                                </p>
+                            </div>
+
+                            <p
+                                className="m-0 text-center text-[#FFFDF6]"
+                                style={{
+                                    marginTop: "120px",
+                                    fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                    fontWeight: 800,
+                                    fontSize: "72px",
+                                    letterSpacing: "-1.38px",
+                                    lineHeight: "109px",
+                                }}
+                            >
+                                VS
+                            </p>
+
+                            <div className="relative flex flex-col items-center">
+                                <div
+                                    className="relative overflow-hidden rounded-full"
+                                    style={{
+                                        width: "296px",
+                                        height: "296px",
+                                        border: "12px solid #FAFAFA",
+                                        backgroundColor: "rgba(250,250,250,0.12)",
+                                    }}
+                                >
+                                    <img
+                                        src={MOCK_PARTY_PLAYER2.avatarUrl}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        draggable={false}
+                                    />
+                                </div>
+
+                                <p
+                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "41px",
+                                        letterSpacing: "-0.77px",
+                                        lineHeight: "61px",
+                                    }}
+                                >
+                                    Player 2
+                                </p>
+                                <p
+                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 600,
+                                        fontSize: "23px",
+                                        letterSpacing: "-0.43px",
+                                        lineHeight: "34px",
+                                    }}
+                                >
+                                    {MOCK_PARTY_PLAYER2.name}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

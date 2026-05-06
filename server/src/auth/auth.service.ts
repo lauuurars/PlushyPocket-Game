@@ -49,13 +49,13 @@ type ResolvedCharacter = {
 const resolveCharacterChoice = (raw: string): ResolvedCharacter | null => {
     const key = raw.trim().toLowerCase()
     if (key === "mochi") {
-        return { enumValue: "mochi", displayName: "Mochi", storageFileName: "Mochi.png" }
+        return { enumValue: "mochi", displayName: "Mochi", storageFileName: "Mochi.svg" }
     }
     if (key === "misu") {
-        return { enumValue: "misu", displayName: "Misu", storageFileName: "Misu.png" }
+        return { enumValue: "misu", displayName: "Misu", storageFileName: "Misu.svg" }
     }
     if (key === "yuki") {
-        return { enumValue: "yuki", displayName: "Yuki", storageFileName: "Yuki.png" }
+        return { enumValue: "yuki", displayName: "Yuki", storageFileName: "Yuki.svg" }
     }
     return null
 }

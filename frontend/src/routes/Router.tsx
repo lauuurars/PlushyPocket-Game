@@ -21,6 +21,8 @@ import Profile from "../phone/pages/Profile";
 import Rewards from "../phone/pages/Rewards";
 import { supabase } from "../lib/supabaseClient";
 import ShoutCake from "../phone/islands/cake/ShoutCake";
+import Results from "../desktop/pages/Results";
+import PartyRoom from "../desktop/pages/PartyRoom";
 
 type Viewport = "pc" | "mobile";
 
@@ -78,6 +80,11 @@ const router = createBrowserRouter(
             Component: Welcome,
             loader: requireViewport("pc"),
         },
+        {
+            path: "/welcome",
+            Component: Welcome,
+            loader: requireViewport("pc"),
+        },
         // Flappy boat - PC
         {
             path: "/flappy-boat",
@@ -102,10 +109,20 @@ const router = createBrowserRouter(
             Component: StartGame,
             loader: requireViewport("pc"),
         },
+        // Party Room - PC
+        {
+            path: "/party-room",
+            Component: PartyRoom,
+            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+        },
         // Home (island hub) - PC
         {
             path: "/home",
             Component: Home,
+        },
+                {
+            path: "/results",
+            Component: Results
         },
         // Loading - mobile
         {
@@ -189,7 +206,7 @@ const router = createBrowserRouter(
         {
             path: "/blocked-characters",
             Component: BlockedCharacters
-        }
+        },
     ]
 )
 
