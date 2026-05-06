@@ -10,6 +10,9 @@ import CakeGame from "../desktop/islands/cake/CakeGame";
 import QRGame from "../phone/pages/QRGame";
 import QRCharacter from "../phone/pages/QRCharacter";
 import StartGame from "../desktop/pages/StartGame";
+import Home from "../desktop/pages/Home";
+import ChooseCharacter from "../phone/pages/ChooseCharacter";
+import HomePhone from "../phone/pages/HomePage";
 import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 import Characters from "../phone/pages/Characters";
@@ -101,6 +104,11 @@ const router = createBrowserRouter(
             Component: StartGame,
             loader: requireViewport("pc"),
         },
+        // Home (island hub) - PC
+        {
+            path: "/home",
+            Component: Home,
+        },
         // Loading - mobile
         {
             path: "/loading",
@@ -175,14 +183,6 @@ const router = createBrowserRouter(
             path: "/shout-cake",
             Component: ShoutCake,
             //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
-        },
-        {
-            path: "/characters",
-            Component: Characters
-        },
-        {
-            path: "/blocked-characters",
-            Component: BlockedCharacters
         },
     ]
 )
