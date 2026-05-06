@@ -14,6 +14,7 @@ import StartGame from "../desktop/pages/StartGame";
 import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 import JoinRoom from "../phone/pages/JoinRoom";
+import WaitingRoom from "../phone/pages/WaitingRoom";
 
 const router = createBrowserRouter(
     [
@@ -76,6 +77,11 @@ const router = createBrowserRouter(
         {
             path: "/join-room",
             Component: JoinRoom
+        },
+        {
+            path: "/waiting-room",
+            Component: WaitingRoom
+            
         }
     ]
 )
