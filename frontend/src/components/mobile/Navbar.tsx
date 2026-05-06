@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Gamepad2, Gift, House, LayoutGrid, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-type NavKey = "home" | "grid" | "game" | "gift" | "user";
+type NavKey = "home" | "characters" | "game" | "gift" | "user";
 
 type NavbarProps = {
     routes?: Partial<Record<NavKey, string>>;
@@ -18,6 +18,7 @@ export default function Navbar({ routes }: NavbarProps) {
             gift: "/rewards",
             user: "/profile",
             game: "/qr-game",
+            characters: "/characters",
             ...routes,
         };
     }, [routes]);
@@ -58,10 +59,10 @@ export default function Navbar({ routes }: NavbarProps) {
                             <button
                                 type="button"
                                 aria-label="Apps"
-                                onClick={() => navigateTo("grid")}
+                                onClick={() => navigateTo("characters")}
                                 className="h-[clamp(30px,8vw,36px)] w-[clamp(30px,8vw,36px)]"
                             >
-                                <LayoutGrid className={`h-full w-full ${iconClass("grid")}`} />
+                                <LayoutGrid className={`h-full w-full ${iconClass("characters")}`} />
                             </button>
                         </div>
 
