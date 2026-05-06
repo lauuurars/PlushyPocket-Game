@@ -17,6 +17,7 @@ import WaitingRoom from "../phone/pages/WaitingRoom";
 import Profile from "../phone/pages/Profile";
 import Rewards from "../phone/pages/Rewards";
 import { supabase } from "../lib/supabaseClient";
+import ShoutCake from "../phone/islands/cake/ShoutCake";
 
 type Viewport = "pc" | "mobile";
 
@@ -167,7 +168,12 @@ const router = createBrowserRouter(
         {
             path: "/rewards",
             Component: Rewards
-        }
+        },
+        {
+            path: "/shout-cake",
+            Component: ShoutCake,
+            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
     ]
 )
 
