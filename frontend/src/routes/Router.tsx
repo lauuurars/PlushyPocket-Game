@@ -14,6 +14,7 @@ import ChooseCharacter from "../phone/pages/ChooseCharacter";
 import HomePhone from "../phone/pages/HomePage";
 import JoinRoom from "../phone/pages/JoinRoom";
 import WaitingRoom from "../phone/pages/WaitingRoom";
+import Profile from "../phone/pages/Profile";
 import Rewards from "../phone/pages/Rewards";
 import { supabase } from "../lib/supabaseClient";
 
@@ -159,6 +160,8 @@ const router = createBrowserRouter(
             Component: WaitingRoom
         },
         {
+            path: "/profile",
+            Component: Profile
             path: "/rewards",
             Component: Rewards
             ,
