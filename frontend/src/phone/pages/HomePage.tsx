@@ -5,6 +5,8 @@ import UnlockItemPopup from "../../components/UnlockItemPopup";
 import Cloud from "../../assets/homePhone/cloud.svg";
 import Cloud2 from "../../assets/homePhone/cloud2.svg";
 import Mochi from "../../assets/homePhone/mochiFull.svg";
+import Misu from "../../assets/homePhone/misufull.svg";
+import Yuki from "../../assets/homePhone/yukifull.svg";
 import Ocean from "../../assets/homePhone/oceanHome.svg";
 import Palmtree from "../../assets/homePhone/palmtree.svg";
 import Sand from "../../assets/homePhone/sand.svg";
@@ -12,7 +14,8 @@ import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3";
 import Navbar from "../../components/mobile/Navbar";
 
 const HomePhone = () => {
-    const [username, setUsername] = useState("Martin");
+    const [username, setUsername] = useState("Player");
+    const [character, setCharacter] = useState("Mochi");
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isMuted, setIsMuted] = useState(false);
     const [startedMusic, setStartedMusic] = useState(false);
@@ -26,6 +29,11 @@ const HomePhone = () => {
         const storedName = localStorage.getItem("username");
         if (storedName) {
             setUsername(storedName);
+        }
+
+        const storedCharacter = localStorage.getItem("character");
+        if (storedCharacter) {
+            setCharacter(storedCharacter);
         }
 
         // Setup background music
@@ -51,6 +59,18 @@ const HomePhone = () => {
         } else {
             audioMute.muted = !audioMute.muted;
             setIsMuted(!isMuted);
+        }
+    };
+
+    const getCharacterImage = () => {
+        switch (character.toLowerCase()) {
+            case "misu":
+                return Misu;
+            case "yuki":
+                return Yuki;
+            case "mochi":
+            default:
+                return Mochi;
         }
     };
 
@@ -132,10 +152,10 @@ const HomePhone = () => {
                 <img src={Sand} alt="" className="w-full object-cover" />
             </div>
 
-            {/* Mochi*/}
+            {/* Character */}
             <div className="absolute left-1/2 bottom-[10%] -translate-x-1/2 w-[75%] z-40 animate-mochi">
-                <img src={Mochi}
-                    alt="Mochi"
+                <img src={getCharacterImage()}
+                    alt={character}
                     className="w-full" />
             </div>
 
