@@ -6,6 +6,7 @@ import {
   authRedirectUrl,
   loginWithBackend,
   persistSupabaseSession,
+  persistUsername,
   signInWithGoogle,
 } from "../../lib/api";
 import { supabase } from "../../lib/supabaseClient";

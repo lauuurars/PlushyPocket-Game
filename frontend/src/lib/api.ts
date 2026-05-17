@@ -11,6 +11,22 @@ export function persistDatabaseUserId(userId: string): void {
     }
 }
 
+export function persistUsername(username: string): void {
+    try {
+        localStorage.setItem("username", username);
+    } catch {
+        // private mode / disabled storage — ignore
+    }
+}
+
+export function persistCharacter(character: string): void {
+    try {
+        localStorage.setItem("character", character);
+    } catch {
+        // private mode / disabled storage — ignore
+    }
+}
+
 function serverBase(): string {
     return (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
 }
@@ -152,6 +168,11 @@ export async function fetchAuthMe(accessToken: string): Promise<AuthMeResponse> 
         throw new Error("Invalid response from server");
     }
     persistDatabaseUserId(data.id);
+    const displayName = displayNameFromAuthMe(data as AuthMeResponse);
+    persistUsername(displayName);
+    if (data.character_selected) {
+        persistCharacter(data.character_selected);
+    }
     return data as AuthMeResponse;
 }
 
@@ -167,6 +188,8 @@ export async function persistSupabaseSession(session: AuthSessionPayload): Promi
     if (data.user?.id) {
         persistDatabaseUserId(data.user.id);
     }
+    const displayName = displayNameFromSupabaseUser(data.user);
+    persistUsername(displayName);
 }
 
 /** URL pública según el cliente de Supabase (`getPublicUrl`). */
@@ -469,4 +492,5 @@ export async function updatePlayerCharacter(characterName: string): Promise<void
     if (!res.ok) {
         throw new Error(data.error ?? `Could not save character (${res.status})`);
     }
+    persistCharacter(characterName);
 }

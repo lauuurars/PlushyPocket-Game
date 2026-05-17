@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Background1 from "../../assets/onboarding/background1.svg";
 import {
   persistSupabaseSession,
+  persistUsername,
   registerWithBackend,
   signInWithGoogle,
 } from "../../lib/api";
@@ -77,6 +78,7 @@ export default function SignUp() {
       });
       if (result.session) {
         await persistSupabaseSession(result.session);
+        persistUsername(username.trim());
         navigate("/age", { replace: true });
         return;
       }
