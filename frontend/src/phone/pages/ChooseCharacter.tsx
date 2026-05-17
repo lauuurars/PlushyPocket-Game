@@ -13,12 +13,12 @@ export default function ChooseCharacter() {
     const [error, setError] = useState<string | null>(null);
     const [loadingName, setLoadingName] = useState<string | null>(null);
 
-    async function selectCharacter(displayName: string) {
+    async function selectCharacter(characterKey: string) {
         if (loadingName) return;
         setError(null);
-        setLoadingName(displayName);
+        setLoadingName(characterKey);
         try {
-            await updatePlayerCharacter(displayName);
+            await updatePlayerCharacter(characterKey);
             navigate("/home-phone", { replace: true });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -63,14 +63,14 @@ export default function ChooseCharacter() {
                             imageSrc={Mochi}
                             bgColor="#6EC6F6"
                             imageAlign="bottom"
-                            onClick={() => void selectCharacter("Mochi")}
+                            onClick={() => void selectCharacter("mochi")}
                         />
                         <CharacterCard
                             name="Misu"
                             imageSrc={Misu}
                             bgColor="#F9DA55"
                             imageAlign="bottom"
-                            onClick={() => void selectCharacter("Misu")}
+                            onClick={() => void selectCharacter("misu")}
                         />
                     </div>
 
@@ -80,13 +80,13 @@ export default function ChooseCharacter() {
                             imageSrc={Yuki}
                             bgColor="#915FDF"
                             imageAlign="bottom"
-                            onClick={() => void selectCharacter("Yuki")}
+                            onClick={() => void selectCharacter("yuki")}
                         />
                     </div>
 
                     {error && (
                         <p
-                            className="relative z-10 mx-auto mt-6 max-w-[280px] px-2 text-center text-sm text-[#ffe8e8]"
+                            className="relative z-10 mx-auto mt-6 max-w-70 px-2 text-center text-sm text-[#ffe8e8]"
                             role="alert"
                             style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
                         >
