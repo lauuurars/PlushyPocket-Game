@@ -12,29 +12,22 @@ import Palmtree from "../../assets/homePhone/palmtree.svg";
 import Sand from "../../assets/homePhone/sand.svg";
 import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3";
 import Navbar from "../../components/mobile/Navbar";
+import { fetchPartyRoomUserProfile, persistCharacter, persistUsername } from "../../lib/api";
 
 const HomePhone = () => {
-    const [username, setUsername] = useState("Player");
-    const [character, setCharacter] = useState("Mochi");
+    const [username, setUsername] = useState(() => {
+        return localStorage.getItem("username") ?? "Player";
+    });
+    const [character, setCharacter] = useState(() => {
+        return localStorage.getItem("character") ?? "Mochi";
+    });
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [isMuted, setIsMuted] = useState(false);
     const [startedMusic, setStartedMusic] = useState(false);
-    const [ready, setReady] = useState(false);
     const [showPopup, setShowPopup] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        setReady(true);
-        // guardar el username 
-        const storedName = localStorage.getItem("username");
-        if (storedName) {
-            setUsername(storedName);
-        }
-
-        const storedCharacter = localStorage.getItem("character");
-        if (storedCharacter) {
-            setCharacter(storedCharacter);
-        }
 
         // Setup background music
         const audio = new Audio(BackgroundMusic);
@@ -42,11 +35,23 @@ const HomePhone = () => {
         audio.volume = 0.4;
         audioRef.current = audio;
 
+        void fetchPartyRoomUserProfile().then((profile) => {
+            if (!profile) return;
+            setUsername(profile.displayName);
+            persistUsername(profile.displayName);
+            if (profile.character_selected) {
+                setCharacter(profile.character_selected);
+                persistCharacter(profile.character_selected);
+                return;
+            }
+            navigate("/choose-character", { replace: true });
+        });
+
         return () => {
             audio.pause();
             audio.src = "";
         };
-    }, []);
+    }, [navigate]);
 
     const toggleMute = () => {
         const audioMute = audioRef.current;
@@ -120,13 +125,13 @@ const HomePhone = () => {
             `}</style>
 
             {/* nubesitas */}
-            <div className="absolute top-[20%] left-[80%] w-[120px] animate-cloud-slow opacity-80">
+            <div className="absolute top-[20%] left-[80%] w-30 animate-cloud-slow opacity-80">
                 <img src={Cloud}
                     alt=""
                     className="w-full" />
             </div>
 
-            <div className="absolute top-[15%] right-[65%] w-[150px] animate-cloud-fast opacity-90"
+            <div className="absolute top-[15%] right-[65%] w-37.5 animate-cloud-fast opacity-90"
                 style={{ animationDelay: '-2s' }}>
                 <img src={Cloud2}
                     alt=""
@@ -144,7 +149,7 @@ const HomePhone = () => {
             <div className="absolute bottom-[20%] left-0 w-full z-20 overflow-hidden">
                 <img src={Ocean}
                     alt=""
-                    className="min-w-[105vw] h-[300px] object-cover animate-wave"
+                    className="min-w-[105vw] h-75 object-cover animate-wave"
                     style={{ marginBottom: '-2px' }} />
             </div>
 

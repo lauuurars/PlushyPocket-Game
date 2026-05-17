@@ -4,9 +4,11 @@ import { Link, useNavigate } from "react-router-dom";
 import Background1 from "../../assets/onboarding/background1.svg";
 import {
   authRedirectUrl,
+  fetchAuthMe,
+  isCharacterSelectionComplete,
+  isRecordedAgeComplete,
   loginWithBackend,
   persistSupabaseSession,
-  persistUsername,
   signInWithGoogle,
 } from "../../lib/api";
 import { supabase } from "../../lib/supabaseClient";
@@ -76,6 +78,15 @@ export default function LogIn() {
         return;
       }
       await persistSupabaseSession(result.session);
+      const me = await fetchAuthMe(result.session.access_token);
+      if (!isRecordedAgeComplete(me.age)) {
+        navigate("/age", { replace: true });
+        return;
+      }
+      if (!isCharacterSelectionComplete(me.character_selected)) {
+        navigate("/choose-character", { replace: true });
+        return;
+      }
       navigate("/home-phone", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -157,9 +168,9 @@ export default function LogIn() {
             aria-hidden
           />
 
-          <main className="mt-35 flex w-full min-w-0 flex-1 flex-col rounded-tl-[49px] rounded-tr-[49px] bg-[#fafafa] px-[25px] pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-12">
+          <main className="mt-35 flex w-full min-w-0 flex-1 flex-col rounded-tl-[49px] rounded-tr-[49px] bg-[#fafafa] px-6.25 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-12">
             <h1
-              className="mx-auto mb-10 max-w-[280px] text-center text-[40px] leading-[37px] tracking-[-1px] text-[#d51017]"
+              className="mx-auto mb-10 max-w-70 text-center text-[40px] leading-9.25 tracking-[-1px] text-[#d51017]"
               style={{
                 fontFamily: "'Baloo Da 2', 'Baloo 2', cursive, system-ui",
                 fontWeight: 600,
@@ -181,7 +192,7 @@ export default function LogIn() {
             <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
               <div className="relative">
                 <i
-                  className="fi-rr-envelope login-field-icon pointer-events-none absolute left-[15px] top-1/2 -translate-y-1/2"
+                  className="fi-rr-envelope login-field-icon pointer-events-none absolute left-3.75 top-1/2 -translate-y-1/2"
                   aria-hidden
                 />
                 <input
@@ -198,7 +209,7 @@ export default function LogIn() {
 
               <div className="relative">
                 <i
-                  className="fi-rr-lock login-field-icon pointer-events-none absolute left-[15px] top-1/2 -translate-y-1/2"
+                  className="fi-rr-lock login-field-icon pointer-events-none absolute left-3.75 top-1/2 -translate-y-1/2"
                   aria-hidden
                 />
                 <input
@@ -226,7 +237,7 @@ export default function LogIn() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 flex h-[52px] w-full cursor-pointer items-center justify-center rounded-[30px] bg-[#ff7be2] text-lg font-medium text-[#fafafa] shadow-[0px_3px_4px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60"
+                className="mt-2 flex h-13 w-full cursor-pointer items-center justify-center rounded-[30px] bg-[#ff7be2] text-lg font-medium text-[#fafafa] shadow-[0px_3px_4px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60"
                 style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
               >
                 {loading ? "Please wait…" : "Continue"}
@@ -242,7 +253,7 @@ export default function LogIn() {
               type="button"
               disabled={loading}
               onClick={handleGoogle}
-              className="mt-6 flex h-[52px] w-full cursor-pointer items-center justify-center gap-2 rounded-[30px] bg-[#76d6ff] px-6 text-lg font-medium text-[#fafafa] shadow-[0px_3px_4px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60"
+              className="mt-6 flex h-13 w-full cursor-pointer items-center justify-center gap-2 rounded-[30px] bg-[#76d6ff] px-6 text-lg font-medium text-[#fafafa] shadow-[0px_3px_4px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60"
               style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
             >
               <GoogleGlyph className="h-5 w-5 shrink-0" />
