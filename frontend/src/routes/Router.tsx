@@ -23,6 +23,7 @@ import { supabase } from "../lib/supabaseClient";
 import ShoutCake from "../phone/islands/cake/ShoutCake";
 import Results from "../desktop/pages/Results";
 import PartyRoom from "../desktop/pages/PartyRoom";
+import HammerMole from "../phone/islands/hammer-mole/HammerMole";
 
 type Viewport = "pc" | "mobile";
 
@@ -197,6 +198,11 @@ const router = createBrowserRouter(
         {
             path: "/shout-cake",
             Component: ShoutCake,
+            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/hammer",
+            Component: HammerMole,
             //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
