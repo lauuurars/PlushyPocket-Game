@@ -6,13 +6,11 @@ import RayoRosa from "../../assets/join/RayoRosa.svg";
 import AngryMisu from "../../assets/join/AngryMisu.svg";
 import Corazon from "../../assets/welcome/Corazon.svg"
 import { PinkButton } from "../../components/PinkButton";
+import { useSearchParams } from "react-router-dom";
 
-type  SalaJuegoProps = {
-    roomCode?: string;
-};
-
-
-export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
+export default function WaitingRoom() {
+    const [searchParams] = useSearchParams();
+    const roomId = (searchParams.get("roomId") ?? searchParams.get("roomCode") ?? "5173").trim();
     return (
         <div
             className="relative w-full overflow-hidden flex flex-col md:hidden"
@@ -118,7 +116,7 @@ export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
                     }}
                 >
                     <div className="relative w-full">
-                        <img src={StarRoom} alt={`Sala ${roomCode}`} className="block w-full" draggable={false} />
+                        <img src={StarRoom} alt={`Sala ${roomId}`} className="block w-full" draggable={false} />
                         <span
                             style={{
                                 position: "absolute",
@@ -135,7 +133,7 @@ export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
                                 color: "#583921",
                             }}
                         >
-                            {roomCode}
+                            {roomId}
                         </span>
                     </div>
                 </div>

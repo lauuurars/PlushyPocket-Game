@@ -114,7 +114,7 @@ const router = createBrowserRouter(
         {
             path: "/party-room",
             Component: PartyRoom,
-            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+            loader: requireViewport("pc"),
         },
         // Home (island hub) - PC
         {

@@ -1,9 +1,10 @@
 import PartyBackground from "../../assets/startGame/Party Background.svg";
-import QR from "../../assets/startGame/QR.svg";
 import Leon from "../../assets/startGame/leon.svg";
 import Pinguino from "../../assets/startGame/pingüino.svg";
 
-import { useEffect, useState } from "react";
+import QRCode from "qrcode";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Estrella2 from "../../assets/welcome/Estrella2.svg";
@@ -11,9 +12,22 @@ import Estrella3 from "../../assets/welcome/Estrella3.svg";
 import Flor from "../../assets/welcome/Flor.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
+import {
+    createRealtimeSocket,
+    type RoomCreatedPayload,
+    type RoomUpdatePayload,
+    type ScreenCreateRoomPayload,
+} from "../../lib/api";
 
 export default function StartGame() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [ready, setReady] = useState(false)
+    const [roomId, setRoomId] = useState<string | null>(null);
+    const [qrError, setQrError] = useState<string | null>(null);
+    const [qrReady, setQrReady] = useState(false);
+    const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [qrPx, setQrPx] = useState(256);
 
     useEffect(() => {
         const prevOverflow = document.body.style.overflow
@@ -24,6 +38,87 @@ export default function StartGame() {
             document.body.style.overflow = prevOverflow
         }
     }, [])
+
+    useEffect(() => {
+        const update = () => {
+            const container = Math.min(window.innerHeight * 0.32, 304);
+            const padding = 22 * 2;
+            const next = Math.max(160, Math.floor(container - padding));
+            setQrPx(next);
+        };
+        update();
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
+
+    const selectedIsland = searchParams.get("island")?.trim() ?? "";
+
+    const selection = useMemo(() => {
+        switch (selectedIsland) {
+            case "sanrio":
+                return { minigameId: "hammer-mole", islandName: "Sanrio Island" };
+            case "onepiece":
+                return { minigameId: "flappy-boat", islandName: "One Piece Island" };
+            case "bt21":
+                return { minigameId: "cake", islandName: "BT21 Island" };
+            default:
+                return { minigameId: "unknown", islandName: "Sanrio Island" };
+        }
+    }, [selectedIsland]);
+
+    useEffect(() => {
+        const socket = createRealtimeSocket();
+
+        const handleCreated = (payload: RoomCreatedPayload) => {
+            setRoomId(payload.roomId);
+        };
+
+        const handleRoomUpdate = (payload: RoomUpdatePayload) => {
+            if (payload.playersInRoom >= 1) {
+                socket.disconnect();
+                navigate(`/party-room?roomId=${encodeURIComponent(payload.roomId)}&minigameId=${encodeURIComponent(payload.minigameId)}&islandName=${encodeURIComponent(selection.islandName)}`);
+            }
+        };
+
+        const handleConnectError = () => {
+            setQrError("No se pudo conectar al servidor para crear la sala");
+        };
+
+        socket.on("room_created", handleCreated);
+        socket.on("room_update", handleRoomUpdate);
+        socket.on("connect_error", handleConnectError);
+
+        const createPayload: ScreenCreateRoomPayload = { minigameId: selection.minigameId };
+        socket.emit("screen__create_room", createPayload);
+
+        const timeoutId = window.setTimeout(() => {
+            setQrError((prev) => prev ?? "No se pudo crear la sala. Verifica que el servidor esté corriendo.");
+            socket.disconnect();
+        }, 6000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            socket.off("room_created", handleCreated);
+            socket.off("room_update", handleRoomUpdate);
+            socket.off("connect_error", handleConnectError);
+            socket.disconnect();
+        };
+    }, [navigate, selection.islandName, selection.minigameId]);
+
+    useEffect(() => {
+        if (!roomId) return;
+
+        const payload = JSON.stringify({ v: 1, roomId, minigameId: selection.minigameId });
+        const canvas = qrCanvasRef.current;
+        if (!canvas) return;
+
+        void QRCode.toCanvas(canvas, payload, { errorCorrectionLevel: "M", margin: 1, width: qrPx })
+            .then(() => setQrReady(true))
+            .catch(() => {
+                setQrReady(false);
+                setQrError("No se pudo generar el QR");
+            });
+    }, [qrPx, roomId, selection.minigameId]);
 
     return (
         <div className="relative h-svh w-screen overflow-hidden bg-[#ED1C24]">
@@ -136,8 +231,18 @@ export default function StartGame() {
                 </h1>
 
                 { /* ---------  QR img para reemplazar -----------   */}
-                <div className="absolute left-1/2 top-[34.5%] h-[min(32svh,304px)] w-[min(32svh,304px)] -translate-x-1/2 overflow-hidden rounded-[37px] bg-white shadow-[0px_4px_12px_rgba(76,76,76,0.25)]">
-                    <img src={QR} alt="QR code" className="h-full w-full object-cover" />
+                <div className="absolute left-1/2 top-[34.5%] h-[min(32svh,304px)] w-[min(32svh,304px)] -translate-x-1/2 overflow-hidden rounded-[37px] bg-white p-5.5 shadow-[0px_4px_12px_rgba(76,76,76,0.25)]">
+                    <canvas ref={qrCanvasRef} className="block h-full w-full rounded-[22px]" />
+                    {!qrReady ? (
+                        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                            <p
+                                className="m-0 text-sm font-semibold text-[#583921]"
+                                style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
+                            >
+                                {qrError ?? "Generando QR..."}
+                            </p>
+                        </div>
+                    ) : null}
                 </div>
 
                 { /* ----- párrafo  ----------  */}

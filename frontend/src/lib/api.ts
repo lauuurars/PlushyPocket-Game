@@ -1,4 +1,16 @@
 import { supabase } from "./supabaseClient";
+import { io, type Socket } from "socket.io-client";
+import type {
+    GameStartPayload,
+    PlayerInfoPayload,
+    PlayerJoinPayload,
+    PlayerRole,
+    RealtimeClientType,
+    RoomCreatedPayload,
+    RoomStatus,
+    RoomUpdatePayload,
+    ScreenCreateRoomPayload,
+} from "../types/realtimeTypes";
 
 /** `public.users.id` (UUID de Auth), útil para el juego y APIs que referencian `users`. */
 export const LOCAL_STORAGE_DB_USER_ID_KEY = "plushyPocket_dbUserId";
@@ -39,6 +51,23 @@ function requireServerBase(): string {
         );
     }
     return baseUrl;
+}
+
+export type {
+    GameStartPayload,
+    PlayerInfoPayload,
+    PlayerJoinPayload,
+    PlayerRole,
+    RealtimeClientType,
+    RoomCreatedPayload,
+    RoomStatus,
+    RoomUpdatePayload,
+    ScreenCreateRoomPayload,
+};
+
+export function createRealtimeSocket(): Socket {
+    const baseUrl = requireServerBase();
+    return io(baseUrl, { path: "/real-time" });
 }
 
 /** OAuth return URL; Supabase completes the PKCE/session exchange from the client. */
