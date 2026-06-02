@@ -85,8 +85,9 @@ export type Room = {
     status: RoomStatus
     screenSocketId: string | null
     players: RoomPlayer[]
-    scores: Record<string, number>   // userId -> score acumulado durante la partida
-    gameEndTime?: number              // timestamp de cuando termina el juego
+    scores: Record<string, number>       // userId -> score acumulado durante la partida
+    playerData: Record<string, Record<string, unknown>>  // userId -> datos crudos del juego
+    gameEndTime?: number                  // timestamp de cuando termina el juego
 }
 
 export const GAME_DURATION: Record<string, number> = {

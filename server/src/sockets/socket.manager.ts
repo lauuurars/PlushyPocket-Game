@@ -2,10 +2,24 @@ import socketio from "socket.io";
 import { Server as HttpServer } from "http"
 import GameService from "../game/game.service"
 import GameRepository from "../game/game.repository"
-import { GameEndPayload, GameOverPayload, GameStartPayload, PlayerActionPayload, PlayerInfoPayload, PlayerJoinPayload, PlayerRole, RewardAssignedPayload, Room, RoomCreatedPayload, RoomPlayer, RoomUpdatePayload, ScreenCreateRoomPayload, SocketSession } from "../types/socket.types"
+import { calculateScore, determineWinner } from "../game/scoring.service"
+import { GameEndPayload, GameOverPayload, GameStartPayload, GAME_DURATION, PlayerActionPayload, PlayerInfoPayload, PlayerJoinPayload, PlayerRole, RewardAssignedPayload, Room, RoomCreatedPayload, RoomPlayer, RoomUpdatePayload, ScreenCreateRoomPayload, SocketSession } from "../types/socket.types"
 
 const rooms: Record<string, Room> = {}
 const sessions: Record<string, SocketSession> = {}
+const gameTimers: Record<string, NodeJS.Timeout> = {}
+const tickerIntervals: Record<string, NodeJS.Timeout> = {}
+
+const cleanupGameTimers = (roomId: string) => {
+    if (tickerIntervals[roomId]) {
+        clearInterval(tickerIntervals[roomId])
+        delete tickerIntervals[roomId]
+    }
+    if (gameTimers[roomId]) {
+        clearTimeout(gameTimers[roomId])
+        delete gameTimers[roomId]
+    }
+}
 
 const toPlayerInfoPayload = (player: RoomPlayer): PlayerInfoPayload => ({
     userId: player.userId,
@@ -41,6 +55,45 @@ const getRoomIdFromSocket = (socket: socketio.Socket) => {
     return inferred
 }
 
+const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string) => {
+    const room = rooms[roomId]
+    if (!room) return
+
+    cleanupGameTimers(roomId)
+
+    room.status = "RESULTS"
+    emitRoomUpdate(io, room)
+
+    const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores }
+    io.to(roomId).emit("game_over", gameOverPayload)
+
+    try {
+        const rewards = await GameRepository.listGameRewards()
+        if (rewards.length === 0) {
+            io.to(roomId).emit("game_error", { message: "No hay recompensas disponibles" })
+            return
+        }
+
+        const randomReward = rewards[Math.floor(Math.random() * rewards.length)]
+        const result = await GameService.finishGame({ winner_id: winnerId, reward_id: randomReward.id })
+
+        const winnerSocketId = room.players.find(p => p.userId === winnerId)?.socketId
+        if (!winnerSocketId) return
+
+        const rewardAssignedPayload: RewardAssignedPayload = {
+            userId: result.winner.id,
+            rewardId: result.reward.id,
+            rewardName: result.reward.reward_name,
+            rewardType: result.reward.reward_type,
+            status: result.user_reward.status,
+        }
+
+        io.to(winnerSocketId).emit("reward_assigned", rewardAssignedPayload)
+    } catch (error: any) {
+        io.to(roomId).emit("game_error", { message: error.message ?? "Error al procesar el fin de partida :C" })
+    }
+}
+
 export const initializeSockets = (rawServer: HttpServer) => {
     const io = new socketio.Server(rawServer, {
         path: "/real-time",
@@ -64,6 +117,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 screenSocketId: socket.id,
                 players: [],
                 scores: {},
+                playerData: {},
             }
 
             rooms[roomId] = room
@@ -150,6 +204,31 @@ export const initializeSockets = (rawServer: HttpServer) => {
                     }
                     io.to(room.roomId).emit("game_start", gameStartPayload)
                     emitRoomUpdate(io, room)
+
+                    // Iniciar timer del juego
+                    const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+                    room.gameEndTime = Date.now() + durationMs
+
+                    tickerIntervals[room.roomId] = setInterval(() => {
+                        const remaining = Math.max(0, Math.ceil((room.gameEndTime! - Date.now()) / 1000))
+                        io.to(room.roomId).emit("game_timer_tick", { remaining })
+                    }, 1000)
+
+                    gameTimers[room.roomId] = setTimeout(() => {
+                        for (const player of room.players) {
+                            const data = room.playerData[player.userId] ?? {}
+                            const score = calculateScore(room.minigameId, { score: 0, payload: data })
+                            room.scores[player.userId] = score
+                        }
+
+                        const { winnerId, loserId } = determineWinner(room.scores)
+                        if (!winnerId || !loserId) {
+                            io.to(room.roomId).emit("game_error", { message: "No se pudo determinar un ganador" })
+                            return
+                        }
+
+                        void processGameEnd(io, room.roomId, winnerId, loserId)
+                    }, durationMs)
                 } catch (error: any) {
                     io.to(room.roomId).emit("game_error", { message: error.message ?? "Error al iniciar partida" })
                 }
@@ -163,6 +242,13 @@ export const initializeSockets = (rawServer: HttpServer) => {
             const room = rooms[roomId]
             if (!room) return
             if (room.status !== "IN_GAME") return
+
+            // Track score updates in real-time
+            if (data.action === "score_update" && data.payload) {
+                const score = calculateScore(room.minigameId, { score: 0, payload: data.payload })
+                room.scores[data.userId] = score
+                room.playerData[data.userId] = data.payload as Record<string, unknown>
+            }
 
             io.to(roomId).emit("game_action", {
                 roomId,
@@ -211,37 +297,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 return
             }
 
-            room.status = "RESULTS"
-            emitRoomUpdate(io, room)
-
-            const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores }
-            io.to(roomId).emit("game_over", gameOverPayload)
-
-            try {
-                const rewards = await GameRepository.listGameRewards()
-                if (rewards.length === 0) {
-                    io.to(roomId).emit("game_error", { message: "No hay recompensas disponibles" })
-                    return
-                }
-
-                const randomReward = rewards[Math.floor(Math.random() * rewards.length)]
-                const result = await GameService.finishGame({ winner_id: winnerId, reward_id: randomReward.id })
-
-                const winnerSocketId = room.players.find(p => p.userId === winnerId)?.socketId
-                if (!winnerSocketId) return
-
-                const rewardAssignedPayload: RewardAssignedPayload = {
-                    userId: result.winner.id,
-                    rewardId: result.reward.id,
-                    rewardName: result.reward.reward_name,
-                    rewardType: result.reward.reward_type,
-                    status: result.user_reward.status,
-                }
-
-                io.to(winnerSocketId).emit("reward_assigned", rewardAssignedPayload)
-            } catch (error: any) {
-                io.to(roomId).emit("game_error", { message: error.message ?? "Error al procesar el fin de partida :C" })
-            }
+            await processGameEnd(io, roomId, winnerId, loserId)
         })
 
         // 8. disconnect
@@ -265,6 +321,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
 
             if (session.clientType === "screen") {
                 room.screenSocketId = null
+                cleanupGameTimers(roomId)
                 io.to(roomId).emit("screen_disconnected", { roomId })
                 if (room.players.length === 0) delete rooms[roomId]
                 delete sessions[socket.id]
