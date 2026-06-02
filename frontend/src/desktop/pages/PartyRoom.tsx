@@ -7,6 +7,9 @@ import MochiAvatarUrl from "../../assets/choose/Mochi.svg?url";
 import MisuAvatarUrl from "../../assets/choose/Misu.svg?url";
 import YukiAvatarUrl from "../../assets/choose/Yuki.svg?url";
 import { createRealtimeSocket, type GameStartPayload, type RoomUpdatePayload } from "../../lib/api";
+import { updateRoomState, attachRoomListeners, getRoomState } from "../../lib/roomStore";
+
+let globalSocket: ReturnType<typeof createRealtimeSocket> | null = null;
 
 export default function PartyRoom() {
     const navigate = useNavigate();
@@ -20,13 +23,25 @@ export default function PartyRoom() {
     useEffect(() => {
         if (!roomId) return;
 
-        const socket = createRealtimeSocket();
+        if (!globalSocket || !getRoomState().socket) {
+            const socket = createRealtimeSocket();
+            globalSocket = socket;
+            updateRoomState({ socket, roomId, minigameId: null, playerRole: null, players: [], scores: {} });
+            attachRoomListeners(socket);
+        }
+
+        const socket = globalSocket;
 
         const onRoomUpdate = (payload: RoomUpdatePayload) => {
             setRoom(payload);
+            updateRoomState({ players: payload.players });
         };
 
         const onGameStart = (payload: GameStartPayload) => {
+            updateRoomState({
+                players: payload.players,
+                minigameId: payload.minigameId,
+            });
             navigate(`/${payload.minigameId}`, { replace: true });
         };
 
@@ -37,7 +52,6 @@ export default function PartyRoom() {
         return () => {
             socket.off("room_update", onRoomUpdate);
             socket.off("game_start", onGameStart);
-            socket.disconnect();
         };
     }, [navigate, roomId]);
 

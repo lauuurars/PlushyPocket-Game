@@ -63,6 +63,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 status: "CREATED",
                 screenSocketId: socket.id,
                 players: [],
+                scores: {},
             }
 
             rooms[roomId] = room
@@ -213,7 +214,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             room.status = "RESULTS"
             emitRoomUpdate(io, room)
 
-            const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId }
+            const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores }
             io.to(roomId).emit("game_over", gameOverPayload)
 
             try {

@@ -1,11 +1,15 @@
 import { supabase } from "./supabaseClient";
 import { io, type Socket } from "socket.io-client";
 import type {
+    GameEndPayload,
+    GameOverPayload,
     GameStartPayload,
+    PlayerActionPayload,
     PlayerInfoPayload,
     PlayerJoinPayload,
     PlayerRole,
     RealtimeClientType,
+    RewardAssignedPayload,
     RoomCreatedPayload,
     RoomStatus,
     RoomUpdatePayload,
@@ -54,11 +58,15 @@ function requireServerBase(): string {
 }
 
 export type {
+    GameEndPayload,
+    GameOverPayload,
     GameStartPayload,
+    PlayerActionPayload,
     PlayerInfoPayload,
     PlayerJoinPayload,
     PlayerRole,
     RealtimeClientType,
+    RewardAssignedPayload,
     RoomCreatedPayload,
     RoomStatus,
     RoomUpdatePayload,
