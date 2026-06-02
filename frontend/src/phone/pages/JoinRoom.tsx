@@ -36,6 +36,9 @@ export default function JoinRoom() {
         const onRoomFull = (p: { message?: string }) => {
             setJoinError(p?.message ?? "La sala está llena");
         };
+        const onConnectError = () => {
+            setJoinError("No se pudo conectar al servidor. Verifica que el servidor esté corriendo.");
+        };
         const onPlayerJoined = (p: { userId: string }) => {
             const myId = userIdRef.current;
             if (!myId || p.userId !== myId) return;
@@ -52,6 +55,7 @@ export default function JoinRoom() {
         socket.on("room_not_found", onRoomNotFound);
         socket.on("room_full", onRoomFull);
         socket.on("player__joined", onPlayerJoined);
+        socket.on("connect_error", onConnectError);
 
         void (async () => {
             const profile = await fetchPartyRoomUserProfile();
@@ -82,6 +86,7 @@ export default function JoinRoom() {
             socket.off("room_not_found", onRoomNotFound);
             socket.off("room_full", onRoomFull);
             socket.off("player__joined", onPlayerJoined);
+            socket.off("connect_error", onConnectError);
             socket.disconnect();
         };
     }, [minigameId, navigate, roomId]);

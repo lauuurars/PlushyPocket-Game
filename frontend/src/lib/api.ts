@@ -44,7 +44,20 @@ export function persistCharacter(character: string): void {
 }
 
 function serverBase(): string {
-    return (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
+    const envUrl = (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
+    if (envUrl) {
+        try {
+            const parsed = new URL(envUrl);
+            if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+                const currentHost = window.location.hostname;
+                if (currentHost !== "localhost" && currentHost !== "127.0.0.1") {
+                    return `${parsed.protocol}//${currentHost}:${parsed.port}`;
+                }
+            }
+        } catch {}
+        return envUrl;
+    }
+    return `${window.location.protocol}//${window.location.hostname}:8080`;
 }
 
 function requireServerBase(): string {
@@ -354,13 +367,16 @@ export function profilePictureUrlsForAuthMe(me: AuthMeResponse): string[] {
     );
 }
 
-/** Estado recibido al navegar de PartyRoom → `/results`. */
+/** Estado recibido al navegar a `/results` desde CakeGame. */
 export type PartyResultsNavState = {
     roomCode?: string;
     winnerPlayer: 1 | 2;
     winnerName: string;
     player1Name: string;
     player2Name: string;
+    player1Score?: number;
+    player2Score?: number;
+    rewardName?: string;
     /** Lista de URLs públicas (.svg antes que `.png`). */
     player1AvatarUrls?: string[];
     player2AvatarUrl?: string | null;

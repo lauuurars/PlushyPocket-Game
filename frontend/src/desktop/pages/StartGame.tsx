@@ -91,13 +91,7 @@ export default function StartGame() {
         const createPayload: ScreenCreateRoomPayload = { minigameId: selection.minigameId };
         socket.emit("screen__create_room", createPayload);
 
-        const timeoutId = window.setTimeout(() => {
-            setQrError((prev) => prev ?? "No se pudo crear la sala. Verifica que el servidor esté corriendo.");
-            socket.disconnect();
-        }, 6000);
-
         return () => {
-            clearTimeout(timeoutId);
             socket.off("room_created", handleCreated);
             socket.off("room_update", handleRoomUpdate);
             socket.off("connect_error", handleConnectError);

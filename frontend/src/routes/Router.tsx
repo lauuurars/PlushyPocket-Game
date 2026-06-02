@@ -198,12 +198,12 @@ const router = createBrowserRouter(
         {
             path: "/shout-cake",
             Component: ShoutCake,
-            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/hammer",
             Component: HammerMole,
-            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/characters",

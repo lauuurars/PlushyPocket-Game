@@ -88,7 +88,7 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
             status: result.user_reward.status,
         }
 
-        io.to(winnerSocketId).emit("reward_assigned", rewardAssignedPayload)
+                io.to(roomId).emit("reward_assigned", rewardAssignedPayload)
     } catch (error: any) {
         io.to(roomId).emit("game_error", { message: error.message ?? "Error al procesar el fin de partida :C" })
     }
