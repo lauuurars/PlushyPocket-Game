@@ -125,20 +125,20 @@ const LoserPage: React.FC = () => {
                 {/* Main Content */}
                 <div className="flex flex-col items-center animate-fade-in">
                     <h1
-                        className="text-[#ED1C24] text-[40px] font-extrabold leading-[37px] tracking-[-1px] text-center mb-3"
+                        className="text-[#ED1C24] text-[40px] font-extrabold leading-9.25 tracking-[-1px] text-center mb-3"
                         style={{ fontFamily: '"Baloo 2", sans-serif' }}
                     >
                         Oops! Better luck next time!
                     </h1>
                     <p
-                        className="text-[#ED1C24] leading-[20px] text-center mb-10"
+                        className="text-[#ED1C24] leading-5 text-center mb-10"
                         style={{ fontFamily: '"Nunito", sans-serif' }}
                     >
                         Don't worry, your plushy squad still thinks you're awesome.
                     </p>
 
                     {/* Buttons */}
-                    <div className="w-full max-w-[230px] flex flex-col mt-30 gap-4">
+                    <div className="w-full max-w-57.5 flex flex-col mt-30 gap-4">
                         <PinkButton
                             text="Play Again"
                             onClick={handlePlayAgain}
@@ -164,7 +164,7 @@ const LoserPage: React.FC = () => {
                 </div>
 
                 {/* Character - Anchored to bottom */}
-                <div className="absolute bottom-0 left-0 w-[80%] left-1/2 -translate-x-1/2">
+                <div className="absolute bottom-0 left-01/2 w-[80%] left-1/2 -translate-x-1/2">
                     <img
                         src={SadMisu}
                         alt="Sad Misu"
