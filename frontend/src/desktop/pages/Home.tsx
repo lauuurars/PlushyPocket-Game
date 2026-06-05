@@ -147,7 +147,7 @@ function IslandColumn({
             <button
                 type="button"
                 onClick={onSelect}
-                className="min-w-[140px] shrink-0 rounded-[22px] bg-[#925fdf] px-5 py-2.5 text-center text-[clamp(0.875rem,1.1vw,1.06rem)] font-semibold text-[#fafafa] shadow-[0px_2px_6px_rgba(76,76,76,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.98] md:min-w-[160px] md:px-7 md:py-3"
+                className="cursor-pointer min-w-[140px] shrink-0 rounded-[22px] bg-[#925fdf] px-5 py-2.5 text-center text-[clamp(0.875rem,1.1vw,1.06rem)] font-semibold text-[#fafafa] shadow-[0px_2px_6px_rgba(76,76,76,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.98] md:min-w-[160px] md:px-7 md:py-3"
                 style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
             >
                 {label}

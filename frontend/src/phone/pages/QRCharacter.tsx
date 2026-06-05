@@ -1,13 +1,77 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { VioletButton } from '../../components/VioletButton';
+import { supabase } from '../../lib/supabaseClient';
+import { useNavigate } from 'react-router-dom';
+import UnlockedCharacterPopup from '../../components/UnlockedCharacterPopup';
+
+const getImageUrl = (path: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    const projectId = "rnuuksshouctvcpebsbg";
+    const bucket = "characters";
+    return `https://${projectId}.supabase.co/storage/v1/object/public/${bucket}/${path}`;
+};
 
 const QRCharacter: React.FC = () => {
+    const navigate = useNavigate();
+    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+    const [unlockedChar, setUnlockedChar] = useState<{name: string, imageUrl: string} | null>(null);
+
     useEffect(() => {
         const html5QrCode = new Html5Qrcode("reader");
 
-        const qrCodeSuccessCallback = (decodedText: string) => {
+        const qrCodeSuccessCallback = async (decodedText: string) => {
             console.log(`Resultado del escaneo: ${decodedText}`);
+            
+            const userId = localStorage.getItem("plushyPocket_dbUserId");
+            if (!userId) {
+                alert("Debes iniciar sesión para desbloquear personajes.");
+                return;
+            }
+
+            // 1. Identify the character first
+            const { data: charData, error: fetchError } = await supabase
+                .from('characters')
+                .select('character_name, img_url')
+                .eq('id', decodedText)
+                .single();
+
+            if (fetchError || !charData) {
+                console.error("Error buscando el personaje:", fetchError);
+                alert("Código QR inválido. Personaje no encontrado en Miniso.");
+                return;
+            }
+
+            // 2. Insert into user_characters
+            const { error } = await supabase
+                .from('user_characters')
+                .insert([
+                    { 
+                        id: crypto.randomUUID(),
+                        user_id: userId, 
+                        character_id: decodedText,
+                        unlocked_at: new Date().toISOString()
+                    }
+                ]);
+
+            if (error) {
+                console.error("Error al desbloquear el personaje:", error);
+                if (error.code === '23505') { // Unique violation
+                    alert(`You already unlocked ${charData.character_name}!`);
+                } else {
+                    alert(`Error DB (${error.code || '?'}) saving ${charData.character_name}: ${error.message || JSON.stringify(error)}`);
+                }
+            } else {
+                setUnlockedChar({
+                    name: charData.character_name,
+                    imageUrl: getImageUrl(charData.img_url) || ''
+                });
+                setShowSuccessPopup(true);
+            }
+            
+            // Stop scanning after a successful read
+            html5QrCode.stop().catch(console.error);
         };
 
         const config = {
@@ -66,6 +130,17 @@ const QRCharacter: React.FC = () => {
                     onClick={() => console.log('Intentando escanear...')}
                 />
             </div>
+
+            {/* Success Popup */}
+            {unlockedChar && (
+                <UnlockedCharacterPopup
+                    isOpen={showSuccessPopup}
+                    characterName={unlockedChar.name}
+                    characterImageUrl={unlockedChar.imageUrl}
+                    onClose={() => navigate('/home-phone')}
+                    onContinue={() => navigate('/characters')}
+                />
+            )}
 
             <style>
                 {`
