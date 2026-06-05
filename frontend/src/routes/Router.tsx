@@ -24,6 +24,7 @@ import ShoutCake from "../phone/islands/cake/ShoutCake";
 import Results from "../desktop/pages/Results";
 import PartyRoom from "../desktop/pages/PartyRoom";
 import HammerMole from "../phone/islands/hammer-mole/HammerMole";
+import Error404 from "../desktop/pages/Error404";
 
 type Viewport = "pc" | "mobile";
 
@@ -212,6 +213,12 @@ const router = createBrowserRouter(
         {
             path: "/blocked-characters",
             Component: BlockedCharacters
+        },
+        // 404 - PC
+        {
+            path: "*",
+            Component: Error404,
+            loader: requireViewport("pc"),
         },
     ]
 )
