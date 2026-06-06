@@ -46,7 +46,7 @@ export default function Home() {
     };
 
     return (
-        <div className="relative h-svh min-h-[600px] w-screen overflow-hidden bg-[#ed1c24] font-sans">
+        <div className="relative h-svh min-h-150 w-screen overflow-hidden bg-[#ed1c24] font-sans">
             <style>{`
                 @keyframes home-float-a {
                     0%, 100% { transform: translateY(0); }
@@ -90,7 +90,7 @@ export default function Home() {
 
                 <div className="flex shrink-0 justify-center px-4 pb-4 pt-[clamp(4.5rem,11vh,6.5rem)]">
                     <div
-                        className="rounded-[32px] bg-[#ed1c24] px-[clamp(1.25rem,3vw,2rem)] py-[clamp(0.65rem,1.2vh,0.85rem)] shadow-[0px_3px_8px_rgba(76,76,76,0.25)]"
+                        className="rounded-4xl bg-[#ed1c24] px-[clamp(1.25rem,3vw,2rem)] py-[clamp(0.65rem,1.2vh,0.85rem)] shadow-[0px_3px_8px_rgba(76,76,76,0.25)]"
                         role="status"
                     >
                         <p
@@ -147,7 +147,7 @@ function IslandColumn({
             <button
                 type="button"
                 onClick={onSelect}
-                className="cursor-pointer min-w-[140px] shrink-0 rounded-[22px] bg-[#925fdf] px-5 py-2.5 text-center text-[clamp(0.875rem,1.1vw,1.06rem)] font-semibold text-[#fafafa] shadow-[0px_2px_6px_rgba(76,76,76,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.98] md:min-w-[160px] md:px-7 md:py-3"
+                className="cursor-pointer min-w-35 shrink-0 rounded-[22px] bg-[#925fdf] px-5 py-2.5 text-center text-[clamp(0.875rem,1.1vw,1.06rem)] font-semibold text-[#fafafa] shadow-[0px_2px_6px_rgba(76,76,76,0.25)] transition-transform hover:scale-[1.03] active:scale-[0.98] md:min-w-40 md:px-7 md:py-3"
                 style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
             >
                 {label}
