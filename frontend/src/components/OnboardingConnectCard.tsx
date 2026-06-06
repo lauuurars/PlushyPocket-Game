@@ -35,10 +35,10 @@ export function OnboardingConnectCard({
       `}</style>
       <div
         className={[
-          "flex flex-col items-center rounded-[35px] bg-[#fafafa]",
-          "px-11.75 pt-7.25 pb-6.25",
-          "gap-16.25",
+          "flex flex-col items-center justify-between rounded-[35px] bg-[#fafafa]",
           "shadow-[0_14px_40px_-12px_rgba(76,76,76,0.2)]",
+          "pt-7.25 pr-12.75 pb-8.75 pl-13",
+          "w-85.75 h-77",
           className,
         ].join(" ")}
       >
@@ -67,12 +67,22 @@ export function OnboardingConnectCard({
           })}
         </div>
 
-        <p className="m-0 max-w-62.5 shrink-0 text-center text-[18px] leading-6 font-normal text-[#583921] font-sans">
-          {text}
-        </p>
+        <div className="flex-1 flex items-center justify-center w-full">
+          <p 
+            className="m-0 max-w-60 text-center text-[18px] leading-6 font-normal text-[#583921] font-sans"
+          >
+            {text}
+          </p>
+        </div>
 
-        <div className="flex w-full justify-center">
-          <PinkButton text="Continue" onClick={onContinue} className="text-[22px] w-50 h-12" />
+        <div 
+          className="flex w-full justify-center"
+        >
+          <PinkButton 
+            text="Continue" 
+            onClick={onContinue} 
+            className="rounded-[34px] text-[22px] shadow-[0px_3px_9px_0px_rgba(76,76,76,0.25)]  w-50 h-12"
+          />
         </div>
       </div>
     </>

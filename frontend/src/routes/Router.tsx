@@ -29,6 +29,7 @@ import WinnerPage from "../phone/pages/WinnerPage";
 import Error404 from "../desktop/pages/Error404";
 import Onboarding1 from "../phone/onboarding/Onboarding1";
 import Onboarding2 from "../phone/onboarding/Onboarding2";
+import Onboarding3 from "../phone/onboarding/Onboarding3";
 
 type Viewport = "pc" | "mobile";
 
@@ -150,6 +151,11 @@ const router = createBrowserRouter(
         {
             path: "/onboarding2",
             Component: Onboarding2,
+            loader: composeLoaders(requireViewport("mobile")),
+        },
+        {
+            path: "/onboarding3",
+            Component: Onboarding3,
             loader: composeLoaders(requireViewport("mobile")),
         },
         // Login - mobile
