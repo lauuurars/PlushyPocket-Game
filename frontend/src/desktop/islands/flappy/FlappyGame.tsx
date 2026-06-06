@@ -9,6 +9,7 @@ import woodenbench from '../../../assets/flappybird/woodenbench.svg';
 import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
 import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
 import GamePoints from '../../../components/GamePoints';
+import Timer from '../../../components/Timer';
 
 const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 
@@ -153,7 +154,9 @@ const FlappyGame: React.FC = () => {
             <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
                 <GamePoints points={score} />
             </div>
-
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                <Timer initialSeconds={90} />
+            </div>
             <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
                 <GamePoints points={score} />
             </div>

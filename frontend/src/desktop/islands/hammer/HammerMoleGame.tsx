@@ -8,6 +8,7 @@ import kuromi from '../../../assets/marcoHammerMole/kuromi.svg';
 import myMelody from '../../../assets/marcoHammerMole/myMelody.svg';
 import pompompurin from '../../../assets/marcoHammerMole/pompompurin.svg';
 import GamePoints from '../../../components/GamePoints';
+import Timer from '../../../components/Timer';
 
 const charactersList: Character[] = [
     { name: 'Cinnamoroll', image: cinnamoroll },
@@ -126,7 +127,9 @@ const HammerMoleGame: React.FC = () => {
             <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
                 <GamePoints points={score} />
             </div>
-
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                <Timer initialSeconds={90} />
+            </div>
             <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
                 <GamePoints points={score} />
             </div>

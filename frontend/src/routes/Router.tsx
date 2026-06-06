@@ -93,13 +93,13 @@ const router = createBrowserRouter(
         {
             path: "/flappy-boat",
             Component: FlappyGame,
-            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+            loader: composeLoaders(requireViewport("pc")),
         }, 
         // Hammer mole - PC
         {
             path: "/hammer-mole",
             Component: HammerMoleGame,
-            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+            loader: composeLoaders(requireViewport("pc")),
         },
         // Cake - PC
         {

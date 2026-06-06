@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GamePoints from '../../../components/GamePoints';
+import Timer from '../../../components/Timer';
 import Catapulta from '../../../assets/cake/Catapulta.svg';
 import CatapultaTwo from '../../../assets/cake/Catapulta2.svg';
 import { getRoomState, setRoomCallbacks, clearRoomCallbacks } from '../../../lib/roomStore';
@@ -199,6 +200,9 @@ const CakeGame: React.FC = () => {
             {/* Contadores de puntos */}
             <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
                 <GamePoints points={p1Score} />
+            </div>
+            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                <Timer initialSeconds={90} />
             </div>
             <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
                 <GamePoints points={p2Score} />
