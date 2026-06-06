@@ -225,6 +225,7 @@ const router = createBrowserRouter(
             path: "/winner",
             Component: WinnerPage,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
         // 404 - PC
         {
             path: "*",
