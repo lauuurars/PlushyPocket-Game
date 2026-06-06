@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, X } from "lucide-react";
+import { Eye, EyeOff, X, Pencil } from "lucide-react";
 
 import Background from "../../assets/BgProfile.svg?url";
 import BackgroundEdit from "../../assets/EditBg.svg?url"
@@ -424,13 +424,13 @@ export default function Profile() {
                                     text="Edit Profile"
                                     disabled={loading}
                                     onClick={openEdit}
-                                    className="w-42.5 h-11.25 px-0 py-0 text-[17px] font-bold shadow-[0px_3px_8px_rgba(76,76,76,0.25)] hover:scale-[1.02] active:scale-[0.98]"
+                                    className="w-42 h-11.25 px-0 py-0 text-[15px] font-bold shadow-[0px_3px_8px_rgba(76,76,76,0.25)] hover:scale-[1.02] active:scale-[0.98]"
                                 />
                                 <button
                                     type="button"
                                     disabled={loading}
                                     onClick={() => void handleLogout()}
-                                    className="w-42.5 h-11.25 rounded-full text-[18px] font-bold text-[#FAFAFA] shadow-[0px_3px_8px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="w-42 h-11.25 rounded-full text-[18px] font-bold text-[#FAFAFA] shadow-[0px_3px_8px_rgba(76,76,76,0.25)] transition-transform enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                                     style={{
                                         background: "#979797",
                                         fontFamily: "'Nunito', system-ui, sans-serif",
@@ -454,23 +454,23 @@ export default function Profile() {
                         <div
                             className="absolute inset-0"
                             onClick={() => (saving ? null : setShowEdit(false))}
-                            style={{ background: "rgba(0,0,0,0.15)" }}
+                            style={{ background: "rgba(0,0,0,0.20)" }}
                         />
                         <div
-                            className="relative w-full overflow-hidden"
+                            className="relative w-full overflow-hidden flex flex-col"
                             style={{
                                 maxWidth: "430px",
                                 background: "#FAFAFA",
                                 borderTopLeftRadius: 60,
                                 borderTopRightRadius: 60,
-                                minHeight: "92svh",
+                                maxHeight: "95svh",
                                 backgroundImage: `url("${BackgroundEdit}")`,
                                 backgroundPosition: "center",
                                 backgroundSize: "cover",
                                 backgroundRepeat: "no-repeat",
                             }}
                         >
-                            <div className="relative w-full" style={{ padding: "24px 24px 0" }}>
+                            <div className="relative w-full" style={{ padding: "30px 24px 0" }}>
                                 <button
                                     type="button"
                                     disabled={saving}
@@ -483,260 +483,261 @@ export default function Profile() {
                                 </button>
                             </div>
 
-                            <div className="flex flex-col items-center text-center" style={{ padding: "0 24px" }}>
-                                <h2
-                                    className="mt-3"
-                                    style={{
-                                        fontFamily: "'Baloo 2', cursive",
-                                        fontWeight: 800,
-                                        fontSize: "45px",
-                                        color: "#D51017",
-                                        lineHeight: 1.05,
-                                        margin: 0,
-                                    }}
-                                >
-                                    Edit Profile
-                                </h2>
-
-                                <div className="mt-5 flex flex-col items-center">
-                                    <div
-                                        className="rounded-full overflow-hidden flex items-center justify-center bg-white"
+                            <div className="flex-1 overflow-y-auto">
+                                <div className="flex flex-col items-center text-center" style={{ padding: "0 24px" }}>
+                                    <h2
+                                        className="mt-2"
                                         style={{
-                                            width: 112,
-                                            height: 112,
-                                        }}
-                                    >
-                                        <img
-                                            src={profileIcon}
-                                            alt="Profile picture"
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                    <p
-                                        className="mt-6 pt-3"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontWeight: 900,
-                                            fontSize: "30px",
-                                            color: "#583921",
-                                            lineHeight: 1.1,
-                                            margin: 0,
-                                        }}
-                                    >
-                                        {username}
-                                    </p>
-                                    <p
-                                        className="mt-2 pt-1"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontWeight: 700,
-                                            fontSize: "15px",
-                                            color: "#8B7767",
-                                            margin: 0,
-                                        }}
-                                    >
-                                        Age: {age ?? "-"}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="w-full" style={{ padding: "22px 24px 24px" }}>
-                                {saveError && (
-                                    <p
-                                        className="mx-auto mb-4 max-w-[320px] text-center text-sm"
-                                        role="alert"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
+                                            fontFamily: "'Baloo 2', cursive",
+                                            fontWeight: 800,
+                                            fontSize: "clamp(36px, 9vw, 45px)",
                                             color: "#D51017",
-                                            fontWeight: 700,
+                                            lineHeight: 1.05,
                                             margin: 0,
                                         }}
                                     >
-                                        {saveError}
-                                    </p>
-                                )}
+                                        Edit Profile
+                                    </h2>
 
-                                <div>
-                                    <label
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "18px",
-                                            fontWeight: 700,
-                                            color: "#6a6a6a",
-                                        }}
-                                    >
-                                        Username
-                                    </label>
-                                    <input
-                                        value={editUsername}
-                                        onChange={(e) => setEditUsername(e.target.value)}
-                                        disabled={saving}
-                                        className="mt-1 w-full bg-transparent outline-none"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            color: "#979797",
-                                        }}
-                                    />
-                                    <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
-                                </div>
-
-                                <div className="mt-4">
-                                    <label
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "18px",
-                                            fontWeight: 700,
-                                            color: "#6a6a6a",
-                                        }}
-                                    >
-                                        Age
-                                    </label>
-                                    <input
-                                        value={editAge}
-                                        onChange={(e) => setEditAge(e.target.value)}
-                                        disabled={saving}
-                                        inputMode="numeric"
-                                        className="mt-1 w-full bg-transparent outline-none"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            color: "#979797",
-                                        }}
-                                    />
-                                    <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
-                                </div>
-
-                                <div className="mt-4">
-                                    <label
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "18px",
-                                            fontWeight: 700,
-                                            color: "#6a6a6a",
-                                        }}
-                                    >
-                                        Email
-                                    </label>
-                                    <input
-                                        value={email}
-                                        disabled
-                                        className="mt-1 w-full bg-transparent outline-none"
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "16px",
-                                            fontWeight: 500,
-                                            color: "#979797",
-                                        }}
-                                    />
-                                    <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
-                                </div>
-
-                                <div className="mt-4">
-                                    <label
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "18px",
-                                            fontWeight: 700,
-                                            color: "#6a6a6a",
-                                        }}
-                                    >
-                                        Password
-                                    </label>
-                                    <div className="relative mt-1">
-                                        <input
-                                            value={editPassword}
-                                            onChange={(e) => setEditPassword(e.target.value)}
-                                            disabled={saving}
-                                            type={showPassword ? "text" : "password"}
-                                            className="w-full bg-transparent pr-10 outline-none"
+                                    <div className="mt-4 flex flex-col items-center">
+                                        <div
+                                            className="rounded-full overflow-hidden flex items-center justify-center bg-white"
+                                            style={{
+                                                width: "clamp(110px, 22vw, 112px)",
+                                                height: "clamp(110px, 22vw, 112px)",
+                                            }}
+                                        >
+                                            <img
+                                                src={profileIcon}
+                                                alt="Profile picture"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                        <p
                                             style={{
                                                 fontFamily: "'Nunito', system-ui, sans-serif",
-                                                fontSize: "16px",
-                                                fontWeight: 500,
-                                                color: "#979797",
-                                                letterSpacing: showPassword ? "0px" : "2px",
+                                                fontWeight: 900,
+                                                fontSize: "clamp(26px, 6vw, 30px)",
+                                                color: "#583921",
+                                                lineHeight: 1.1,
+                                                margin: 0,
                                             }}
-                                        />
-                                        {editPassword.length > 0 && (
-                                            <button
-                                                type="button"
-                                                disabled={saving}
-                                                onClick={() => setShowPassword((v) => !v)}
-                                                className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-[#979797] disabled:opacity-60"
-                                                aria-label={showPassword ? "Hide password" : "Show password"}
-                                            >
-                                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                            </button>
-                                        )}
-                                    </div>
-                                    <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
-                                    {passwordsMismatch && (
+                                        >
+                                            {username}
+                                        </p>
                                         <p
-                                            className="mt-2 text-sm"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "clamp(15px, 3.5vw, 15px)",
+                                                color: "#8B7767",
+                                                margin: 0,
+                                            }}
+                                        >
+                                            Age: {age ?? "-"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="w-full" style={{ padding: "16px 24px 24px" }}>
+                                    {saveError && (
+                                        <p
+                                            className="mx-auto mb-4 max-w-[320px] text-center text-sm"
                                             role="alert"
                                             style={{
                                                 fontFamily: "'Nunito', system-ui, sans-serif",
-                                                color: "#ED1C24",
+                                                color: "#D51017",
                                                 fontWeight: 700,
                                                 margin: 0,
                                             }}
                                         >
-                                            Passwords do not match.
+                                            {saveError}
                                         </p>
                                     )}
-                                </div>
 
-                                <div className="mt-4">
-                                    <label
-                                        style={{
-                                            fontFamily: "'Nunito', system-ui, sans-serif",
-                                            fontSize: "18px",
-                                            fontWeight: 700,
-                                            color: "#6a6a6a",
-                                        }}
-                                    >
-                                        Confirm Password
-                                    </label>
-                                    <div className="relative mt-1">
-                                        <input
-                                            value={editConfirmPassword}
-                                            onChange={(e) => setEditConfirmPassword(e.target.value)}
-                                            disabled={saving}
-                                            type={showConfirmPassword ? "text" : "password"}
-                                            className="w-full bg-transparent pr-10 outline-none"
+                                    <div>
+                                        <label
                                             style={{
                                                 fontFamily: "'Nunito', system-ui, sans-serif",
-                                                fontSize: "16px",
-                                                fontWeight: 500,
-                                                color: "#979797",
-                                                letterSpacing: showConfirmPassword ? "0px" : "2px",
+                                                fontSize: "clamp(16px, 4vw, 18px)",
+                                                fontWeight: 700,
+                                                color: "#6a6a6a",
                                             }}
-                                        />
-                                        {editConfirmPassword.length > 0 && (
-                                            <button
-                                                type="button"
+                                        >
+                                            Username
+                                        </label>
+                                        <div className="relative mt-1">
+                                            <input
+                                                value={editUsername}
+                                                onChange={(e) => setEditUsername(e.target.value)}
                                                 disabled={saving}
-                                                onClick={() => setShowConfirmPassword((v) => !v)}
-                                                className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-[#979797] disabled:opacity-60"
-                                                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                                className="w-full bg-transparent outline-none pr-10"
+                                                style={{
+                                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                                    fontSize: "16px",
+                                                    fontWeight: 500,
+                                                    color: "#979797",
+                                                }}
+                                            />
+                                            <Pencil
+                                                size={18}
+                                                color="#6a6a6a"
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none"
+                                            />
+                                        </div>
+                                        <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
+                                    </div>
+
+                                    <div className="mt-3">
+                                        <label
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontSize: "clamp(16px, 4vw, 18px)",
+                                                fontWeight: 700,
+                                                color: "#6a6a6a",
+                                            }}
+                                        >
+                                            Age
+                                        </label>
+                                        <div className="relative mt-1">
+                                            <input
+                                                value={editAge}
+                                                onChange={(e) => setEditAge(e.target.value)}
+                                                disabled={saving}
+                                                inputMode="numeric"
+                                                className="w-full bg-transparent outline-none pr-10"
+                                                style={{
+                                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                                    fontSize: "16px",
+                                                    fontWeight: 500,
+                                                    color: "#979797",
+                                                }}
+                                            />
+                                            <Pencil
+                                                size={18}
+                                                color="#6a6a6a"
+                                                className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none"
+                                            />
+                                        </div>
+                                        <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
+                                    </div>
+
+                                    <div className="mt-3">
+                                        <label
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontSize: "clamp(16px, 4vw, 18px)",
+                                                fontWeight: 700,
+                                                color: "#6a6a6a",
+                                            }}
+                                        >
+                                            Password
+                                        </label>
+                                        <div className="relative mt-1">
+                                            <input
+                                                value={editPassword}
+                                                onChange={(e) => setEditPassword(e.target.value)}
+                                                disabled={saving}
+                                                type={showPassword ? "text" : "password"}
+                                                className="w-full bg-transparent pr-10 outline-none"
+                                                style={{
+                                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                                    fontSize: "16px",
+                                                    fontWeight: 500,
+                                                    color: "#979797",
+                                                    letterSpacing: showPassword ? "0px" : "2px",
+                                                }}
+                                            />
+                                            {editPassword.length === 0 ? (
+                                                <Pencil
+                                                    size={18}
+                                                    color="#6a6a6a"
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none"
+                                                />
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    disabled={saving}
+                                                    onClick={() => setShowPassword((v) => !v)}
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-[#979797] disabled:opacity-60 z-10"
+                                                    aria-label={showPassword ? "Hide password" : "Show password"}
+                                                >
+                                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
+                                        {passwordsMismatch && (
+                                            <p
+                                                className="mt-2 text-sm"
+                                                role="alert"
+                                                style={{
+                                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                                    color: "#ED1C24",
+                                                    fontWeight: 700,
+                                                    margin: 0,
+                                                }}
                                             >
-                                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                            </button>
+                                                Passwords do not match.
+                                            </p>
                                         )}
                                     </div>
-                                    <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
-                                </div>
 
-                                <div className="mt-8 flex w-full justify-center pb-6">
-                                    <PinkButton
-                                        text={saving ? "Saving…" : "Save Changes"}
-                                        disabled={!canSaveProfileChanges}
-                                        onClick={() => void handleSaveChanges()}
-                                        className="w-48 h-11 px-0 py-0 text-[17px] font-bold shadow-[0px_3px_8px_rgba(76,76,76,0.25)] hover:scale-[1.02] active:scale-[0.98]"
-                                    />
+                                    <div className="mt-3">
+                                        <label
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontSize: "clamp(16px, 4vw, 18px)",
+                                                fontWeight: 700,
+                                                color: "#6a6a6a",
+                                            }}
+                                        >
+                                            Confirm Password
+                                        </label>
+                                        <div className="relative mt-1">
+                                            <input
+                                                value={editConfirmPassword}
+                                                onChange={(e) => setEditConfirmPassword(e.target.value)}
+                                                disabled={saving}
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                className="w-full bg-transparent pr-10 outline-none"
+                                                style={{
+                                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                                    fontSize: "16px",
+                                                    fontWeight: 500,
+                                                    color: "#979797",
+                                                    letterSpacing: showConfirmPassword ? "0px" : "2px",
+                                                }}
+                                            />
+                                            {editConfirmPassword.length === 0 ? (
+                                                <Pencil
+                                                    size={18}
+                                                    color="#6a6a6a"
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none"
+                                                />
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    disabled={saving}
+                                                    onClick={() => setShowConfirmPassword((v) => !v)}
+                                                    className="absolute right-0 top-1/2 -translate-y-1/2 p-1 text-[#979797] disabled:opacity-60 z-10"
+                                                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                                >
+                                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="mt-2" style={{ height: 1, width: "100%", background: "#979797" }} />
+                                    </div>
+
+                                    <div className="mt-6 flex w-full justify-center pb-6">
+                                        <PinkButton
+                                            text={saving ? "Saving…" : "Save Changes"}
+                                            disabled={!canSaveProfileChanges}
+                                            onClick={() => void handleSaveChanges()}
+                                            className="w-48 h-11 px-0 py-0 text-[17px] font-bold shadow-[0px_3px_8px_rgba(76,76,76,0.25)] hover:scale-[1.02] active:scale-[0.98]"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
