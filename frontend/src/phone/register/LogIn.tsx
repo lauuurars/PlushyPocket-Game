@@ -173,7 +173,7 @@ export default function LogIn() {
               className="mx-auto mb-10 max-w-70 text-center text-[40px] leading-9.25 tracking-[-1px] text-[#d51017]"
               style={{
                 fontFamily: "'Baloo Da 2', 'Baloo 2', cursive, system-ui",
-                fontWeight: 600,
+                fontWeight: 800,
               }}
             >
               Welcome Back

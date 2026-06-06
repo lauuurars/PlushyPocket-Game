@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import WaitingBg from "../../assets/join/WaitingBg.svg?url";
 import StarRoom from "../../assets/join/StarRoom.svg";
 import FlorAzul from "../../assets/join/FlorAzul.svg";
@@ -6,13 +8,58 @@ import RayoRosa from "../../assets/join/RayoRosa.svg";
 import AngryMisu from "../../assets/join/AngryMisu.svg";
 import Corazon from "../../assets/welcome/Corazon.svg"
 import { PinkButton } from "../../components/PinkButton";
+import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../lib/api";
+import type { GameStartPayload } from "../../lib/api";
+import { getRoomState, attachRoomListeners, updateRoomState } from "../../lib/roomStore";
 
-type  SalaJuegoProps = {
-    roomCode?: string;
+const GAME_ROUTES: Record<string, string> = {
+  "cake": "/shout-cake",
+  "hammer-mole": "/hammer",
 };
 
+export default function WaitingRoom() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const roomId = (searchParams.get("roomId") ?? searchParams.get("roomCode") ?? "5173").trim();
+    const minigameId = (searchParams.get("minigameId") ?? "").trim();
 
-export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
+    useEffect(() => {
+        if (!roomId) return;
+
+        let cancelled = false;
+        const socket = createRealtimeSocket();
+        updateRoomState({ socket, roomId, minigameId });
+        attachRoomListeners(socket);
+
+        void (async () => {
+            const profile = await fetchPartyRoomUserProfile();
+            if (cancelled) return;
+
+            const userId = profile?.id ?? localStorage.getItem("plushyPocket_dbUserId") ?? "";
+            const username = profile?.displayName ?? "Player";
+            const characterId = profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
+
+            socket.emit("player__join", { userId, username, roomId, characterId });
+        })();
+
+        socket.on("game_start", (payload: GameStartPayload) => {
+            if (cancelled) return;
+            updateRoomState({ players: payload.players, minigameId: payload.minigameId });
+            const route = GAME_ROUTES[payload.minigameId] ?? `/${payload.minigameId}`;
+            navigate(`${route}?roomId=${encodeURIComponent(payload.roomId)}`, { replace: true });
+        });
+
+        socket.on("room_not_found", () => {
+            if (!cancelled) navigate("/qr-game", { replace: true });
+        });
+
+        return () => {
+            cancelled = true;
+            socket.off("game_start");
+            socket.off("room_not_found");
+        };
+    }, [navigate, roomId, minigameId]);
+
     return (
         <div
             className="relative w-full overflow-hidden flex flex-col md:hidden"
@@ -82,8 +129,6 @@ export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
                         transform: "rotate(10deg)",
                     }}
                 />
-
-
             </div>
 
             <div className="relative flex flex-col w-full" style={{ zIndex: 3, flex: 1 }}>
@@ -118,7 +163,7 @@ export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
                     }}
                 >
                     <div className="relative w-full">
-                        <img src={StarRoom} alt={`Sala ${roomCode}`} className="block w-full" draggable={false} />
+                        <img src={StarRoom} alt={`Sala ${roomId}`} className="block w-full" draggable={false} />
                         <span
                             style={{
                                 position: "absolute",
@@ -135,7 +180,7 @@ export default function WaitingRoom({ roomCode = "5173" }:  SalaJuegoProps) {
                                 color: "#583921",
                             }}
                         >
-                            {roomCode}
+                            {roomId}
                         </span>
                     </div>
                 </div>

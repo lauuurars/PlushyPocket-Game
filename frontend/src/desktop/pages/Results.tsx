@@ -6,8 +6,7 @@ import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 import { PinkButton } from "../../components/PinkButton";
 import type { PartyResultsNavState } from "../../lib/api";
-import { fetchPartyRoomUserProfile } from "../../lib/api";
-import { MOCK_PARTY_PLAYER2, PLAYER_1_FIXED_AVATAR_URL } from "../partyMocks";
+import { PLAYER_1_FIXED_AVATAR_URL } from "../partyMocks";
 
 function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
     if (!s || typeof s !== "object") return false;
@@ -19,61 +18,23 @@ function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
     return true;
 }
 
-type ResultsProps = {
-    winnerName?: string;
-    roomCode?: string;
-    winnerPlayer?: 1 | 2;
-    player1Name?: string;
-    player2Name?: string;
-    player2AvatarUrl?: string;
-};
-
-export default function Results({
-    winnerName: winnerNameProp,
-    roomCode: roomCodeProp = "5173",
-    winnerPlayer: winnerPlayerProp = 1,
-    player1Name: player1NameProp = "Player 1",
-    player2Name: player2NameProp = "Player 2",
-    player2AvatarUrl: player2AvatarUrlProp,
-}: ResultsProps) {
+export default function Results() {
     const navigate = useNavigate();
     const location = useLocation();
     const navState = location.state as unknown;
     const [scale, setScale] = useState(1);
-    const [party, setParty] = useState<PartyResultsNavState | null>(() =>
+    const [party] = useState<PartyResultsNavState | null>(() =>
         isValidPartyNavState(navState) ? navState : null,
     );
 
-    useEffect(() => {
-        if (party) return;
-
-        let cancelled = false;
-        void (async () => {
-            const p = await fetchPartyRoomUserProfile();
-            if (cancelled) return;
-            const p1Name = p?.displayName ?? "Player";
-            const w: 1 | 2 = Math.random() < 0.5 ? 1 : 2;
-            setParty({
-                roomCode: roomCodeProp,
-                winnerPlayer: w,
-                winnerName: w === 1 ? p1Name : MOCK_PARTY_PLAYER2.name,
-                player1Name: p1Name,
-                player2Name: MOCK_PARTY_PLAYER2.name,
-                player2AvatarUrl: MOCK_PARTY_PLAYER2.avatarUrl,
-            });
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [party, roomCodeProp]);
-
-    const roomCode = party?.roomCode ?? roomCodeProp;
-    const winnerPlayer = party?.winnerPlayer ?? winnerPlayerProp;
-    const winnerName = party?.winnerName ?? winnerNameProp ?? "Player 1";
-    const player1Name = party?.player1Name ?? player1NameProp;
-    const player2Name = party?.player2Name ?? player2NameProp;
-    const player2AvatarUrl = party?.player2AvatarUrl ?? player2AvatarUrlProp;
+    const roomCode = party?.roomCode ?? "----";
+    const winnerPlayer = party?.winnerPlayer ?? 1;
+    const winnerName = party?.winnerName ?? "Player 1";
+    const player1Name = party?.player1Name ?? "Player 1";
+    const player2Name = party?.player2Name ?? "Player 2";
+    const p1Score = party?.player1Score ?? 0;
+    const p2Score = party?.player2Score ?? 0;
+    const rewardName = party?.rewardName;
 
     useEffect(() => {
         const updateScale = () => {
@@ -180,6 +141,22 @@ export default function Results({
                     {winnerName}
                 </p>
 
+                {rewardName ? (
+                    <p
+                        className="absolute m-0 text-center text-[#FFD700]"
+                        style={{
+                            top: "250px",
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            fontFamily: "'Nunito', system-ui, sans-serif",
+                            fontWeight: 700,
+                            fontSize: "28px",
+                        }}
+                    >
+                        Reward: {rewardName}
+                    </p>
+                ) : null}
+
                 <div
                     className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
                     style={{ top: "307px", width: "min(1050px, 80vw)" }}
@@ -242,6 +219,16 @@ export default function Results({
                         >
                             {player1Name}
                         </p>
+                        <p
+                            className="m-0 mt-1 text-center text-[#FFD700]"
+                            style={{
+                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                fontWeight: 700,
+                                fontSize: "20px",
+                            }}
+                        >
+                            {p1Score} pts
+                        </p>
                     </div>
 
                     <p
@@ -284,14 +271,11 @@ export default function Results({
                                 backgroundColor: "rgba(250,250,250,0.12)",
                             }}
                         >
-                            {player2AvatarUrl ? (
-                                <img
-                                    src={player2AvatarUrl}
-                                    alt=""
-                                    className="h-full w-full object-cover"
-                                    draggable={false}
-                                />
-                            ) : null}
+                            <div
+                                className="flex h-full w-full items-center justify-center rounded-full bg-[rgba(250,250,250,0.08)] text-6xl font-bold text-[#FAFAFA]"
+                            >
+                                P2
+                            </div>
                         </div>
 
                         <p
@@ -317,6 +301,16 @@ export default function Results({
                             }}
                         >
                             {player2Name}
+                        </p>
+                        <p
+                            className="m-0 mt-1 text-center text-[#FFD700]"
+                            style={{
+                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                fontWeight: 700,
+                                fontSize: "20px",
+                            }}
+                        >
+                            {p2Score} pts
                         </p>
                     </div>
                 </div>

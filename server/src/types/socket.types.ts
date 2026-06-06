@@ -58,6 +58,7 @@ export interface GameEndPayload {
     roomId: string;
     winnerId: string;   // users.id del ganador
     loserId: string;    // users.id del perdedor
+    scores: Record<string, number>  // userId -> puntaje final
 }
 
 export type GameOverPayload = GameEndPayload
@@ -84,6 +85,15 @@ export type Room = {
     status: RoomStatus
     screenSocketId: string | null
     players: RoomPlayer[]
+    scores: Record<string, number>       // userId -> score acumulado durante la partida
+    playerData: Record<string, Record<string, unknown>>  // userId -> datos crudos del juego
+    gameEndTime?: number                  // timestamp de cuando termina el juego
+}
+
+export const GAME_DURATION: Record<string, number> = {
+    "cake": 45,
+    "flappy-boat": 60,
+    "hammer-mole": 60,
 }
 
 export type SocketSession = {

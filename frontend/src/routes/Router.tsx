@@ -24,6 +24,8 @@ import ShoutCake from "../phone/islands/cake/ShoutCake";
 import Results from "../desktop/pages/Results";
 import PartyRoom from "../desktop/pages/PartyRoom";
 import HammerMole from "../phone/islands/hammer-mole/HammerMole";
+import LoserPage from "../phone/pages/LoserPage";
+import WinnerPage from "../phone/pages/WinnerPage";
 import Error404 from "../desktop/pages/Error404";
 
 type Viewport = "pc" | "mobile";
@@ -115,7 +117,7 @@ const router = createBrowserRouter(
         {
             path: "/party-room",
             Component: PartyRoom,
-            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+            loader: requireViewport("pc"),
         },
         // Home (island hub) - PC
         {
@@ -199,12 +201,12 @@ const router = createBrowserRouter(
         {
             path: "/shout-cake",
             Component: ShoutCake,
-            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/hammer",
             Component: HammerMole,
-            //loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/characters",
@@ -214,6 +216,15 @@ const router = createBrowserRouter(
             path: "/blocked-characters",
             Component: BlockedCharacters
         },
+        {
+            path: "/loser",
+            Component: LoserPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/winner",
+            Component: WinnerPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         // 404 - PC
         {
             path: "*",

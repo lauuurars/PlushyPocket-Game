@@ -20,6 +20,11 @@ export interface FinishGameDTO {
     reward_id: string
 }
 
+export interface PlayerGameData {
+    score: number
+    payload?: Record<string, unknown>
+}
+
 export type RewardType = "bonus" | "discount" | "character"
 export type RewardStatus = "active" | "redeemed" | "expired"
 

@@ -1,29 +1,59 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import BgParty from "../../assets/startGame/Bg Party.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
-import { fetchPartyRoomUserProfile, type PartyResultsNavState, type PartyUserDisplay } from "../../lib/api";
-import { MOCK_PARTY_PLAYER2, PARTY_TRANSITION_MS, PLAYER_1_FIXED_AVATAR_URL } from "../partyMocks";
+import MochiAvatarUrl from "../../assets/choose/Mochi.svg?url";
+import MisuAvatarUrl from "../../assets/choose/Misu.svg?url";
+import YukiAvatarUrl from "../../assets/choose/Yuki.svg?url";
+import { createRealtimeSocket, type GameStartPayload, type RoomUpdatePayload } from "../../lib/api";
+import { updateRoomState, attachRoomListeners, getRoomState } from "../../lib/roomStore";
 
-interface PartyRoomProps {
-    roomCode?: string;
-    islandName?: string;
-}
+let globalSocket: ReturnType<typeof createRealtimeSocket> | null = null;
 
-export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Island" }: PartyRoomProps) {
+export default function PartyRoom() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [scale, setScale] = useState(1);
-    const [profile, setProfile] = useState<PartyUserDisplay | null>(null);
-    const profileRef = useRef<PartyUserDisplay | null>(null);
+    const [room, setRoom] = useState<RoomUpdatePayload | null>(null);
 
-    profileRef.current = profile;
-
-    const player1Name = profile?.displayName ?? "Player";
+    const roomId = (searchParams.get("roomId") ?? "").trim();
+    const islandName = (searchParams.get("islandName") ?? "Sanrio Island").trim();
 
     useEffect(() => {
-        void fetchPartyRoomUserProfile().then(setProfile);
-    }, []);
+        if (!roomId) return;
+
+        if (!globalSocket || !getRoomState().socket) {
+            const socket = createRealtimeSocket();
+            globalSocket = socket;
+            updateRoomState({ socket, roomId, minigameId: null, playerRole: null, players: [], scores: {} });
+            attachRoomListeners(socket);
+        }
+
+        const socket = globalSocket;
+
+        const onRoomUpdate = (payload: RoomUpdatePayload) => {
+            setRoom(payload);
+            updateRoomState({ players: payload.players });
+        };
+
+        const onGameStart = (payload: GameStartPayload) => {
+            updateRoomState({
+                players: payload.players,
+                minigameId: payload.minigameId,
+            });
+            navigate(`/${payload.minigameId}`, { replace: true });
+        };
+
+        socket.on("room_update", onRoomUpdate);
+        socket.on("game_start", onGameStart);
+        socket.emit("screen__join_room", { roomId });
+
+        return () => {
+            socket.off("room_update", onRoomUpdate);
+            socket.off("game_start", onGameStart);
+        };
+    }, [navigate, roomId]);
 
     useEffect(() => {
         const updateScale = () => {
@@ -38,27 +68,15 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
         return () => window.removeEventListener("resize", updateScale);
     }, []);
 
-    useEffect(() => {
-        const tid = window.setTimeout(() => {
-            const p = profileRef.current;
-            const p1Name = p?.displayName ?? "Player";
-            const w: 1 | 2 = Math.random() < 0.5 ? 1 : 2;
+    const p1 = useMemo(() => room?.players.find((p) => p.role === "P1") ?? null, [room?.players]);
+    const p2 = useMemo(() => room?.players.find((p) => p.role === "P2") ?? null, [room?.players]);
 
-            const state: PartyResultsNavState = {
-                roomCode,
-                winnerPlayer: w,
-                winnerName: w === 1 ? p1Name : MOCK_PARTY_PLAYER2.name,
-                player1Name: p1Name,
-                player2Name: MOCK_PARTY_PLAYER2.name,
-                player1AvatarUrls: [PLAYER_1_FIXED_AVATAR_URL],
-                player2AvatarUrl: MOCK_PARTY_PLAYER2.avatarUrl,
-            };
-
-            navigate("/results", { replace: true, state });
-        }, PARTY_TRANSITION_MS);
-
-        return () => clearTimeout(tid);
-    }, [navigate, roomCode]);
+    const avatarFor = (characterId: string | null | undefined): string => {
+        const key = (characterId ?? "").toLowerCase();
+        if (key.includes("misu")) return MisuAvatarUrl as string;
+        if (key.includes("yuki")) return YukiAvatarUrl as string;
+        return MochiAvatarUrl as string;
+    };
 
     return (
         <div
@@ -101,7 +119,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                 lineHeight: "72px",
                             }}
                         >
-                            Party Room - {roomCode}
+                            Party Room - {roomId || room?.roomId || "----"}
                         </div>
 
                         <img
@@ -151,7 +169,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                     }}
                                 >
                                     <img
-                                        src={PLAYER_1_FIXED_AVATAR_URL}
+                                        src={avatarFor(p1?.characterId)}
                                         alt=""
                                         className="h-full w-full object-contain object-center"
                                         draggable={false}
@@ -159,7 +177,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                 </div>
 
                                 <p
-                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
@@ -171,7 +189,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                     Player 1
                                 </p>
                                 <p
-                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    className="m-0 -mt-1.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,
@@ -180,7 +198,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                         lineHeight: "34px",
                                     }}
                                 >
-                                    {player1Name}
+                                    {p1?.username ?? "Waiting..."}
                                 </p>
                             </div>
 
@@ -208,16 +226,18 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                         backgroundColor: "rgba(250,250,250,0.12)",
                                     }}
                                 >
-                                    <img
-                                        src={MOCK_PARTY_PLAYER2.avatarUrl}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                        draggable={false}
-                                    />
+                                    {p2 ? (
+                                        <img
+                                            src={avatarFor(p2.characterId)}
+                                            alt=""
+                                            className="h-full w-full object-contain object-center"
+                                            draggable={false}
+                                        />
+                                    ) : null}
                                 </div>
 
                                 <p
-                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
@@ -229,7 +249,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                     Player 2
                                 </p>
                                 <p
-                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    className="m-0 -mt-1.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,
@@ -238,7 +258,7 @@ export default function PartyRoom({ roomCode = "5173", islandName = "Sanrio Isla
                                         lineHeight: "34px",
                                     }}
                                 >
-                                    {MOCK_PARTY_PLAYER2.name}
+                                    {p2?.username ?? "Waiting..."}
                                 </p>
                             </div>
                         </div>

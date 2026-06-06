@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import JoinBg from "../../assets/join/JoinBg.svg?url";
 import StarRoom from "../../assets/join/StarRoom.svg";
 import RayoRosa from "../../assets/join/RayoRosa.svg";
@@ -6,18 +7,89 @@ import FlorAzul from "../../assets/join/FlorAzul.svg";
 import Estrella4 from "../../assets/join/Estrella4.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
 import Pinguino from "../../assets/onboarding/pinguino.svg";
+import { createRealtimeSocket, fetchPartyRoomUserProfile, type PlayerJoinPayload } from "../../lib/api";
 
-interface SalaJuegoProps {
-    roomCode?: string; // mockeado por ahora :p
-}
-
-export default function JoinRoom({ roomCode = "5173" }: SalaJuegoProps) {
+export default function JoinRoom() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const roomId = (searchParams.get("roomId") ?? searchParams.get("roomCode") ?? "5173").trim();
+    const minigameId = (searchParams.get("minigameId") ?? "").trim();
     const [ready, setReady] = useState(false);
+    const [joinError, setJoinError] = useState<string | null>(null);
+    const joinedRef = useRef(false);
+    const userIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => setReady(true), 80);
         return () => clearTimeout(t);
     }, []);
+
+    useEffect(() => {
+        if (!roomId) return;
+        if (joinedRef.current) return;
+
+        const socket = createRealtimeSocket();
+
+        const onRoomNotFound = (p: { message?: string }) => {
+            setJoinError(p?.message ?? "Sala no encontrada");
+        };
+        const onRoomFull = (p: { message?: string }) => {
+            setJoinError(p?.message ?? "La sala está llena");
+        };
+        const onConnectError = () => {
+            setJoinError("No se pudo conectar al servidor. Verifica que el servidor esté corriendo.");
+        };
+        const onPlayerJoined = (p: { userId: string }) => {
+            const myId = userIdRef.current;
+            if (!myId || p.userId !== myId) return;
+            if (joinedRef.current) return;
+            joinedRef.current = true;
+            window.setTimeout(() => {
+                navigate(
+                    `/waiting-room?roomId=${encodeURIComponent(roomId)}${minigameId ? `&minigameId=${encodeURIComponent(minigameId)}` : ""}`,
+                    { replace: true },
+                );
+            }, 700);
+        };
+
+        socket.on("room_not_found", onRoomNotFound);
+        socket.on("room_full", onRoomFull);
+        socket.on("player__joined", onPlayerJoined);
+        socket.on("connect_error", onConnectError);
+
+        void (async () => {
+            const profile = await fetchPartyRoomUserProfile();
+            const userId = profile?.id ?? null;
+            if (!userId) {
+                setJoinError("No se pudo obtener la sesión del usuario");
+                return;
+            }
+            userIdRef.current = userId;
+
+            const username = profile?.displayName ?? "Player";
+            const characterId =
+                profile?.character_selected ??
+                (typeof localStorage !== "undefined" ? localStorage.getItem("character") : null) ??
+                "mochi";
+
+            const payload: PlayerJoinPayload = {
+                userId,
+                username,
+                roomId,
+                characterId,
+            };
+
+            socket.emit("player__join", payload);
+        })();
+
+        return () => {
+            socket.off("room_not_found", onRoomNotFound);
+            socket.off("room_full", onRoomFull);
+            socket.off("player__joined", onPlayerJoined);
+            socket.off("connect_error", onConnectError);
+            socket.disconnect();
+        };
+    }, [minigameId, navigate, roomId]);
 
     return (
         <>
@@ -176,7 +248,7 @@ export default function JoinRoom({ roomCode = "5173" }: SalaJuegoProps) {
                         >
                             <img
                                 src={StarRoom}
-                                alt={`Sala ${roomCode}`}
+                                alt={`Sala ${roomId}`}
                                 style={{ width: "clamp(200px, 55vw, 260px)", display: "block" }}
                             />
                             {/* --------- codigo de sala ------------- */}
@@ -195,7 +267,7 @@ export default function JoinRoom({ roomCode = "5173" }: SalaJuegoProps) {
                                     letterSpacing: "-0.02em",
                                 }}
                             >
-                                {roomCode}
+                                {roomId}
                             </span>
                         </div>
                     </div>
@@ -220,6 +292,19 @@ export default function JoinRoom({ roomCode = "5173" }: SalaJuegoProps) {
                     />
                 </div>
             </div>
+            {joinError ? (
+                <div
+                    className="absolute inset-x-0 bottom-6 z-30 flex justify-center px-6"
+                    role="alert"
+                >
+                    <div
+                        className="rounded-[18px] bg-[rgba(0,0,0,0.65)] px-5 py-3 text-center text-sm font-semibold text-white"
+                        style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}
+                    >
+                        {joinError}
+                    </div>
+                </div>
+            ) : null}
         </>
     );
 }
