@@ -26,6 +26,7 @@ import PartyRoom from "../desktop/pages/PartyRoom";
 import HammerMole from "../phone/islands/hammer-mole/HammerMole";
 import LoserPage from "../phone/pages/LoserPage";
 import WinnerPage from "../phone/pages/WinnerPage";
+import Error404 from "../desktop/pages/Error404";
 
 type Viewport = "pc" | "mobile";
 
@@ -224,6 +225,11 @@ const router = createBrowserRouter(
             path: "/winner",
             Component: WinnerPage,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        // 404 - PC
+        {
+            path: "*",
+            Component: Error404,
+            loader: requireViewport("pc"),
         },
     ]
 )

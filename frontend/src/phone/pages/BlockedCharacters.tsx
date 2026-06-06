@@ -6,9 +6,9 @@ import Navbar from "../../components/mobile/Navbar";
 
 interface Character {
     id: string;
-    name: string;
+    character_name: string; // Updated from name
+    collection_name?: string;
     img_url: string; 
-    is_blocked: boolean;
     bg_color?: string;
 }
 
@@ -41,16 +41,41 @@ export default function BlockedCharacters() {
     useEffect(() => {
         async function fetchCharacters() {
             setLoading(true);
-            const { data, error } = await supabase
-                .from("characters")
-                .select("*")
-                .eq("is_blocked", true);
+            const userId = localStorage.getItem("plushyPocket_dbUserId");
 
-            if (error) {
-                console.error("Error fetching blocked characters:", error);
-            } else {
-                setCharacters(data || []);
+            // Fetch all characters
+            const { data: allCharacters, error: charError } = await supabase
+                .from("characters")
+                .select("*");
+
+            if (charError) {
+                console.error("Error fetching blocked characters:", charError);
+                setLoading(false);
+                return;
             }
+
+            // Fetch user's unlocked characters
+            let unlockedCharIds = new Set<string>();
+            if (userId) {
+                const { data: userChars, error: userCharError } = await supabase
+                    .from("user_characters")
+                    .select("character_id")
+                    .eq("user_id", userId);
+                
+                if (userCharError) {
+                    console.error("Error fetching user characters:", userCharError);
+                } else if (userChars) {
+                    userChars.forEach(uc => unlockedCharIds.add(uc.character_id));
+                }
+            }
+
+            // Filter logic: NOT default unlocked AND NOT in user_characters
+            const blockedCharacters = (allCharacters || []).filter(char => {
+                const isDefaultUnlocked = ['mochi', 'misu', 'yuki'].includes(char.character_name?.toLowerCase());
+                return !isDefaultUnlocked && !unlockedCharIds.has(char.id);
+            });
+
+            setCharacters(blockedCharacters);
             setLoading(false);
         }
 
@@ -183,7 +208,7 @@ export default function BlockedCharacters() {
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
                                 bgColor="#343434" 
-                                onClick={() => console.log(`Blocked ${char.name}`)}
+                                onClick={() => console.log(`Blocked ${char.character_name}`)}
                                 isLocked={true}
                             />
                         ))}
