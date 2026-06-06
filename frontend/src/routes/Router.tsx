@@ -105,7 +105,7 @@ const router = createBrowserRouter(
         {
             path: "/cake",
             Component: CakeGame,
-            loader: composeLoaders(requireViewport("pc"), requireAuth({ redirectTo: "/" })),
+            loader: composeLoaders(requireViewport("pc")),
         },
         // Start-game - PC 
         {
