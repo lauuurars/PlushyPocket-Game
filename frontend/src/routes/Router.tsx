@@ -25,6 +25,7 @@ import Results from "../desktop/pages/Results";
 import PartyRoom from "../desktop/pages/PartyRoom";
 import HammerMole from "../phone/islands/hammer-mole/HammerMole";
 import LoserPage from "../phone/pages/LoserPage";
+import WinnerPage from "../phone/pages/WinnerPage";
 
 type Viewport = "pc" | "mobile";
 
@@ -217,6 +218,11 @@ const router = createBrowserRouter(
         {
             path: "/loser",
             Component: LoserPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/winner",
+            Component: WinnerPage,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
     ]
