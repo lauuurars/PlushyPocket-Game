@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
 
-import Background1 from "../../assets/onboarding/background1.svg";
-import Leon1 from "../../assets/onboarding/leon1.svg";
+import Background2 from "../../assets/onboarding/Bg2.svg";
+import WinMisu from "../../assets/onboarding/WinMisu.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
-import Estrella3 from "../../assets/welcome/Estrella3.svg";
-import Flor from "../../assets/welcome/Flor.svg";
-import Estrella2 from "../../assets/welcome/Estrella2.svg";
+import Corona from "../../assets/welcome/Corona.svg";
+import RayoRosa from "../../assets/join/RayoRosa.svg";
+import Estrella1 from "../../assets/welcome/Estrella1.svg";
 import { OnboardingConnectCard } from "../../components/OnboardingConnectCard";
 import { SkipButton } from "../../components/SkipButton";
 
-export default function Onboarding1() {
+export default function Onboarding2() {
   const navigate = useNavigate();
 
   return (
@@ -22,39 +22,39 @@ export default function Onboarding1() {
           50% { transform: translateY(-6px); }
         }
 
-        .onboarding1-viewport {
+        .onboarding2-viewport {
           min-height: 100svh;
           min-height: 100dvh;
         }
       `}</style>
       <div
-        className="onboarding1-viewport relative isolate w-full overflow-hidden"
+        className="onboarding2-viewport relative isolate w-full overflow-hidden"
         style={{ backgroundColor: "#ED1C24" }}
       >
         <img
-          src={Background1}
+          src={Background2}
           alt=""
           aria-hidden
           className="pointer-events-none absolute inset-0 z-0 h-full w-full max-h-none object-cover object-center"
         />
 
-        <div className="onboarding1-viewport relative z-1 mx-auto flex w-full max-w-98.25 flex-col px-6.25 pb-[env(safe-area-inset-bottom,0)] pt-8">
+        <div className="onboarding2-viewport relative z-1 mx-auto flex w-full max-w-98.25 flex-col px-6.25 pb-[env(safe-area-inset-bottom,0)] pt-8">
           <div className="flex w-full shrink-0 justify-end">
-            <SkipButton navigateTo="/onboarding2" />
+            <SkipButton />
           </div>
 
           <div className="mt-6 flex w-full flex-1 flex-col items-center gap-9">
             <h1
               className="m-0 max-w-71.5 text-center text-[#FAFAFA]"
               style={{
-                fontFamily: "'Baloo Da', 'Baloo 2', cursive, system-ui",
+                fontFamily: "'Baloo Da', 'Baloo 2', system-ui",
                 fontWeight: 800,
                 fontSize: "40px",
                 lineHeight: 1.15,
                 letterSpacing: "-1px",
               }}
             >
-              Play Your Favorite Games
+              Win amazing rewards
             </h1>
 
             <div className="relative mx-auto flex w-full max-w-71.5 justify-center">
@@ -70,13 +70,13 @@ export default function Onboarding1() {
                 <div
                   className="absolute"
                   style={{
-                    left: "1%",
-                    top: "-5%",
+                    left: "-2%",
+                    top: "0%",
                     animation: "onboarding-float 3.2s ease-in-out infinite",
                   }}
                 >
                   <img
-                    src={Estrella3}
+                    src={Estrella1}
                     alt=""
                     width={46}
                     height={46}
@@ -92,34 +92,33 @@ export default function Onboarding1() {
                   }}
                 >
                   <img
-                    src={Flor}
+                    src={Corona}
                     alt=""
-                    width={40}
-                    height={42}
+                    width={46}
                     style={{ transform: "rotate(10deg)" }}
                   />
                 </div>
                 <div
                   className="absolute"
                   style={{
-                    left: "1%",
-                    top: "45%",
+                    left: "2%",
+                    top: "50%",
                     animation: "onboarding-float 3.4s ease-in-out infinite 0.3s",
                   }}
                 >
                   <img
-                    src={Estrella2}
+                    src={RayoRosa}
                     alt=""
-                    width={36}
-                    height={48}
-                    style={{ transform: "rotate(18deg)" }}
+                    width={32}
+                    height={64}
+                    style={{ transform: "rotate(-40deg)" }}
                   />
                 </div>
                 <div
                   className="absolute"
                   style={{
                     right: "4%",
-                    top: "38%",
+                    top: "48%",
                     animation: "onboarding-float 3.3s ease-in-out infinite 0.45s",
                   }}
                 >
@@ -134,17 +133,19 @@ export default function Onboarding1() {
               </div>
 
               <img
-                src={Leon1}
-                alt="Plushy lion"
-                className="relative z-1 mt-2 w-full max-w-55 object-contain"
-                style={{ width: "min(56vw, 207px)" }}
+                src={WinMisu}
+                alt="Plushy Misu with trophy"
+                className="relative z-1 mt-1 mb-2 w-full max-w-55 object-contain"
+                style={{ width: "max(100vw, 207px)" }}
               />
             </div>
           </div>
 
           <OnboardingConnectCard
             className="mt-6 mb-8 w-full max-w-none shrink-0"
-            onContinue={() => navigate("/onboarding2")}
+            onContinue={() => navigate("/")}
+            text="Connect your gaming accounts and track your playtime across all platforms"
+            dotsVariant="second"
           />
         </div>
       </div>
