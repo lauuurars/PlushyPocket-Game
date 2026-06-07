@@ -27,8 +27,8 @@ const UnlockItemPopup: React.FC<UnlockItemPopupProps> = ({ isOpen, onClose }) =>
                     Unlock a new item!
                 </h2>
 
-                <div className="w-32 h-32 rounded-full border-5 border-[#ED1C24] flex items-center justify-center mb-8">
-                    <Camera size={64} className="text-[#ED1C24]" />
+                <div className="w-24 h-24 rounded-full border-[4px] border-[#ED1C24] flex items-center justify-center mb-6">
+                    <Camera size={48} className="text-[#ED1C24]" />
                 </div>
 
                 <p className="text-[#583921] text-lg leading-relaxed mb-10 px-2">

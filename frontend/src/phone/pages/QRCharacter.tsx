@@ -17,6 +17,7 @@ const QRCharacter: React.FC = () => {
     const navigate = useNavigate();
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [unlockedChar, setUnlockedChar] = useState<{name: string, imageUrl: string} | null>(null);
+    const [isScanning, setIsScanning] = useState(false);
 
     useEffect(() => {
         const html5QrCode = new Html5Qrcode("reader");
@@ -71,7 +72,9 @@ const QRCharacter: React.FC = () => {
             }
             
             // Stop scanning after a successful read
-            html5QrCode.stop().catch(console.error);
+            html5QrCode.stop().then(() => {
+                setIsScanning(false);
+            }).catch(console.error);
         };
 
         const config = {
@@ -88,6 +91,7 @@ const QRCharacter: React.FC = () => {
                     qrCodeSuccessCallback,
                     () => { }
                 );
+                setIsScanning(true);
             } catch (err) {
                 console.error("Error al iniciar la cámara trasera:", err);
             }
@@ -126,7 +130,7 @@ const QRCharacter: React.FC = () => {
 
             <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 w-full flex justify-center">
                 <VioletButton
-                    text="Scan Me"
+                    text={isScanning ? "Scanning..." : "Scan Me"}
                     onClick={() => console.log('Intentando escanear...')}
                 />
             </div>

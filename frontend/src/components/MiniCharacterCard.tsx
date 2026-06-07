@@ -13,8 +13,8 @@ export default function MiniCharacterCard({ imageSrc, bgColor, onClick, isLocked
             type="button"
             onClick={onClick}
             style={{
-                width: "115px",
-                height: "120px",
+                width: "100%",
+                aspectRatio: "115 / 120",
                 backgroundColor: bgColor,
                 borderRadius: "20px",
                 display: "flex",
@@ -32,8 +32,8 @@ export default function MiniCharacterCard({ imageSrc, bgColor, onClick, isLocked
                 <img
                     src={imageSrc}
                     style={{
-                        height: "90px",
-                        width: "auto",
+                        width: "85%",
+                        height: "85%",
                         objectFit: "contain",
                         filter: isLocked ? "grayscale(100%)" : "none",
                     }}
