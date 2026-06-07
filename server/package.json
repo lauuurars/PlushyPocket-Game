@@ -4,7 +4,7 @@
   "description": "PlushyPocket Game Server",
   "main": "main.ts",
   "scripts": {
-    "start": "tsx watch main.ts"
+    "start": "nodemon main.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
