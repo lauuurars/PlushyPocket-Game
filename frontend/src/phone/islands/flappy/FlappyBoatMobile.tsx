@@ -12,17 +12,19 @@ export default function FlappyGame() {
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get("roomId");
 
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [score, setScore] = useState(0);
   const [gameOverData, setGameOverData] = useState<{
     winnerId: string;
     myScore: number;
     opponentScore: number;
   } | null>(null);
+  const [tapFeedback, setTapFeedback] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<string>("");
   const characterIdRef = useRef<string>("mochi");
+  const touchFiredRef = useRef(false);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -52,9 +54,7 @@ export default function FlappyGame() {
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
 
-    socket.on("game_timer_tick", (data: { remaining: number }) => {
-      if (!cancelled) setTimeRemaining(data.remaining);
-    });
+
 
     socket.on("game_over", (payload: GameOverPayload) => {
       if (cancelled) return;
@@ -82,6 +82,42 @@ export default function FlappyGame() {
     };
   }, [roomId]);
 
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    };
+  }, []);
+
+  const jump = () => {
+    const socket = socketRef.current;
+    if (socket && roomId && userIdRef.current) {
+      socket.emit("player_action", {
+        userId: userIdRef.current,
+        characterId: characterIdRef.current,
+        action: "jump",
+        timestamp: Date.now(),
+        roomId,
+      });
+    }
+    setTapFeedback(true);
+    if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    tapTimeoutRef.current = setTimeout(() => setTapFeedback(false), 120);
+  };
+
+  const handleTouchStart: React.TouchEventHandler = (e) => {
+    e.preventDefault();
+    touchFiredRef.current = true;
+    jump();
+  };
+
+  const handleClick: React.MouseEventHandler = () => {
+    if (touchFiredRef.current) {
+      touchFiredRef.current = false;
+      return;
+    }
+    jump();
+  };
+
   if (gameOverData) {
     const isWinner = gameOverData.winnerId === userIdRef.current;
     return (
@@ -104,7 +140,12 @@ export default function FlappyGame() {
   }
 
   return (
-    <div className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA]">
+    <div
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA] select-none"
+      style={{ touchAction: "manipulation" }}
+    >
       <div
         aria-hidden
         className="absolute inset-0"
@@ -120,14 +161,6 @@ export default function FlappyGame() {
         className="absolute left-1/2 -top-95 h-155 w-155 -translate-x-1/2 rounded-full bg-[#ED1C24]"
       />
 
-      {timeRemaining !== null && (
-        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
-          <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ED1C24] shadow-md">
-            {timeRemaining}s
-          </span>
-        </div>
-      )}
-
       <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-18">
         <h1
           className="text-center text-[44px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
@@ -142,7 +175,7 @@ export default function FlappyGame() {
           <img
             src={bigBoat}
             alt="Boat"
-            className="w-[320px] max-w-[88vw] select-none pointer-events-none"
+            className={`w-[320px] max-w-[88vw] select-none pointer-events-none transition-transform duration-75 ${tapFeedback ? "scale-90" : "scale-100"}`}
             draggable={false}
           />
         </div>

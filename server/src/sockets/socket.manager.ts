@@ -58,6 +58,7 @@ const getRoomIdFromSocket = (socket: socketio.Socket) => {
 const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string) => {
     const room = rooms[roomId]
     if (!room) return
+    if (room.status === "RESULTS") return
 
     cleanupGameTimers(roomId)
 
@@ -141,6 +142,15 @@ export const initializeSockets = (rawServer: HttpServer) => {
             sessions[socket.id] = { clientType: "screen", roomId: room.roomId }
             socket.join(room.roomId)
             emitRoomUpdate(io, room)
+
+            if (room.status === "IN_GAME") {
+                const gameStartPayload: GameStartPayload = {
+                    roomId: room.roomId,
+                    minigameId: room.minigameId,
+                    players: room.players.map(toPlayerInfoPayload),
+                }
+                socket.emit("game_start", gameStartPayload)
+            }
         })
 
         // 3. player join 

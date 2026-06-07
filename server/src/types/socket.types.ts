@@ -92,7 +92,7 @@ export type Room = {
 
 export const GAME_DURATION: Record<string, number> = {
     "cake": 45,
-    "flappy-boat": 60,
+    "flappy-boat": 90,
     "hammer-mole": 60,
 }
 
