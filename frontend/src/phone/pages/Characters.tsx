@@ -187,8 +187,8 @@ export default function Characters() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(3, 95px)",
-                            gap: "35px",
+                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                            gap: "15px",
                             justifyContent: "center",
                             width: "100%",
                             maxWidth: "400px",

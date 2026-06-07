@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import MiniCharacterCard from "../../components/MiniCharacterCard";
 import Navbar from "../../components/mobile/Navbar";
+import UnlockCharacterPopup from "../../components/UnlockCharacterPopup";
 
 interface Character {
     id: string;
@@ -36,6 +37,7 @@ const getRandomColor = (id: string) => {
 export default function BlockedCharacters() {
     const [characters, setCharacters] = useState<Character[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isUnlockPopupOpen, setIsUnlockPopupOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -196,8 +198,8 @@ export default function BlockedCharacters() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(3, 95px)",
-                            gap: "35px",
+                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                            gap: "15px",
                             justifyContent: "center",
                             width: "100%",
                             maxWidth: "400px",
@@ -208,13 +210,18 @@ export default function BlockedCharacters() {
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
                                 bgColor="#343434" 
-                                onClick={() => console.log(`Blocked ${char.character_name}`)}
+                                onClick={() => setIsUnlockPopupOpen(true)}
                                 isLocked={true}
                             />
                         ))}
                     </div>
                 )}
             </div>
+
+            <UnlockCharacterPopup 
+                isOpen={isUnlockPopupOpen} 
+                onClose={() => setIsUnlockPopupOpen(false)} 
+            />
 
             <Navbar />
         </div>

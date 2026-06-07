@@ -4,8 +4,8 @@ import type { Socket } from "socket.io-client";
 import type { GameOverPayload } from "../../../lib/api";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
-import Background from "../../../assets/moleAssets/HammerBg.jpg";
 import bigBoat from "../../../assets/flappybird/bigBoat.png";
+import WaterWave from "../../../assets/flappybird/FlappyBoatWaterMobile.svg";
 
 export default function FlappyGame() {
   const navigate = useNavigate();
@@ -102,19 +102,26 @@ export default function FlappyGame() {
       </div>
     );
   }
-
   return (
     <div className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA]">
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url("${Background}")`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
+      <style>{`
+        @keyframes floatBoat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          33%      { transform: translateY(-15px) rotate(3deg); }
+          66%      { transform: translateY(8px) rotate(-2deg); }
+        }
+        @keyframes waveWater {
+          0%, 100% { transform: translateX(0) translateY(0); }
+          50%      { transform: translateX(-8%) translateY(16px); }
+        }
+        .animate-boat {
+          animation: floatBoat 3.5s ease-in-out infinite;
+          transform-origin: bottom center;
+        }
+        .animate-water {
+          animation: waveWater 4s ease-in-out infinite;
+        }
+      `}</style>
 
       <div
         className="absolute left-1/2 -top-95 h-155 w-155 -translate-x-1/2 rounded-full bg-[#ED1C24]"
@@ -128,26 +135,33 @@ export default function FlappyGame() {
         </div>
       )}
 
-      <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-18">
+      <img 
+        src={WaterWave} 
+        alt="Water waves" 
+        className="absolute bottom-0 left-[-15%] w-[130%] max-w-none z-0 object-cover animate-water" 
+        style={{ minHeight: "35vh" }}
+      />
+
+      <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-14">
         <h1
-          className="text-center text-[44px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
+          className="text-center text-[40px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
           style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
         >
-          Flappy Boat
+          Fly as high as<br/>you can!
         </h1>
 
         <div
-          className="mt-14 flex w-full flex-1 items-center justify-center"
+          className="mt-6 flex w-full flex-1 items-center justify-center relative z-10"
         >
           <img
             src={bigBoat}
             alt="Boat"
-            className="w-[320px] max-w-[88vw] select-none pointer-events-none"
+            className="w-[360px] max-w-[95vw] select-none pointer-events-none drop-shadow-2xl animate-boat"
             draggable={false}
           />
         </div>
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center mt-auto z-20 mb-2">
           <h2
             className="text-center text-[54px] font-extrabold leading-12 tracking-[-1px] text-[#ED1C24]"
             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
@@ -155,7 +169,7 @@ export default function FlappyGame() {
             Game Points
           </h2>
           <p
-            className="mt-2 text-center text-[34px] font-extrabold leading-9 tracking-[-1px] text-[#583921]"
+            className="mt-2 text-center text-[40px] font-extrabold leading-9 tracking-[-1px] text-[#583921]"
             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
           >
             {score} pts
