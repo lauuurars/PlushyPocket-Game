@@ -26,22 +26,22 @@ export default function LoadingScreen() {
         }
 
         try {
-          const me = await fetchAuthMe(session.access_token);
+                const me = await fetchAuthMe(session.access_token);
 
-          if (!isRecordedAgeComplete(me.age)) {
-            navigate("/age", { replace: true });
-            return;
-          }
+                if (!isRecordedAgeComplete(me.age)) {
+                    navigate("/age", { replace: true });
+                    return;
+                }
 
-          if (!isCharacterSelectionComplete(me.character_selected)) {
-            navigate("/choose-character", { replace: true });
-            return;
-          }
+                if (!isCharacterSelectionComplete(me.character_selected)) {
+                    navigate("/choose-character", { replace: true });
+                    return;
+                }
 
-          navigate("/home-phone", { replace: true });
-        } catch {
-          navigate("/signup", { replace: true });
-        }
+                navigate("/home-phone", { replace: true });
+            } catch {
+                navigate("/signup", { replace: true });
+            }
       }, 500);
     }, 2300);
 

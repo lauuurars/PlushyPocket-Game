@@ -19,7 +19,7 @@ export default function ChooseCharacter() {
         setLoadingName(characterKey);
         try {
             await updatePlayerCharacter(characterKey);
-            navigate("/home-phone", { replace: true });
+            navigate("/onboarding1", { replace: true });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Something went wrong.");
         } finally {

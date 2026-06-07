@@ -5,8 +5,8 @@ import Background1 from "../../assets/onboarding/background1.svg";
 import {
   authRedirectUrl,
   fetchAuthMe,
-  isCharacterSelectionComplete,
   isRecordedAgeComplete,
+  isCharacterSelectionComplete,
   loginWithBackend,
   persistSupabaseSession,
   signInWithGoogle,

@@ -28,7 +28,6 @@ const HomePhone = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-
         // Setup background music
         const audio = new Audio(BackgroundMusic);
         audio.loop = true;

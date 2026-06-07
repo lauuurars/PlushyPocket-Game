@@ -27,6 +27,9 @@ import HammerMole from "../phone/islands/hammer-mole/HammerMole";
 import LoserPage from "../phone/pages/LoserPage";
 import WinnerPage from "../phone/pages/WinnerPage";
 import Error404 from "../desktop/pages/Error404";
+import Onboarding1 from "../phone/onboarding/Onboarding1";
+import Onboarding2 from "../phone/onboarding/Onboarding2";
+import Onboarding3 from "../phone/onboarding/Onboarding3";
 
 type Viewport = "pc" | "mobile";
 
@@ -139,6 +142,21 @@ const router = createBrowserRouter(
             path: "/signup",
             Component: SignUp,
             loader: requireViewport("mobile"),
+        },
+        {
+            path: "/onboarding1",
+            Component: Onboarding1,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/onboarding2",
+            Component: Onboarding2,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/onboarding3",
+            Component: Onboarding3,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // Login - mobile
         {
