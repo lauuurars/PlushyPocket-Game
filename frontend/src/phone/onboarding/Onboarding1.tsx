@@ -40,7 +40,7 @@ export default function Onboarding1() {
 
         <div className="onboarding1-viewport relative z-1 mx-auto flex w-full max-w-98.25 flex-col px-6.25 pb-[env(safe-area-inset-bottom,0)] pt-8">
           <div className="flex w-full shrink-0 justify-end">
-            <SkipButton navigateTo="/onboarding2" />
+            <SkipButton navigateTo="/home-phone" />
           </div>
 
           <div className="mt-6 flex w-full flex-1 flex-col items-center gap-9">
@@ -146,6 +146,9 @@ export default function Onboarding1() {
             className="mt-6 mb-8 w-full max-w-none shrink-0"
             onContinue={() => navigate("/onboarding2")}
           />
+          <div className="hidden">
+            <SkipButton navigateTo="/home-phone" />
+          </div>
         </div>
       </div>
     </>

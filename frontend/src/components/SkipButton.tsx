@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 
 export type SkipButtonProps = {
   onClick?: () => void;
@@ -8,13 +9,22 @@ export type SkipButtonProps = {
 export function SkipButton({ onClick, navigateTo }: SkipButtonProps) {
   const navigate = useNavigate();
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (onClick) {
       onClick();
-    } else if (navigateTo) {
-      navigate(navigateTo);
+    }
+
+    const target = navigateTo || "/";
+
+    if (target === "/home-phone") {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        navigate(target);
+      } else {
+        navigate("/login");
+      }
     } else {
-      navigate("/");
+      navigate(target);
     }
   };
 

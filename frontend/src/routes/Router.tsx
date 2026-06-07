@@ -146,17 +146,17 @@ const router = createBrowserRouter(
         {
             path: "/onboarding1",
             Component: Onboarding1,
-            loader: composeLoaders(requireViewport("mobile")),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/onboarding2",
             Component: Onboarding2,
-            loader: composeLoaders(requireViewport("mobile")),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/onboarding3",
             Component: Onboarding3,
-            loader: composeLoaders(requireViewport("mobile")),
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // Login - mobile
         {
