@@ -24,6 +24,7 @@ import ShoutCake from "../phone/islands/cake/ShoutCake";
 import Results from "../desktop/pages/Results";
 import PartyRoom from "../desktop/pages/PartyRoom";
 import HammerMole from "../phone/islands/hammer-mole/HammerMole";
+import FlappyBoatMobile from "../phone/islands/flappy/FlappyBoatMobile";
 import LoserPage from "../phone/pages/LoserPage";
 import WinnerPage from "../phone/pages/WinnerPage";
 import Error404 from "../desktop/pages/Error404";
@@ -97,7 +98,13 @@ const router = createBrowserRouter(
             path: "/flappy-boat",
             Component: FlappyGame,
             loader: composeLoaders(requireViewport("pc")),
-        }, 
+        },
+        // Flappy boat - Mobile
+        {
+            path: "/flappy-boat-mobile",
+            Component: FlappyBoatMobile,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
         // Hammer mole - PC
         {
             path: "/hammer-mole",
@@ -127,7 +134,7 @@ const router = createBrowserRouter(
             path: "/home",
             Component: Home,
         },
-                {
+        {
             path: "/results",
             Component: Results
         },
@@ -228,7 +235,7 @@ const router = createBrowserRouter(
         },
         {
             path: "/characters",
-            Component: Characters 
+            Component: Characters
         },
         {
             path: "/blocked-characters",

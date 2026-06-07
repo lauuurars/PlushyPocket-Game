@@ -7,7 +7,14 @@ import FlorAzul from "../../assets/join/FlorAzul.svg";
 import Estrella4 from "../../assets/join/Estrella4.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
 import Pinguino from "../../assets/onboarding/pinguino.svg";
-import { createRealtimeSocket, fetchPartyRoomUserProfile, type PlayerJoinPayload } from "../../lib/api";
+import { createRealtimeSocket, fetchPartyRoomUserProfile, type GameStartPayload, type PlayerJoinPayload } from "../../lib/api";
+import { updateRoomState } from "../../lib/roomStore";
+
+const GAME_ROUTES: Record<string, string> = {
+  "cake": "/shout-cake",
+  "hammer-mole": "/hammer",
+  "flappy-boat": "/flappy-boat-mobile",
+};
 
 export default function JoinRoom() {
     const navigate = useNavigate();
@@ -17,6 +24,8 @@ export default function JoinRoom() {
     const [ready, setReady] = useState(false);
     const [joinError, setJoinError] = useState<string | null>(null);
     const joinedRef = useRef(false);
+    const navigatedRef = useRef(false);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const userIdRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -44,7 +53,8 @@ export default function JoinRoom() {
             if (!myId || p.userId !== myId) return;
             if (joinedRef.current) return;
             joinedRef.current = true;
-            window.setTimeout(() => {
+            timerRef.current = setTimeout(() => {
+                if (navigatedRef.current) return;
                 navigate(
                     `/waiting-room?roomId=${encodeURIComponent(roomId)}${minigameId ? `&minigameId=${encodeURIComponent(minigameId)}` : ""}`,
                     { replace: true },
@@ -52,10 +62,21 @@ export default function JoinRoom() {
             }, 700);
         };
 
+        const onGameStart = (payload: GameStartPayload) => {
+            navigatedRef.current = true;
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+                timerRef.current = null;
+            }
+            const route = GAME_ROUTES[payload.minigameId] ?? `/${payload.minigameId}`;
+            navigate(`${route}?roomId=${encodeURIComponent(payload.roomId)}`, { replace: true });
+        };
+
         socket.on("room_not_found", onRoomNotFound);
         socket.on("room_full", onRoomFull);
         socket.on("player__joined", onPlayerJoined);
         socket.on("connect_error", onConnectError);
+        socket.on("game_start", onGameStart);
 
         void (async () => {
             const profile = await fetchPartyRoomUserProfile();
@@ -82,12 +103,19 @@ export default function JoinRoom() {
             socket.emit("player__join", payload);
         })();
 
+        /* Store the socket in roomStore so WaitingRoom can reuse it */
+        updateRoomState({ socket, roomId, minigameId });
+
         return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+                timerRef.current = null;
+            }
             socket.off("room_not_found", onRoomNotFound);
             socket.off("room_full", onRoomFull);
             socket.off("player__joined", onPlayerJoined);
             socket.off("connect_error", onConnectError);
-            socket.disconnect();
+            socket.off("game_start", onGameStart);
         };
     }, [minigameId, navigate, roomId]);
 

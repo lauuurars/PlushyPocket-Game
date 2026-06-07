@@ -28,6 +28,12 @@ export default function PartyRoom() {
             globalSocket = socket;
             updateRoomState({ socket, roomId, minigameId: null, playerRole: null, players: [], scores: {} });
             attachRoomListeners(socket);
+        } else {
+            /* Ensure roomStore is up to date even when reusing existing socket */
+            const st = getRoomState();
+            if (st.roomId !== roomId) {
+                updateRoomState({ roomId, minigameId: null, players: [], scores: {} });
+            }
         }
 
         const socket = globalSocket;

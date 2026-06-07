@@ -168,6 +168,16 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 existingPlayer.username = username
                 existingPlayer.characterId = characterId
                 role = existingPlayer.role
+
+                /* If game is already in progress, re-emit game_start so the new socket doesn't miss it */
+                if (room.status === "IN_GAME") {
+                    const gameStartPayload: GameStartPayload = {
+                        roomId: room.roomId,
+                        minigameId: room.minigameId,
+                        players: room.players.map(toPlayerInfoPayload),
+                    }
+                    socket.emit("game_start", gameStartPayload)
+                }
             } else {
                 role = room.players.some(p => p.role === "P1") ? "P2" : "P1"
                 room.players.push({ userId, username, characterId, role, socketId: socket.id })

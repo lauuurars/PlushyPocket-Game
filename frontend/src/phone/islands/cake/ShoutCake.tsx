@@ -67,10 +67,10 @@ export default function ShoutCake() {
     const socket = existing.socket?.connected
       ? existing.socket
       : (() => {
-          const s = createRealtimeSocket() as unknown as Socket;
-          updateRoomState({ socket: s, roomId });
-          return s;
-        })();
+        const s = createRealtimeSocket() as unknown as Socket;
+        updateRoomState({ socket: s, roomId });
+        return s;
+      })();
 
     socketRef.current = socket;
 
@@ -248,7 +248,7 @@ export default function ShoutCake() {
           <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
         </div>
         <button
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/home-phone")}
           className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ed1c24]"
         >
           Go Home

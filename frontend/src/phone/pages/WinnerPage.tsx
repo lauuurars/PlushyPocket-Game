@@ -104,13 +104,13 @@ const WinnerPage: React.FC = () => {
                     style={{ top: "34%", left: "10%" }}
                     animationClass={`float-a anim-scatter ${ready ? "" : "opacity-0"}`}
                     delay="0.25s" />
-                
+
                 {/* Rayo */}
                 <FloatingElement src={Rayo} alt="" size={45}
                     style={{ top: "63%", left: "10%" }}
                     animationClass={`float-b anim-scatter ${ready ? "" : "opacity-0"}`}
                     delay="0.35s" />
-                
+
                 {/* Corazon */}
                 <FloatingElement src={Corazon} alt="" size={35}
                     style={{ top: "63%", right: "12%" }}

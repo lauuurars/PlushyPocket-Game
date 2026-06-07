@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WaitingBg from "../../assets/join/WaitingBg.svg?url";
 import StarRoom from "../../assets/join/StarRoom.svg";
@@ -10,11 +10,13 @@ import Corazon from "../../assets/welcome/Corazon.svg"
 import { PinkButton } from "../../components/PinkButton";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../lib/api";
 import type { GameStartPayload } from "../../lib/api";
+import type { Socket } from "socket.io-client";
 import { getRoomState, attachRoomListeners, updateRoomState } from "../../lib/roomStore";
 
 const GAME_ROUTES: Record<string, string> = {
-  "cake": "/shout-cake",
-  "hammer-mole": "/hammer",
+    "cake": "/shout-cake",
+    "hammer-mole": "/hammer",
+    "flappy-boat": "/flappy-boat-mobile",
 };
 
 export default function WaitingRoom() {
@@ -27,20 +29,33 @@ export default function WaitingRoom() {
         if (!roomId) return;
 
         let cancelled = false;
-        const socket = createRealtimeSocket();
-        updateRoomState({ socket, roomId, minigameId });
-        attachRoomListeners(socket);
+        const existing = getRoomState();
+        const existingSocket = existing.socket?.connected ? existing.socket : null;
 
-        void (async () => {
-            const profile = await fetchPartyRoomUserProfile();
-            if (cancelled) return;
+        let socket: Socket;
+        let isNewSocket = false;
 
-            const userId = profile?.id ?? localStorage.getItem("plushyPocket_dbUserId") ?? "";
-            const username = profile?.displayName ?? "Player";
-            const characterId = profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
+        if (existingSocket) {
+            socket = existingSocket as unknown as Socket;
+        } else {
+            socket = createRealtimeSocket() as unknown as Socket;
+            isNewSocket = true;
+            updateRoomState({ socket, roomId, minigameId });
+            attachRoomListeners(socket);
+        }
 
-            socket.emit("player__join", { userId, username, roomId, characterId });
-        })();
+        if (isNewSocket) {
+            void (async () => {
+                const profile = await fetchPartyRoomUserProfile();
+                if (cancelled) return;
+
+                const userId = profile?.id ?? localStorage.getItem("plushyPocket_dbUserId") ?? "";
+                const username = profile?.displayName ?? "Player";
+                const characterId = profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
+
+                socket.emit("player__join", { userId, username, roomId, characterId });
+            })();
+        }
 
         socket.on("game_start", (payload: GameStartPayload) => {
             if (cancelled) return;
@@ -194,9 +209,9 @@ export default function WaitingRoom() {
                 >
                     <div style={{ transform: "scale(0.9)", transformOrigin: "center" }}>
                         <PinkButton
-                            text="Exit Party"
+                            text="Exit P|arty"
                             onClick={() => {
-                                window.history.pushState(null, "", "/#");
+                                window.history.pushState(null, "", "/home-phone");
                             }}
                         />
                     </div>
