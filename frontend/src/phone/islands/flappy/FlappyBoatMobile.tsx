@@ -14,6 +14,11 @@ export default function FlappyGame() {
   const [score, setScore] = useState(0);
   const [tapFeedback, setTapFeedback] = useState(false);
 
+  // Gyroscope
+  const [gyroPermission, setGyroPermission] = useState<boolean | null>(null);
+  const motionInitialYRef = useRef<number | null>(null);
+  const canGyroJumpRef = useRef(true);
+
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<string>("");
   const characterIdRef = useRef<string>("mochi");
@@ -78,6 +83,47 @@ export default function FlappyGame() {
     };
   }, []);
 
+  // Auto-detect gyro support
+  useEffect(() => {
+    const hasDeviceOrientation = typeof DeviceOrientationEvent !== 'undefined';
+    const hasDeviceMotion = typeof DeviceMotionEvent !== 'undefined';
+    const orientNeedsPermission = hasDeviceOrientation &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    const motionNeedsPermission = hasDeviceMotion &&
+      typeof (DeviceMotionEvent as any).requestPermission === 'function';
+
+    if (orientNeedsPermission || motionNeedsPermission) {
+      // iOS or Android — need user gesture for permission
+      return;
+    }
+
+    // No permission required — auto-enable if any sensor API exists
+    if (hasDeviceOrientation || hasDeviceMotion) {
+      setGyroPermission(true);
+    } else {
+      setGyroPermission(false);
+    }
+  }, []);
+
+  const requestGyroPermission = async () => {
+    // Try DeviceOrientation first (iOS), fall back to DeviceMotion (Android)
+    if (typeof (DeviceOrientationEvent as any)?.requestPermission === 'function') {
+      const result = await (DeviceOrientationEvent as any).requestPermission();
+      if (result === 'granted') {
+        setGyroPermission(true);
+        return;
+      }
+    }
+    if (typeof (DeviceMotionEvent as any)?.requestPermission === 'function') {
+      const result = await (DeviceMotionEvent as any).requestPermission();
+      if (result === 'granted') {
+        setGyroPermission(true);
+        return;
+      }
+    }
+    setGyroPermission(false);
+  };
+
   const jump = () => {
     const socket = socketRef.current;
     if (socket && roomId && userIdRef.current) {
@@ -93,6 +139,40 @@ export default function FlappyGame() {
     if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
     tapTimeoutRef.current = setTimeout(() => setTapFeedback(false), 120);
   };
+
+  // Tilt control via devicemotion (works on both iOS and Android)
+  useEffect(() => {
+    if (!gyroPermission) return;
+
+    const handler = (event: DeviceMotionEvent) => {
+      const y = event.accelerationIncludingGravity?.y;
+      if (y == null) return;
+
+      const referenceY = motionInitialYRef.current;
+
+      if (referenceY === null) {
+        motionInitialYRef.current = y;
+        return;
+      }
+
+      // When phone is vertical: y ≈ -9.8
+      // Tilt forward (top away from you): y → 0 (higher)
+      // Tilt backward (top toward you): y becomes more negative (lower)
+      const delta = y - referenceY; // positive = forward tilt
+
+      if (Math.abs(delta) > 2.5 && canGyroJumpRef.current) {
+        canGyroJumpRef.current = false;
+        jump();
+      }
+
+      if (Math.abs(delta) < 1) {
+        canGyroJumpRef.current = true;
+      }
+    };
+
+    window.addEventListener('devicemotion', handler);
+    return () => window.removeEventListener('devicemotion', handler);
+  }, [gyroPermission]);
 
   const handleTouchStart: React.TouchEventHandler = (e) => {
     e.preventDefault();
@@ -162,6 +242,19 @@ export default function FlappyGame() {
           >
             {score} pts
           </p>
+          {gyroPermission === null && (
+            <button
+              onClick={requestGyroPermission}
+              className="mt-4 rounded-full bg-white px-6 py-2 text-sm font-bold text-[#ED1C24] shadow-md"
+            >
+              Enable Tilt Control
+            </button>
+          )}
+          {gyroPermission === true && (
+            <p className="mt-3 text-xs text-gray-500">
+              Tap or tilt to jump
+            </p>
+          )}
         </div>
       </div>
     </div>
