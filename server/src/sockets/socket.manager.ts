@@ -83,7 +83,7 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
 
         const rewardAssignedPayload: RewardAssignedPayload = {
             userId: result.winner.id,
-            rewardId: result.reward.id,
+            rewardId: result.user_reward.id,
             rewardName: result.reward.reward_name,
             rewardType: result.reward.reward_type,
             status: result.user_reward.status,
