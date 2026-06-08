@@ -9,14 +9,14 @@ interface Character {
     id: string;
     character_name: string; // Updated from name
     collection_name?: string;
-    img_url: string; 
+    img_url: string;
     bg_color?: string;
 }
 
 const CHARACTER_COLORS = ["#76D6FF", "#FF7BE2", "#FFE23F", "#925FDF"];
 
 const getImageUrl = (char: any) => {
-    
+
 
 
     const path = char.img_url || char.url || char.image || char.image_url;
@@ -63,7 +63,7 @@ export default function BlockedCharacters() {
                     .from("user_characters")
                     .select("character_id")
                     .eq("user_id", userId);
-                
+
                 if (userCharError) {
                     console.error("Error fetching user characters:", userCharError);
                 } else if (userChars) {
@@ -86,7 +86,7 @@ export default function BlockedCharacters() {
 
     return (
         <div className="relative min-h-svh w-screen overflow-x-hidden bg-[#ED1C24] md:hidden">
-   
+
             <div
                 style={{
                     position: "absolute",
@@ -114,7 +114,7 @@ export default function BlockedCharacters() {
                     paddingBottom: "120px",
                 }}
             >
-               
+
                 <div style={{ height: "90px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <h1
                         style={{
@@ -131,7 +131,7 @@ export default function BlockedCharacters() {
                     </h1>
                 </div>
 
-              
+
                 <div style={{ height: "30px" }} />
 
 
@@ -209,7 +209,7 @@ export default function BlockedCharacters() {
                             <MiniCharacterCard
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
-                                bgColor="#343434" 
+                                bgColor="#343434"
                                 onClick={() => setIsUnlockPopupOpen(true)}
                                 isLocked={true}
                             />
@@ -218,9 +218,9 @@ export default function BlockedCharacters() {
                 )}
             </div>
 
-            <UnlockCharacterPopup 
-                isOpen={isUnlockPopupOpen} 
-                onClose={() => setIsUnlockPopupOpen(false)} 
+            <UnlockCharacterPopup
+                isOpen={isUnlockPopupOpen}
+                onClose={() => setIsUnlockPopupOpen(false)}
             />
 
             <Navbar />

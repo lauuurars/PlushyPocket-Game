@@ -1,5 +1,5 @@
 import { Music4, Volume2, VolumeX, Camera } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import UnlockItemPopup from "../../components/UnlockItemPopup";
 import Cloud from "../../assets/homePhone/cloud.svg";

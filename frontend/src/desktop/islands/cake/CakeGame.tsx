@@ -164,7 +164,7 @@ const CakeGame: React.FC = () => {
 
             {gamePhase === "alert" && (
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 px-5" style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}>
-                    <div 
+                    <div
                         className="flex w-full max-w-140 flex-col items-center rounded-[40px] bg-[#FAFAFA] p-10 pb-12 text-center shadow-2xl"
                         style={{ animation: "alert-anim 5s forwards" }}
                     >
@@ -179,14 +179,14 @@ const CakeGame: React.FC = () => {
                         </div>
                         <h2 className="mb-5 text-[34px] font-extrabold text-[#ED1C24] leading-tight" style={{ fontFamily: "'Baloo 2', cursive" }}>Keep Your Distance</h2>
                         <p className="text-[20px] font-semibold text-[#583921] leading-[1.4]">
-                           Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
+                            Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
                         </p>
                     </div>
                 </div>
             )}
 
             {gamePhase === "line" && (
-                <div 
+                <div
                     className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
                     style={{ animation: "line-anim 3s forwards" }}
                 >
@@ -194,7 +194,7 @@ const CakeGame: React.FC = () => {
                         <div className="absolute right-1/2 mr-10" style={{ animation: "bounce-left 1s infinite" }}>
                             <ArrowLeft color="#ED1C24" size={200} strokeWidth={2.5} />
                         </div>
-                        
+
                         <div className="w-1.25 h-full rounded-full bg-[#ED1C24]" />
 
                         <div className="absolute left-1/2 ml-10" style={{ animation: "bounce-right 1s infinite" }}>
