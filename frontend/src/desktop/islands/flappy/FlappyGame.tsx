@@ -27,7 +27,6 @@ import Yuki from '../../../assets/flappybird/characters/Yuki.svg';
 import Zoro from '../../../assets/flappybird/characters/Zoro.svg';
 
 const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
-const CHARACTERS = [Cinamon, Koya, Misu, Mochi, MyMelody, Nami, Tata, Yuki, Zoro];
 const CHARACTER_MAP: Record<string, string> = {
     cinamon: Cinamon,
     koya: Koya,
@@ -79,17 +78,6 @@ const FlappyGame: React.FC = () => {
     const passedColumnsP1 = useRef<Set<number>>(new Set());
     const passedColumnsP2 = useRef<Set<number>>(new Set());
 
-    // Characters assignment
-    const [p1Char] = useState(() => CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)]);
-    const [p2Char] = useState(() => {
-        let char = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
-        let attempts = 0;
-        while (char === p1Char && attempts < 10) {
-            char = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)];
-            attempts++;
-        }
-        return char;
-    });
     const [showInstructions, setShowInstructions] = useState(true);
 
     // Configuración Estricta
@@ -631,7 +619,7 @@ const FlappyGame: React.FC = () => {
                     {p1Hit ? (
                         <div className="w-full h-full animate-respawn">
                             <img
-                                src={p1Char}
+                                src={CHARACTER_MAP[p1?.characterId?.toLowerCase() ?? ''] ?? Mochi}
                                 alt={p1.username}
                                 className="w-full h-full object-contain"
                                 style={{ filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))' }}
@@ -639,7 +627,7 @@ const FlappyGame: React.FC = () => {
                         </div>
                     ) : (
                         <img
-                            src={p1Char}
+                            src={CHARACTER_MAP[p1?.characterId?.toLowerCase() ?? ''] ?? Mochi}
                             alt={p1.username}
                             className="w-full h-full object-contain"
                             style={{
@@ -670,7 +658,7 @@ const FlappyGame: React.FC = () => {
                     {p2Hit ? (
                         <div className="w-full h-full animate-respawn">
                             <img
-                                src={p2Char}
+                                src={CHARACTER_MAP[p2?.characterId?.toLowerCase() ?? ''] ?? Mochi}
                                 alt={p2.username}
                                 className="w-full h-full object-contain"
                                 style={{ filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))' }}
@@ -678,7 +666,7 @@ const FlappyGame: React.FC = () => {
                         </div>
                     ) : (
                         <img
-                            src={p2Char}
+                            src={CHARACTER_MAP[p2?.characterId?.toLowerCase() ?? ''] ?? Mochi}
                             alt={p2.username}
                             className="w-full h-full object-contain"
                             style={{

@@ -45,7 +45,8 @@ export default function FlappyGame() {
 
       const userId = profile?.id ?? localStorage.getItem("plushyPocket_dbUserId") ?? "";
       const username = profile?.displayName ?? "Player";
-      const characterId = profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
+      const flappyCharacter = sessionStorage.getItem("flappyCharacter");
+      const characterId = flappyCharacter ?? profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
 
       userIdRef.current = userId;
       characterIdRef.current = characterId;
@@ -56,6 +57,7 @@ export default function FlappyGame() {
 
     socket.on("game_over", (payload: { winnerId: string; scores: Record<string, number> }) => {
       if (cancelled) return;
+      sessionStorage.removeItem("flappyCharacter");
       const isWinner = payload.winnerId === userIdRef.current;
       navigate(isWinner ? '/winner' : '/loser', { replace: true });
     });
