@@ -14,6 +14,12 @@ interface DeviceMotionEventWithPermission extends EventTarget {
     requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
+interface DebugLog {
+    id: number;
+    msg: string;
+    color: string;
+}
+
 function accelToDirection(ax: number, ay: number): string | null {
     const absX = Math.abs(ax);
     const absY = Math.abs(ay);
@@ -33,9 +39,10 @@ function accelToDirection(ax: number, ay: number): string | null {
     return ay > 0 ? 'top' : 'bottom';
 }
 
-// Detectar iOS antes del componente para evitar setState en useEffect
 const iosNeedsPermission =
     typeof (DeviceMotionEvent as unknown as DeviceMotionEventWithPermission).requestPermission === 'function';
+
+let debugIdCounter = 0;
 
 export default function HammerMole() {
     const navigate = useNavigate();
@@ -46,6 +53,8 @@ export default function HammerMole() {
     const [score, setScore] = useState(0);
     const [needsPermission, setNeedsPermission] = useState(iosNeedsPermission);
     const [userId, setUserId] = useState("");
+    const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
+    const [rawAccel, setRawAccel] = useState({ x: 0, y: 0, mag: 0 });
     const [gameOverData, setGameOverData] = useState<{
         winnerId: string;
         myScore: number;
@@ -56,7 +65,11 @@ export default function HammerMole() {
     const userIdRef = useRef<string>("");
     const characterIdRef = useRef<string>("mochi");
     const lastSwingRef = useRef(0);
-    const baselineRef = useRef({ x: 0, y: 0 });
+
+    const addLog = useCallback((msg: string, color = "#fff") => {
+        const entry: DebugLog = { id: debugIdCounter++, msg, color };
+        setDebugLogs(prev => [entry, ...prev].slice(0, 12));
+    }, []);
 
     useEffect(() => {
         if (!roomId) return;
@@ -72,6 +85,7 @@ export default function HammerMole() {
             })();
 
         socketRef.current = socket;
+        addLog("🔌 Socket conectado", "#4ade80");
 
         void (async () => {
             const profile = await fetchPartyRoomUserProfile();
@@ -83,8 +97,9 @@ export default function HammerMole() {
 
             userIdRef.current = id;
             characterIdRef.current = characterId;
-            setUserId(id); // también en estado para el render
+            setUserId(id);
             socket.emit("player__join", { userId: id, username, roomId, characterId });
+            addLog(`👤 Join: ${username}`, "#60a5fa");
         })();
 
         socket.on("game_timer_tick", (data: { remaining: number }) => {
@@ -104,18 +119,23 @@ export default function HammerMole() {
         socket.on("hit_confirmed", (data: { userId: string; points: number }) => {
             if (cancelled || data.userId !== userIdRef.current) return;
             setScore(prev => prev + data.points);
+            addLog(`✅ Hit confirmado +${data.points}pts`, "#4ade80");
         });
 
         return () => {
             cancelled = true;
             socketRef.current = null;
         };
-    }, [roomId]);
+    }, [roomId, addLog]);
 
     const emitSwing = useCallback((direction: string) => {
         const socket = socketRef.current;
-        if (!socket || !userIdRef.current || !roomId) return;
+        if (!socket || !userIdRef.current || !roomId) {
+            addLog(`❌ emitSwing falló — socket:${!!socket} uid:${!!userIdRef.current} room:${!!roomId}`, "#f87171");
+            return;
+        }
 
+        addLog(`🔨 Swing → ${direction}`, "#facc15");
         socket.emit('player_action', {
             userId: userIdRef.current,
             characterId: characterIdRef.current,
@@ -124,18 +144,26 @@ export default function HammerMole() {
             roomId,
             payload: { direction },
         });
-    }, [roomId]);
+    }, [roomId, addLog]);
 
-    // Acelerómetro — Android y browsers sin restricción
     useEffect(() => {
-        if (iosNeedsPermission) return; // iOS lo maneja requestMotionPermission()
+        if (iosNeedsPermission) return;
+
+        addLog("📡 Acelerómetro iniciando...", "#a78bfa");
 
         const handleMotion = (e: DeviceMotionEvent) => {
             const acc = e.acceleration;
-            if (!acc || (acc.x === null && acc.y === null)) return;
+            if (!acc || (acc.x === null && acc.y === null)) {
+                addLog("⚠️ acceleration es null", "#f87171");
+                return;
+            }
 
             const ax = acc.x ?? 0;
             const ay = acc.y ?? 0;
+            const mag = Math.sqrt(ax * ax + ay * ay);
+
+            // Actualizar valores raw en tiempo real
+            setRawAccel({ x: parseFloat(ax.toFixed(1)), y: parseFloat(ay.toFixed(1)), mag: parseFloat(mag.toFixed(1)) });
 
             const now = Date.now();
             if (now - lastSwingRef.current < COOLDOWN_MS) return;
@@ -144,12 +172,17 @@ export default function HammerMole() {
             if (!direction) return;
 
             lastSwingRef.current = now;
+            addLog(`📐 ax:${ax.toFixed(1)} ay:${ay.toFixed(1)} mag:${mag.toFixed(1)} → ${direction}`, "#fb923c");
             emitSwing(direction);
         };
 
         const calibrate = (e: DeviceMotionEvent) => {
             const acc = e.acceleration;
-            if (!acc || (acc.x === null && acc.y === null)) return;
+            if (!acc || (acc.x === null && acc.y === null)) {
+                addLog("⚠️ calibrate: acceleration null, dispositivo no soportado", "#f87171");
+                return;
+            }
+            addLog("✔️ Acelerómetro calibrado", "#4ade80");
             window.removeEventListener('devicemotion', calibrate);
             window.addEventListener('devicemotion', handleMotion);
         };
@@ -159,7 +192,7 @@ export default function HammerMole() {
             window.removeEventListener('devicemotion', calibrate);
             window.removeEventListener('devicemotion', handleMotion);
         };
-    }, [emitSwing]);
+    }, [emitSwing, addLog]);
 
     const requestMotionPermission = async () => {
         const DeviceMotion = DeviceMotionEvent as unknown as DeviceMotionEventWithPermission;
@@ -167,16 +200,23 @@ export default function HammerMole() {
 
         try {
             const result = await DeviceMotion.requestPermission();
-            if (result !== 'granted') return;
+            if (result !== 'granted') {
+                addLog("❌ Permiso denegado", "#f87171");
+                return;
+            }
 
             setNeedsPermission(false);
+            addLog("✅ Permiso iOS concedido", "#4ade80");
 
             const handleMotion = (e: DeviceMotionEvent) => {
-                const acc = e.accelerationIncludingGravity;
-                if (!acc) return;
+                const acc = e.acceleration;
+                if (!acc || (acc.x === null && acc.y === null)) return;
 
-                const ax = (acc.x ?? 0) - baselineRef.current.x;
-                const ay = (acc.y ?? 0) - baselineRef.current.y;
+                const ax = acc.x ?? 0;
+                const ay = acc.y ?? 0;
+                const mag = Math.sqrt(ax * ax + ay * ay);
+
+                setRawAccel({ x: parseFloat(ax.toFixed(1)), y: parseFloat(ay.toFixed(1)), mag: parseFloat(mag.toFixed(1)) });
 
                 const now = Date.now();
                 if (now - lastSwingRef.current < COOLDOWN_MS) return;
@@ -185,25 +225,26 @@ export default function HammerMole() {
                 if (!direction) return;
 
                 lastSwingRef.current = now;
+                addLog(`📐 ax:${ax.toFixed(1)} ay:${ay.toFixed(1)} mag:${mag.toFixed(1)} → ${direction}`, "#fb923c");
                 emitSwing(direction);
             };
 
             const calibrate = (e: DeviceMotionEvent) => {
-                const acc = e.accelerationIncludingGravity;
-                if (!acc) return;
-                baselineRef.current = { x: acc.x ?? 0, y: acc.y ?? 0 };
+                const acc = e.acceleration;
+                if (!acc || (acc.x === null && acc.y === null)) return;
+                addLog("✔️ Acelerómetro iOS calibrado", "#4ade80");
                 window.removeEventListener('devicemotion', calibrate);
                 window.addEventListener('devicemotion', handleMotion);
             };
 
             window.addEventListener('devicemotion', calibrate);
         } catch (err) {
+            addLog(`❌ Error permiso: ${err}`, "#f87171");
             console.error('Permiso de movimiento denegado:', err);
         }
     };
 
     if (gameOverData) {
-        // Usar userId del estado, NO del ref
         const isWinner = gameOverData.winnerId === userId;
         return (
             <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ED1C24] p-8 text-center">
@@ -246,6 +287,29 @@ export default function HammerMole() {
                     </span>
                 </div>
             )}
+
+            {/* DEBUG OVERLAY */}
+            <div className="absolute top-12 left-0 right-0 z-50 px-2 pointer-events-none">
+                {/* Aceleración en tiempo real */}
+                <div className="mb-1 rounded bg-black/80 px-2 py-1 text-center font-mono text-xs text-white">
+                    ax: <span className="text-yellow-300">{rawAccel.x}</span>
+                    {" | "}
+                    ay: <span className="text-yellow-300">{rawAccel.y}</span>
+                    {" | "}
+                    mag: <span className={rawAccel.mag >= SWING_THRESHOLD ? "text-green-400 font-bold" : "text-red-400"}>{rawAccel.mag}</span>
+                    {" | "}
+                    threshold: <span className="text-gray-400">{SWING_THRESHOLD}</span>
+                </div>
+                {/* Log de eventos */}
+                <div className="rounded bg-black/70 px-2 py-1 font-mono text-xs space-y-0.5 max-h-48 overflow-hidden">
+                    {debugLogs.map(log => (
+                        <div key={log.id} style={{ color: log.color }}>{log.msg}</div>
+                    ))}
+                    {debugLogs.length === 0 && (
+                        <div className="text-gray-500">Esperando eventos...</div>
+                    )}
+                </div>
+            </div>
 
             <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-18">
                 <h1
