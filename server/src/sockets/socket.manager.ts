@@ -141,6 +141,15 @@ export const initializeSockets = (rawServer: HttpServer) => {
             sessions[socket.id] = { clientType: "screen", roomId: room.roomId }
             socket.join(room.roomId)
             emitRoomUpdate(io, room)
+
+            if (room.status === "IN_GAME" || room.status === "READY") {
+                const gameStartPayload: GameStartPayload = {
+                    roomId: room.roomId,
+                    minigameId: room.minigameId,
+                    players: room.players.map(toPlayerInfoPayload),
+                }
+                socket.emit("game_start", gameStartPayload)
+            }
         })
 
         // 3. player join 
