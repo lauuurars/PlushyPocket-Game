@@ -170,10 +170,10 @@ export default function PartyRoom() {
                             className="absolute text-[#FAFAFA]"
                             style={{
                                 top: "62px",
-                                left: "79px",
+                                left: "-230px",
                                 fontFamily: "'Baloo 2', system-ui, sans-serif",
                                 fontWeight: 700,
-                                fontSize: "35px",
+                                fontSize: "45px",
                                 letterSpacing: "-1px",
                                 lineHeight: "72px",
                             }}
@@ -187,11 +187,11 @@ export default function PartyRoom() {
                             aria-hidden
                             className="absolute"
                             style={{
-                                top: "97px",
-                                left: "416px",
-                                width: "31px",
+                                top: "200px",
+                                left: "1200px",
+                                width: "80px",
                                 height: "auto",
-                                transform: "rotate(12deg)",
+                                transform: "rotate(80deg)",
                             }}
                         />
 
@@ -239,8 +239,8 @@ export default function PartyRoom() {
                                 <div
                                     className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
                                     style={{
-                                        width: "296px",
-                                        height: "296px",
+                                        width: "350px",
+                                        height: "350px",
                                         border: "12px solid #FAFAFA",
                                     }}
                                 >
@@ -257,7 +257,7 @@ export default function PartyRoom() {
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
-                                        fontSize: "41px",
+                                        fontSize: "50px",
                                         letterSpacing: "-0.77px",
                                         lineHeight: "61px",
                                     }}
@@ -265,7 +265,7 @@ export default function PartyRoom() {
                                     Player 1
                                 </p>
                                 <p
-                                    className="m-0 -mt-1.5 text-center text-[#FFFDF6]"
+                                    className="m-0 mt-2 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,
@@ -294,10 +294,10 @@ export default function PartyRoom() {
 
                             <div className="relative flex flex-col items-center">
                                 <div
-                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                    className="relative overflow-hidden rounded-full bg-[#dedede] flex items-center justify-center"
                                     style={{
-                                        width: "296px",
-                                        height: "296px",
+                                        width: "350px",
+                                        height: "350px",
                                         border: "12px solid #FAFAFA",
                                     }}
                                 >
@@ -320,7 +320,7 @@ export default function PartyRoom() {
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
-                                        fontSize: "41px",
+                                        fontSize: "50px",
                                         letterSpacing: "-0.77px",
                                         lineHeight: "61px",
                                     }}
@@ -328,7 +328,7 @@ export default function PartyRoom() {
                                     Player 2
                                 </p>
                                 <p
-                                    className="m-0 -mt-1.5 text-center text-[#FFFDF6]"
+                                    className="m-0 mt-2 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,

@@ -41,6 +41,9 @@ export function clearRoomCallbacks() {
 
 export function updateRoomState(partial: Partial<RoomState>) {
   Object.assign(state, partial);
+  if (partial.socket) {
+    attachRoomListeners(partial.socket);
+  }
 }
 
 export function getRoomState(): RoomState {
@@ -59,6 +62,9 @@ export function resetRoomState() {
 }
 
 export function attachRoomListeners(socket: Socket) {
+  // Prevent duplicate listeners
+  detachRoomListeners(socket);
+
   socket.on("game_action", (data: { userId: string; action: string; payload?: Record<string, unknown> }) => {
     if (data.action === "score_update" && data.payload?.score != null) {
       const score = Number(data.payload.score);
@@ -81,6 +87,18 @@ export function attachRoomListeners(socket: Socket) {
   socket.on("reward_assigned", (payload: RewardAssignedPayload) => {
     callbacks.onRewardAssigned?.(payload);
   });
+
+  socket.on("room_closed", () => {
+    resetRoomState();
+    if (typeof window !== "undefined") {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        window.location.href = "/home-phone";
+      } else {
+        window.location.href = "/welcome";
+      }
+    }
+  });
 }
 
 export function detachRoomListeners(socket: Socket) {
@@ -88,4 +106,5 @@ export function detachRoomListeners(socket: Socket) {
   socket.off("game_timer_tick");
   socket.off("game_over");
   socket.off("reward_assigned");
+  socket.off("room_closed");
 }

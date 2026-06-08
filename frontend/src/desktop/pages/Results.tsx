@@ -4,9 +4,9 @@ import { useLocation, useNavigate } from "react-router-dom";
 import BgResults from "../../assets/results/BgResults.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
-import { PinkButton } from "../../components/PinkButton";
+
 import type { PartyResultsNavState } from "../../lib/api";
-import { getRoomState } from "../../lib/roomStore";
+import { getRoomState, resetRoomState } from "../../lib/roomStore";
 import { supabase } from "../../lib/supabaseClient";
 import { profilePicturePublicUrl } from "../../lib/api";
 
@@ -27,6 +27,18 @@ function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
 export default function Results() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    const handleExit = () => {
+        const { socket } = getRoomState();
+        if (socket) {
+            socket.emit("room__close", { roomId: roomCode });
+            // Add a brief timeout to ensure the emit is sent over WebSocket before connection closes
+            setTimeout(() => {
+                socket.disconnect();
+            }, 100);
+        }
+        resetRoomState();
+    };
     const navState = location.state as unknown;
     const [scale, setScale] = useState(1);
     const [party] = useState<PartyResultsNavState | null>(() =>
@@ -53,7 +65,7 @@ export default function Results() {
     const p2UserId = party?.player2UserId || p2?.userId;
     const p2CharacterId = party?.player2CharacterId || p2?.characterId;
 
-    const getPlayerAvatar = async (userId: string, characterId: string | null): Promise<string> => {
+    const getPlayerAvatar = async (userId: string, characterId: string | null | undefined): Promise<string> => {
         try {
             const { data, error } = await supabase
                 .from("users")
@@ -147,10 +159,10 @@ export default function Results() {
                             className="absolute text-[#FAFAFA]"
                             style={{
                                 top: "62px",
-                                left: "79px",
+                                left: "-230px",
                                 fontFamily: "'Baloo 2', system-ui, sans-serif",
                                 fontWeight: 700,
-                                fontSize: "35px",
+                                fontSize: "45px",
                                 letterSpacing: "-1px",
                                 lineHeight: "72px",
                             }}
@@ -164,11 +176,11 @@ export default function Results() {
                             aria-hidden
                             className="absolute"
                             style={{
-                                top: "97px",
-                                left: "416px",
-                                width: "31px",
+                                top: "150px",
+                                left: "1200px",
+                                width: "80px",
                                 height: "auto",
-                                transform: "rotate(12deg)",
+                                transform: "rotate(80deg)",
                             }}
                         />
 
@@ -224,7 +236,7 @@ export default function Results() {
 
                         <div
                             className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
-                            style={{ top: "330px", width: "min(1050px, 80vw)" }}
+                            style={{ top: "280px", width: "min(1050px, 80vw)" }}
                         >
                             <div className="relative flex flex-col items-center">
                                 {winnerPlayer === 1 && (
@@ -247,8 +259,8 @@ export default function Results() {
                                 <div
                                     className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
                                     style={{
-                                        width: "296px",
-                                        height: "296px",
+                                        width: "350px",
+                                        height: "350px",
                                         border: "12px solid #FAFAFA",
                                     }}
                                 >
@@ -261,7 +273,7 @@ export default function Results() {
                                 </div>
 
                                 <p
-                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
@@ -273,11 +285,11 @@ export default function Results() {
                                     Player 1
                                 </p>
                                 <p
-                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,
-                                        fontSize: "23px",
+                                        fontSize: "35px",
                                         letterSpacing: "-0.43px",
                                         lineHeight: "34px",
                                     }}
@@ -320,7 +332,7 @@ export default function Results() {
                                             position: "absolute",
                                             top: "-18px",
                                             left: "-12px",
-                                            width: "62px",
+                                            width: "80px",
                                             height: "auto",
                                             transform: "rotate(-18deg)",
                                             zIndex: 10,
@@ -331,8 +343,8 @@ export default function Results() {
                                 <div
                                     className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
                                     style={{
-                                        width: "296px",
-                                        height: "296px",
+                                        width: "350px",
+                                        height: "350px",
                                         border: "12px solid #FAFAFA",
                                     }}
                                 >
@@ -345,7 +357,7 @@ export default function Results() {
                                 </div>
 
                                 <p
-                                    className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Baloo 2', system-ui, sans-serif",
                                         fontWeight: 700,
@@ -357,11 +369,11 @@ export default function Results() {
                                     Player 2
                                 </p>
                                 <p
-                                    className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
                                     style={{
                                         fontFamily: "'Nunito', system-ui, sans-serif",
                                         fontWeight: 600,
-                                        fontSize: "23px",
+                                        fontSize: "35px",
                                         letterSpacing: "-0.43px",
                                         lineHeight: "34px",
                                     }}
@@ -384,7 +396,7 @@ export default function Results() {
                         <p
                             className="absolute m-0 text-center text-[#FFFDF6]"
                             style={{
-                                top: "762px",
+                                top: "800px",
                                 left: "50%",
                                 transform: "translateX(-50%)",
                                 width: "517px",
@@ -400,34 +412,33 @@ export default function Results() {
 
                         <div
                             className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center gap-6"
-                            style={{ top: "852px" }}
+                            style={{ top: "870px" }}
                         >
                             <div style={{ transform: "scale(0.88)", transformOrigin: "center" }}>
-                                <PinkButton
-                                    text="Go for It"
+                                <button
+                                    type="button"
                                     onClick={() => {
+                                        handleExit();
                                         navigate("/home");
                                     }}
-                                />
+                                    className="flex items-center justify-center gap-1 px-13 py-5 cursor-pointer rounded-full text-[#FAFAFA] text-2xl md:text-[20px] font-bold bg-[#FF7BE2] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
+                                >
+                                    Go for It
+                                </button>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    navigate("/welcome");
-                                }}
-                                className="flex items-center justify-center rounded-[27px] bg-[#979797] shadow-[0px_3px_7px_rgba(76,76,76,0.25)] transition-transform active:scale-[0.98]"
-                                style={{
-                                    padding: "17px 48px 19px",
-                                    fontFamily: "'Nunito', system-ui, sans-serif",
-                                    fontWeight: 600,
-                                    fontSize: "21px",
-                                    color: "#FAFAFA",
-                                    lineHeight: "21px",
-                                }}
-                            >
-                                Not Now
-                            </button>
+                            <div style={{ transform: "scale(0.88)", transformOrigin: "center" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleExit();
+                                        navigate("/welcome");
+                                    }}
+                                    className="flex items-center justify-center gap-1 px-13 py-5 cursor-pointer rounded-full text-[#FAFAFA] text-2xl md:text-[20px] font-bold bg-[#979797] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
+                                >
+                                    Not Now
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
