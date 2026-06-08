@@ -31,6 +31,7 @@ import Error404 from "../desktop/pages/Error404";
 import Onboarding1 from "../phone/onboarding/Onboarding1";
 import Onboarding2 from "../phone/onboarding/Onboarding2";
 import Onboarding3 from "../phone/onboarding/Onboarding3";
+import UnlockedReward from "../phone/pages/UnlockedReward";
 
 type Viewport = "pc" | "mobile";
 
@@ -249,6 +250,11 @@ const router = createBrowserRouter(
         {
             path: "/winner",
             Component: WinnerPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/unlocked-reward",
+            Component: UnlockedReward,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // 404 - PC

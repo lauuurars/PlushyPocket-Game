@@ -9,6 +9,7 @@ import myMelody from '../../../assets/marcoHammerMole/myMelody.svg';
 import pompompurin from '../../../assets/marcoHammerMole/pompompurin.svg';
 import GamePoints from '../../../components/GamePoints';
 import Timer from '../../../components/Timer';
+import HammerInstructionsModal from '../../../components/HammerInstructionsModal';
 
 const charactersList: Character[] = [
     { name: 'Cinnamoroll', image: cinnamoroll },
@@ -32,6 +33,7 @@ const HammerMoleGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [activeCharacters, setActiveCharacters] = useState<ActiveCharacter[]>([]);
     const [score, setScore] = useState(0);
+    const [showInstructions, setShowInstructions] = useState(true);
 
     useEffect(() => {
         let stream: MediaStream | null = null;
@@ -54,6 +56,8 @@ const HammerMoleGame: React.FC = () => {
 
     // Controla la aparición aleatoria de los personajes 
     useEffect(() => {
+        if (showInstructions) return;
+
         const sides: Side[] = ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'];
         const getRandomFromRanges = (ranges: number[][]) => {
             const range = ranges[Math.floor(Math.random() * ranges.length)];
@@ -103,7 +107,7 @@ const HammerMoleGame: React.FC = () => {
         }, 1500);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [showInstructions]);
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -124,15 +128,23 @@ const HammerMoleGame: React.FC = () => {
             <video ref={videoRef} autoPlay playsInline className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-0" />
 
             {/* Contadores de puntos*/}
-            <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
-                <GamePoints points={score} />
-            </div>
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={90} />
-            </div>
-            <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
-                <GamePoints points={score} />
-            </div>
+            {!showInstructions && (
+                <>
+                    <div className="fixed top-6 left-[80px] z-30">
+                        <GamePoints points={score} playerRole="P1" />
+                    </div>
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
+                        <Timer initialSeconds={90} />
+                    </div>
+                    <div className="fixed top-6 right-[80px] z-30">
+                        <GamePoints points={score} playerRole="P2" />
+                    </div>
+                </>
+            )}
+
+            {showInstructions && (
+                <HammerInstructionsModal onStart={() => setShowInstructions(false)} />
+            )}
 
             {activeCharacters.map((active) => {
                 const config = SIDE_CONFIG[active.side];

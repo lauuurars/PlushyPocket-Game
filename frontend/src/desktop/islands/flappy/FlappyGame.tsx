@@ -10,6 +10,7 @@ import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
 import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
 import GamePoints from '../../../components/GamePoints';
 import Timer from '../../../components/Timer';
+import FlappyInstructionsModal from '../../../components/FlappyInstructionsModal';
 
 const ASSETS = [boatPart, boatPart2, woodenbench, woodenbench2, woodenbench3];
 
@@ -18,6 +19,7 @@ const FlappyGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const requestRef = useRef<number | null>(null);
     const [score, setScore] = useState(0);
+    const [showInstructions, setShowInstructions] = useState(true);
 
     // Configuración Estricta
     const SPEED = 6;
@@ -137,9 +139,11 @@ const FlappyGame: React.FC = () => {
     };
 
     useEffect(() => {
-        requestRef.current = requestAnimationFrame(animate);
+        if (!showInstructions) {
+            requestRef.current = requestAnimationFrame(animate);
+        }
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-    },);
+    }, [showInstructions]); // Add dependency to fix the infinite effect loop on pause
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -151,15 +155,23 @@ const FlappyGame: React.FC = () => {
             />
 
             {/* Contadores de puntos*/}
-            <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
-                <GamePoints points={score} />
-            </div>
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={90} />
-            </div>
-            <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
-                <GamePoints points={score} />
-            </div>
+            {!showInstructions && (
+                <>
+                    <div className="fixed top-8 left-[80px] z-30">
+                        <GamePoints points={score} playerRole="P1" />
+                    </div>
+                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                        <Timer initialSeconds={90} />
+                    </div>
+                    <div className="fixed top-8 right-[80px] z-30">
+                        <GamePoints points={score} playerRole="P2" />
+                    </div>
+                </>
+            )}
+
+            {showInstructions && (
+                <FlappyInstructionsModal onStart={() => setShowInstructions(false)} />
+            )}
 
             <div className="z-30 relative">
                 <Ocean />
