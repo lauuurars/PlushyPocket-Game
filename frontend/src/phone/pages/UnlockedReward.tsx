@@ -165,7 +165,11 @@ const UnlockedReward: React.FC = () => {
     }, [searchParams, setSearchParams, userReward, error]);
 
     const handleContinue = () => {
-        navigate("/rewards");
+        if (location.state?.fromGame) {
+            navigate("/winner", { replace: true });
+        } else {
+            navigate("/rewards");
+        }
     };
 
     return (

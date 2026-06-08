@@ -59,7 +59,22 @@ export default function FlappyGame() {
       if (cancelled) return;
       sessionStorage.removeItem("flappyCharacter");
       const isWinner = payload.winnerId === userIdRef.current;
-      navigate(isWinner ? '/winner' : '/loser', { replace: true });
+      if (isWinner) {
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) navigate('/winner', { replace: true });
+        }, 5000);
+        const onReward = (rewardPayload: { userId: string; rewardId: string }) => {
+          clearTimeout(timeoutId);
+          if (!cancelled && rewardPayload.userId === userIdRef.current) {
+            navigate(`/unlocked-reward?rewardId=${encodeURIComponent(rewardPayload.rewardId)}`, {
+              state: { fromGame: true }
+            });
+          }
+        };
+        socket.on("reward_assigned", onReward);
+      } else {
+        navigate('/loser', { replace: true });
+      }
     });
 
     socket.on("game_action", (data: { userId: string; action: string; payload?: { currentScore?: number; score?: number } }) => {
