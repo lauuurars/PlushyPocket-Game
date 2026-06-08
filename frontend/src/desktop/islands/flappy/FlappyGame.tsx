@@ -55,6 +55,7 @@ const FlappyGame: React.FC = () => {
     const [p2Score, setP2Score] = useState(() => (p2 ? (roomState.scores[p2.userId] ?? 0) : 0));
     const p1ScoreRef = useRef(p1 ? (roomState.scores[p1.userId] ?? 0) : 0);
     const p2ScoreRef = useRef(p2 ? (roomState.scores[p2.userId] ?? 0) : 0);
+    const [serverRemaining, setServerRemaining] = useState<number | undefined>(undefined);
 
     // Physics state
     const [p1Y, setP1Y] = useState(400);
@@ -404,7 +405,8 @@ const FlappyGame: React.FC = () => {
                     p2ScoreRef.current = score;
                 }
             },
-            onTimerTick: () => {
+            onTimerTick: (remaining) => {
+                setServerRemaining(remaining);
                 const room = getRoomState();
                 const player1 = room.players.find(p => p.role === "P1");
                 const player2 = room.players.find(p => p.role === "P2");
@@ -564,9 +566,9 @@ const FlappyGame: React.FC = () => {
 
             {/* Timer */}
             <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={60} />
+                <Timer initialSeconds={60} serverRemaining={serverRemaining} />
             </div>
-
+            
             {/* Player 2 info */}
             <div className="fixed top-8 right-8 z-30 flex items-center">
                 <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
@@ -588,7 +590,7 @@ const FlappyGame: React.FC = () => {
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} />
+                        <Timer initialSeconds={60} serverRemaining={serverRemaining} />
                     </div>
                     <div className="fixed top-8 right-[80px] z-30">
                         <GamePoints points={p2Score} playerRole="P2" />

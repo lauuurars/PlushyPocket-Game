@@ -4,13 +4,23 @@ import { Clock } from 'lucide-react';
 interface TimerProps {
     initialSeconds: number;
     onTimeUp?: () => void;
+    serverRemaining?: number;
 }
 
-export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp }) => {
+export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp, serverRemaining }) => {
     const [timeLeft, setTimeLeft] = useState(initialSeconds);
     const [isUrgent, setIsUrgent] = useState(false);
 
+    const displaySeconds = serverRemaining ?? timeLeft;
+
     useEffect(() => {
+        if (serverRemaining !== undefined) {
+            if (serverRemaining <= 0) {
+                onTimeUp?.();
+            }
+            return;
+        }
+
         if (timeLeft <= 0) {
             onTimeUp?.();
             return;
@@ -28,11 +38,11 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp }) => {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [onTimeUp]);
+    }, [onTimeUp, serverRemaining]);
 
     useEffect(() => {
-        setIsUrgent(timeLeft <= 10 && timeLeft > 0);
-    }, [timeLeft]);
+        setIsUrgent(displaySeconds <= 10 && displaySeconds > 0);
+    }, [displaySeconds]);
 
     const formatTime = (totalSeconds: number): string => {
         const minutes = Math.floor(totalSeconds / 60);
@@ -80,7 +90,7 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp }) => {
                     className="text-[48px] font-bold leading-[27px] text-[#FAFAFA]"
                     style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
                 >
-                    {formatTime(timeLeft)}
+                    {formatTime(displaySeconds)}
                 </p>
             </div>
         </div>
