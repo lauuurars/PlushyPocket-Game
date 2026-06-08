@@ -52,6 +52,12 @@ export interface GameStartPayload {
     roomId: string;
     players: PlayerInfoPayload[];
     minigameId: string
+    gameEndTime?: number
+}
+
+export interface GameTimerTickPayload {
+    remaining: number
+    gameEndTime: number
 }
 
 export interface GameEndPayload {

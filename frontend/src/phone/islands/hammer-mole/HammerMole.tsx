@@ -4,6 +4,7 @@ import type { Socket } from "socket.io-client";
 import type { GameOverPayload } from "../../../lib/api";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
+import { useGameTimer } from "../../../lib/useGameTimer";
 import Background from "../../../assets/moleAssets/HammerBg.jpg";
 import Hammer from "../../../assets/moleAssets/Hammer.svg";
 
@@ -49,7 +50,8 @@ export default function HammerMole() {
     const [searchParams] = useSearchParams();
     const roomId = searchParams.get("roomId");
 
-    const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
+    const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+    const timeRemaining = useGameTimer(gameEndTime);
     const [score, setScore] = useState(0);
     const [needsPermission, setNeedsPermission] = useState(iosNeedsPermission);
     const [userId, setUserId] = useState("");
@@ -103,8 +105,16 @@ export default function HammerMole() {
             addLog(`👤 Join: ${username}`, "#60a5fa");
         })();
 
-        socket.on("game_timer_tick", (data: { remaining: number }) => {
-            if (!cancelled) setTimeRemaining(data.remaining);
+        const syncEndTime = (endTime?: number) => {
+            if (!cancelled && endTime) setGameEndTime(endTime);
+        };
+
+        if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
+
+        socket.on("game_start", (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime));
+
+        socket.on("game_timer_tick", (data: { remaining: number; gameEndTime?: number }) => {
+            syncEndTime(data.gameEndTime);
         });
 
         socket.on("game_over", (payload: GameOverPayload) => {
@@ -290,7 +300,7 @@ export default function HammerMole() {
 
             <div className="absolute left-1/2 -top-95 h-155 w-155 -translate-x-1/2 rounded-full bg-[#ED1C24]" />
 
-            {timeRemaining !== null && (
+            {gameEndTime !== null && (
                 <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
                     <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ED1C24] shadow-md">
                         {timeRemaining}s
@@ -299,7 +309,7 @@ export default function HammerMole() {
             )}
 
             {/* DEBUG OVERLAY */}
-            <div className="absolute top-12 left-0 right-0 z-50 px-2 pointer-events-none">
+            <div className="hidden absolute top-12 left-0 right-0 z-50 px-2 pointer-events-none">
                 {/* Aceleración en tiempo real */}
                 <div className="mb-1 rounded bg-black/80 px-2 py-1 text-center font-mono text-xs text-white">
                     ax: <span className="text-yellow-300">{rawAccel.x}</span>

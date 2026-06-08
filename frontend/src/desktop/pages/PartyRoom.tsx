@@ -72,6 +72,7 @@ export default function PartyRoom() {
             updateRoomState({
                 players: payload.players,
                 minigameId: payload.minigameId,
+                ...(payload.gameEndTime ? { gameEndTime: payload.gameEndTime } : {}),
             });
             setStartPayload(payload);
         };

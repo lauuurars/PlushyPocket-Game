@@ -40,6 +40,12 @@ export type GameStartPayload = {
     roomId: string;
     players: PlayerInfoPayload[];
     minigameId: string;
+    gameEndTime?: number;
+};
+
+export type GameTimerTickPayload = {
+    remaining: number;
+    gameEndTime: number;
 };
 
 export type GameEndPayload = {

@@ -3,7 +3,7 @@ import { Clock } from 'lucide-react';
 
 interface TimerProps {
     initialSeconds: number;
-    /** When set, display server-synced remaining time instead of a local countdown. */
+    /** Server-synced seconds left. When set, local countdown is disabled. */
     remaining?: number | null;
     onTimeUp?: () => void;
 }
@@ -14,13 +14,13 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeU
     const isSynced = remaining != null;
     const displayTime = isSynced ? remaining : timeLeft;
 
+    // Local countdown for games without server sync (e.g. Cake, Flappy)
     useEffect(() => {
-        if (isSynced) {
-            if (remaining <= 0) onTimeUp?.();
-            return;
-        }
+        if (isSynced) return;
 
-        if (timeLeft <= 0) {
+        setTimeLeft(initialSeconds);
+
+        if (initialSeconds <= 0) {
             onTimeUp?.();
             return;
         }
@@ -28,7 +28,6 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeU
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
-                    clearInterval(timer);
                     onTimeUp?.();
                     return 0;
                 }
@@ -37,7 +36,11 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeU
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isSynced, remaining, timeLeft, onTimeUp]);
+    }, [isSynced, initialSeconds, onTimeUp]);
+
+    useEffect(() => {
+        if (isSynced && remaining <= 0) onTimeUp?.();
+    }, [isSynced, remaining, onTimeUp]);
 
     useEffect(() => {
         setIsUrgent(displayTime <= 10 && displayTime > 0);

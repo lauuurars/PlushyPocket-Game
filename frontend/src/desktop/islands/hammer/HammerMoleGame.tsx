@@ -4,6 +4,7 @@ import type { Socket } from 'socket.io-client';
 import type { ActiveCharacter, Character, Position, Side } from '../../../types/hammerTypes';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 import { clearRoomCallbacks, getRoomState, setRoomCallbacks } from '../../../lib/roomStore';
+import { useGameTimer } from '../../../lib/useGameTimer';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -91,10 +92,8 @@ const HammerMoleGame: React.FC = () => {
     const [activeCharacters, setActiveCharacters] = useState<ActiveCharacter[]>([]);
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
-    const [timeRemaining, setTimeRemaining] = useState<number | null>(() => {
-        const stored = getRoomState().timeRemaining;
-        return stored > 0 ? stored : null;
-    });
+    const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+    const timeRemaining = useGameTimer(gameEndTime);
     const [showInstructions, setShowInstructions] = useState(true);
 
     // Mantener ref sincronizado para leerlo dentro del socket handler
@@ -129,6 +128,29 @@ const HammerMoleGame: React.FC = () => {
         return () => {
             if (stream) stream.getTracks().forEach(track => track.stop());
             document.body.style.overflow = 'auto';
+        };
+    }, []);
+
+    // Sync gameEndTime from server (survives screen lock / tab throttling)
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        const syncEndTime = (endTime?: number) => {
+            if (endTime) setGameEndTime(endTime);
+        };
+
+        if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
+
+        const onGameStart = (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime);
+        const onTimerTick = (data: { gameEndTime?: number }) => syncEndTime(data.gameEndTime);
+
+        socket.on('game_start', onGameStart);
+        socket.on('game_timer_tick', onTimerTick);
+
+        return () => {
+            socket.off('game_start', onGameStart);
+            socket.off('game_timer_tick', onTimerTick);
         };
     }, []);
 
@@ -172,7 +194,6 @@ const HammerMoleGame: React.FC = () => {
         socket.on('game_action', handleGameAction);
 
         setRoomCallbacks({
-            onTimerTick: (remaining) => setTimeRemaining(remaining),
             onGameOver: (payload: GameOverPayload) => {
                 const room = getRoomState();
                 const p1 = room.players.find(p => p.role === 'P1');
@@ -251,7 +272,9 @@ const HammerMoleGame: React.FC = () => {
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} remaining={timeRemaining} />
+                        {gameEndTime && (
+                            <Timer initialSeconds={60} remaining={timeRemaining} />
+                        )}
                     </div>
                     <div className="fixed top-6 right-[80px] z-30">
                         <GamePoints points={p2Score} playerRole="P2" />
