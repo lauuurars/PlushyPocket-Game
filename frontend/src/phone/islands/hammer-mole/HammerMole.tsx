@@ -131,11 +131,11 @@ export default function HammerMole() {
         if (iosNeedsPermission) return; // iOS lo maneja requestMotionPermission()
 
         const handleMotion = (e: DeviceMotionEvent) => {
-            const acc = e.accelerationIncludingGravity;
-            if (!acc) return;
+            const acc = e.acceleration;
+            if (!acc || (acc.x === null && acc.y === null)) return;
 
-            const ax = (acc.x ?? 0) - baselineRef.current.x;
-            const ay = (acc.y ?? 0) - baselineRef.current.y;
+            const ax = acc.x ?? 0;
+            const ay = acc.y ?? 0;
 
             const now = Date.now();
             if (now - lastSwingRef.current < COOLDOWN_MS) return;
@@ -148,9 +148,8 @@ export default function HammerMole() {
         };
 
         const calibrate = (e: DeviceMotionEvent) => {
-            const acc = e.accelerationIncludingGravity;
-            if (!acc) return;
-            baselineRef.current = { x: acc.x ?? 0, y: acc.y ?? 0 };
+            const acc = e.acceleration;
+            if (!acc || (acc.x === null && acc.y === null)) return;
             window.removeEventListener('devicemotion', calibrate);
             window.addEventListener('devicemotion', handleMotion);
         };
