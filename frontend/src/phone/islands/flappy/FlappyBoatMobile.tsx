@@ -4,7 +4,6 @@ import type { Socket } from "socket.io-client";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
 import bigBoat from "../../../assets/flappybird/bigBoat.png";
-import WaterWave from "../../../assets/flappybird/FlappyBoatWaterMobile.svg";
 
 export default function FlappyGame() {
   const navigate = useNavigate();
@@ -199,7 +198,6 @@ export default function FlappyGame() {
         aria-hidden
         className="absolute inset-0"
         style={{
-          backgroundImage: `url("${Background}")`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
@@ -215,7 +213,7 @@ export default function FlappyGame() {
           className="text-center text-[40px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
           style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
         >
-          Fly as high as<br/>you can!
+          Fly as high as<br />you can!
         </h1>
 
         <div

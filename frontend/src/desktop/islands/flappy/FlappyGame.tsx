@@ -13,6 +13,7 @@ import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
 import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
 import Timer from '../../../components/Timer';
 import FlappyInstructionsModal from '../../../components/FlappyInstructionsModal';
+import GamePoints from '../../../components/GamePoints';
 
 // Characters
 import Cinamon from '../../../assets/flappybird/characters/Cinamon.svg';
@@ -88,7 +89,6 @@ const FlappyGame: React.FC = () => {
         }
         return char;
     });
-    const [score, setScore] = useState(0);
     const [showInstructions, setShowInstructions] = useState(true);
 
     // Configuración Estricta
@@ -499,7 +499,7 @@ const FlappyGame: React.FC = () => {
             requestRef.current = requestAnimationFrame(animate);
         }
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
-    }, []);
+    }, [showInstructions]);
 
     // Periodic scoring: +5 every 2 seconds for surviving
     useEffect(() => {
@@ -525,7 +525,6 @@ const FlappyGame: React.FC = () => {
 
         return () => clearInterval(interval);
     }, []);
-    }, [showInstructions]); // Add dependency to fix the infinite effect loop on pause
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -548,6 +547,8 @@ const FlappyGame: React.FC = () => {
                 }
             `}</style>
 
+            {showInstructions && (
+            <>
             {/* Player 1 info */}
             <div className="fixed top-8 left-8 z-30 flex items-center">
                 <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
@@ -563,7 +564,7 @@ const FlappyGame: React.FC = () => {
 
             {/* Timer */}
             <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={90} />
+                <Timer initialSeconds={60} />
             </div>
 
             {/* Player 2 info */}
@@ -578,17 +579,19 @@ const FlappyGame: React.FC = () => {
                     />
                 </div>
             </div>
+            </>
+            )}
             {/* Contadores de puntos*/}
             {!showInstructions && (
                 <>
                     <div className="fixed top-8 left-[80px] z-30">
-                        <GamePoints points={score} playerRole="P1" />
+                        <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={90} />
+                        <Timer initialSeconds={60} />
                     </div>
                     <div className="fixed top-8 right-[80px] z-30">
-                        <GamePoints points={score} playerRole="P2" />
+                        <GamePoints points={p2Score} playerRole="P2" />
                     </div>
                 </>
             )}
