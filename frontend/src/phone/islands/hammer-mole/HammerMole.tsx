@@ -51,7 +51,7 @@ export default function HammerMole() {
     const roomId = searchParams.get("roomId");
 
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
-    const timeRemaining = useGameTimer(gameEndTime);
+    const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [score, setScore] = useState(0);
     const [needsPermission, setNeedsPermission] = useState(iosNeedsPermission);
     const [userId, setUserId] = useState("");
@@ -114,7 +114,10 @@ export default function HammerMole() {
         socket.on("game_start", (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime));
 
         socket.on("game_timer_tick", (data: { remaining: number; gameEndTime?: number }) => {
-            syncEndTime(data.gameEndTime);
+            if (!cancelled) {
+                setTimeRemaining(data.remaining);
+                syncEndTime(data.gameEndTime);
+            }
         });
 
         socket.on("game_over", (payload: GameOverPayload) => {
@@ -148,7 +151,7 @@ export default function HammerMole() {
 
         // Incrementar hits localmente
         hitsRef.current += 1;
-        const newScore = hitsRef.current * 10;
+        const newScore = hitsRef.current * 5;
 
         addLog(`🔨 Swing → ${direction} (hit #${hitsRef.current})`, "#facc15");
 

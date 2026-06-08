@@ -93,7 +93,7 @@ const HammerMoleGame: React.FC = () => {
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
-    const timeRemaining = useGameTimer(gameEndTime);
+    const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [showInstructions, setShowInstructions] = useState(true);
 
     // Mantener ref sincronizado para leerlo dentro del socket handler
@@ -143,7 +143,10 @@ const HammerMoleGame: React.FC = () => {
         if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
 
         const onGameStart = (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime);
-        const onTimerTick = (data: { gameEndTime?: number }) => syncEndTime(data.gameEndTime);
+        const onTimerTick = (data: { remaining: number; gameEndTime?: number }) => {
+            setTimeRemaining(data.remaining);
+            syncEndTime(data.gameEndTime);
+        };
 
         socket.on('game_start', onGameStart);
         socket.on('game_timer_tick', onTimerTick);
@@ -172,22 +175,30 @@ const HammerMoleGame: React.FC = () => {
 
             const { direction } = data.payload;
             const current = activeCharactersRef.current;
-            const hit = current.find(c => c.side === direction);
+            const hit = current.find(c => c.side === direction && !c.isHit);
             if (!hit) return;
+
+            // Mark as hit immediately to prevent double-hits and show red visual effect
+            hit.isHit = true;
+            setActiveCharacters(prev =>
+                prev.map(c => c.id === hit.id ? { ...c, isHit: true } : c)
+            );
 
             const room = getRoomState();
             const p1 = room.players.find(p => p.role === 'P1');
             const p2 = room.players.find(p => p.role === 'P2');
 
-            if (data.userId === p1?.userId) setP1Score(prev => prev + 10);
-            if (data.userId === p2?.userId) setP2Score(prev => prev + 10);
+            if (data.userId === p1?.userId) setP1Score(prev => prev + 5);
+            if (data.userId === p2?.userId) setP2Score(prev => prev + 5);
 
-            replaceCharacter(hit.id);
+            setTimeout(() => {
+                replaceCharacter(hit.id);
+            }, 300);
 
             socket.emit('hit_confirmed', {
                 userId: data.userId,
                 characterName: hit.character.name,
-                points: 10,
+                points: 5,
             });
         };
 
@@ -262,6 +273,10 @@ const HammerMoleGame: React.FC = () => {
                 @keyframes popDiagBL { 0%, 100% { transform: translate(-100%,  100%); opacity: 0; } 25%, 75% { transform: translate(0, 0); opacity: 1; } }
                 @keyframes popDiagBR { 0%, 100% { transform: translate(100%,   100%); opacity: 0; } 25%, 75% { transform: translate(0, 0); opacity: 1; } }
                 .char-anim { animation-duration: 1.5s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+                .char-hit-red {
+                    filter: sepia(1) saturate(20) hue-rotate(-50deg) brightness(0.8) drop-shadow(0 0 20px #ff0000);
+                    transition: filter 0.1s ease-in-out;
+                }
             `}</style>
 
             <video ref={videoRef} autoPlay playsInline className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-0" />
@@ -306,7 +321,7 @@ const HammerMoleGame: React.FC = () => {
                         <img
                             src={active.character.image}
                             alt={active.character.name}
-                            className="h-full w-auto object-contain"
+                            className={`h-full w-auto object-contain ${active.isHit ? 'char-hit-red' : ''}`}
                             style={{ transform: `rotate(${config.rotation}deg)`, transformOrigin: 'center' }}
                         />
                     </div>

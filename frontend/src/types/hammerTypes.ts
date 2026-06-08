@@ -17,4 +17,6 @@ export interface ActiveCharacter {
   character: Character;
   position: Position;
   side: Side;
+  isHit?: boolean;
 }
+
