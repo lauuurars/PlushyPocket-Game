@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 import BgParty from "../../assets/startGame/Bg Party.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
-import MochiAvatarUrl from "../../assets/choose/Mochi.svg?url";
-import MisuAvatarUrl from "../../assets/choose/Misu.svg?url";
-import YukiAvatarUrl from "../../assets/choose/Yuki.svg?url";
-import { createRealtimeSocket, type GameStartPayload, type RoomUpdatePayload } from "../../lib/api";
+import MochiIcon from "../../assets/profile-pic/Mochi-Icon.svg";
+import MisuIcon from "../../assets/profile-pic/Misu-Icon.svg";
+import YukiIcon from "../../assets/profile-pic/Yuki-Icon.svg";
+import { createRealtimeSocket, profilePicturePublicUrl, type GameStartPayload, type RoomUpdatePayload } from "../../lib/api";
 import { updateRoomState, attachRoomListeners, getRoomState } from "../../lib/roomStore";
+import { supabase } from "../../lib/supabaseClient";
 
 let globalSocket: ReturnType<typeof createRealtimeSocket> | null = null;
 
@@ -17,6 +18,9 @@ export default function PartyRoom() {
     const [scale, setScale] = useState(1);
     const [room, setRoom] = useState<RoomUpdatePayload | null>(null);
     const [startPayload, setStartPayload] = useState<GameStartPayload | null>(null);
+
+    const [p1Avatar, setP1Avatar] = useState<string>("");
+    const [p2Avatar, setP2Avatar] = useState<string>("");
 
     const roomId = (searchParams.get("roomId") ?? "").trim();
     const islandName = (searchParams.get("islandName") ?? "Sanrio Island").trim();
@@ -86,17 +90,69 @@ export default function PartyRoom() {
     const p1 = useMemo(() => room?.players.find((p) => p.role === "P1") ?? null, [room?.players]);
     const p2 = useMemo(() => room?.players.find((p) => p.role === "P2") ?? null, [room?.players]);
 
+    const getPlayerAvatar = async (userId: string, characterId: string | null): Promise<string> => {
+        try {
+            const { data, error } = await supabase
+                .from("users")
+                .select("character_selected, profile_picture_path")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (!error && data?.profile_picture_path) {
+                const pathLower = data.profile_picture_path.toLowerCase();
+                const isDefaultChar = pathLower.includes("mochi.svg") || pathLower.includes("misu.svg") || pathLower.includes("yuki.svg") ||
+                                      pathLower.includes("mochi.png") || pathLower.includes("misu.png") || pathLower.includes("yuki.png");
+                if (!isDefaultChar) {
+                    const url = profilePicturePublicUrl(data.profile_picture_path);
+                    if (url) return url;
+                }
+            }
+
+            const char = (data?.character_selected || characterId || "").toLowerCase();
+            if (char.includes("misu")) return MisuIcon;
+            if (char.includes("yuki")) return YukiIcon;
+            return MochiIcon;
+        } catch {
+            const char = (characterId || "").toLowerCase();
+            if (char.includes("misu")) return MisuIcon;
+            if (char.includes("yuki")) return YukiIcon;
+            return MochiIcon;
+        }
+    };
+
+    useEffect(() => {
+        if (p1?.userId) {
+            void getPlayerAvatar(p1.userId, p1.characterId).then((url) => setP1Avatar(url));
+        } else {
+            setP1Avatar("");
+        }
+    }, [p1?.userId, p1?.characterId]);
+
+    useEffect(() => {
+        if (p2?.userId) {
+            void getPlayerAvatar(p2.userId, p2.characterId).then((url) => setP2Avatar(url));
+        } else {
+            setP2Avatar("");
+        }
+    }, [p2?.userId, p2?.characterId]);
+
     const avatarFor = (characterId: string | null | undefined): string => {
         const key = (characterId ?? "").toLowerCase();
-        if (key.includes("misu")) return MisuAvatarUrl as string;
-        if (key.includes("yuki")) return YukiAvatarUrl as string;
-        return MochiAvatarUrl as string;
+        if (key.includes("misu")) return MisuIcon;
+        if (key.includes("yuki")) return YukiIcon;
+        return MochiIcon;
     };
 
     return (
         <div
             className="flex w-screen items-center justify-center overflow-hidden bg-[#ED1C24]"
-            style={{ height: "100svh" }}
+            style={{
+                height: "100svh",
+                backgroundImage: `url("${BgParty}")`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
         >
             <div className="relative" style={{ width: 1512 * scale, height: 982 * scale }}>
                 <div
@@ -108,18 +164,6 @@ export default function PartyRoom() {
                         transformOrigin: "top left",
                     }}
                 >
-                    <div
-                        aria-hidden
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundImage: `url("${BgParty}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                            zIndex: 0,
-                        }}
-                    />
 
                     <div className="relative w-full" style={{ zIndex: 2, height: 982 }}>
                         <div
@@ -151,42 +195,59 @@ export default function PartyRoom() {
                             }}
                         />
 
-                        <p
-                            className="absolute m-0 text-center text-[#FFFDF6]"
+                        {/* Title: Welcome Players! */}
+                        <h1
+                            className="absolute m-0 text-center text-[#FAFAFA]"
                             style={{
-                                top: "190px",
+                                top: "140px",
                                 left: "50%",
                                 transform: "translateX(-50%)",
-                                width: "420px",
+                                width: "800px",
                                 fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                fontWeight: 700,
-                                fontSize: "40px",
-                                letterSpacing: "-1.04px",
+                                fontWeight: 800,
+                                fontSize: "85px",
+                                letterSpacing: "-1px",
                                 lineHeight: "1.1",
                             }}
                         >
-                            Your next adventure starts in{" "}
+                            Welcome Players!
+                        </h1>
+
+                        <p
+                            className="absolute m-0 text-center text-[#FFFDF6]"
+                            style={{
+                                top: "255px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "600px",
+                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                fontWeight: 700,
+                                fontSize: "30px",
+                                letterSpacing: "-0.5px",
+                                lineHeight: "1.2",
+                            }}
+                        >
+                            Your next adventure together starts in{" "}
                             <strong className="font-extrabold">{islandName}</strong>
                         </p>
 
                         <div
                             className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
-                            style={{ top: "307px", width: "min(1050px, 80vw)" }}
+                            style={{ top: "370px", width: "min(1050px, 80vw)" }}
                         >
                             <div className="relative flex flex-col items-center">
                                 <div
-                                    className="relative overflow-hidden rounded-full"
+                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
                                     style={{
                                         width: "296px",
                                         height: "296px",
                                         border: "12px solid #FAFAFA",
-                                        backgroundColor: "rgba(250,250,250,0.12)",
                                     }}
                                 >
                                     <img
-                                        src={avatarFor(p1?.characterId)}
+                                        src={p1Avatar || avatarFor(p1?.characterId)}
                                         alt=""
-                                        className="h-full w-full object-contain object-center"
+                                        className="h-full w-full object-cover"
                                         draggable={false}
                                     />
                                 </div>
@@ -233,22 +294,25 @@ export default function PartyRoom() {
 
                             <div className="relative flex flex-col items-center">
                                 <div
-                                    className="relative overflow-hidden rounded-full"
+                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
                                     style={{
                                         width: "296px",
                                         height: "296px",
                                         border: "12px solid #FAFAFA",
-                                        backgroundColor: "rgba(250,250,250,0.12)",
                                     }}
                                 >
                                     {p2 ? (
                                         <img
-                                            src={avatarFor(p2.characterId)}
+                                            src={p2Avatar || avatarFor(p2.characterId)}
                                             alt=""
-                                            className="h-full w-full object-contain object-center"
+                                            className="h-full w-full object-cover"
                                             draggable={false}
                                         />
-                                    ) : null}
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center bg-[rgba(250,250,250,0.08)] text-6xl font-bold text-[#583921]/40">
+                                            P2
+                                        </div>
+                                    )}
                                 </div>
 
                                 <p

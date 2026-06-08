@@ -88,6 +88,10 @@ const CakeGame: React.FC = () => {
                         player2Name: p2?.username ?? "Player 2",
                         player1Score: p1Score,
                         player2Score: p2Score,
+                        player1UserId: p1?.userId,
+                        player2UserId: p2?.userId,
+                        player1CharacterId: p1?.characterId,
+                        player2CharacterId: p2?.characterId,
                     },
                 });
             },
@@ -109,6 +113,10 @@ const CakeGame: React.FC = () => {
                         player1Score: room.scores[p1?.userId ?? ""] ?? 0,
                         player2Score: room.scores[p2?.userId ?? ""] ?? 0,
                         rewardName: payload.rewardName,
+                        player1UserId: p1?.userId,
+                        player2UserId: p2?.userId,
+                        player1CharacterId: p1?.characterId,
+                        player2CharacterId: p2?.characterId,
                     },
                 });
             },

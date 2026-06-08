@@ -449,6 +449,10 @@ const FlappyGame: React.FC = () => {
                         player2Name: player2?.username ?? "Player 2",
                         player1Score: score1,
                         player2Score: score2,
+                        player1UserId: player1?.userId,
+                        player2UserId: player2?.userId,
+                        player1CharacterId: player1?.characterId,
+                        player2CharacterId: player2?.characterId,
                     },
                 });
             },
@@ -470,6 +474,10 @@ const FlappyGame: React.FC = () => {
                         player1Score: room.scores[player1?.userId ?? ""] ?? 0,
                         player2Score: room.scores[player2?.userId ?? ""] ?? 0,
                         rewardName: payload.rewardName,
+                        player1UserId: player1?.userId,
+                        player2UserId: player2?.userId,
+                        player1CharacterId: player1?.characterId,
+                        player2CharacterId: player2?.characterId,
                     },
                 });
             },
