@@ -68,6 +68,10 @@ const FlappyGame: React.FC = () => {
     const p1InvincibleRef = useRef(false);
     const p2InvincibleRef = useRef(false);
 
+    // Hit animation states
+    const [p1Hit, setP1Hit] = useState(false);
+    const [p2Hit, setP2Hit] = useState(false);
+
     // Passed columns tracking
     const passedColumnsP1 = useRef<Set<number>>(new Set());
     const passedColumnsP2 = useRef<Set<number>>(new Set());
@@ -86,17 +90,17 @@ const FlappyGame: React.FC = () => {
 
     // Configuración Estricta
     const SPEED = 2;
-    const MIN_HORIZONTAL_SPACING = 450;
-    const OBSTACLE_COUNT = 5;
-    const VERTICAL_GAP = 400;
+    const MIN_HORIZONTAL_SPACING = 520;
+    const OBSTACLE_COUNT = 4;
+    const VERTICAL_GAP = 800;
     const BASE_HEIGHT = 300;
     const BIRD_WIDTH = 70;
     const BIRD_HEIGHT = 70;
     const P1_X = 250;
     const P2_X = 370;
 
-    const GRAVITY = 0.15;
-    const JUMP_FORCE = -8;
+    const GRAVITY = 0.1;
+    const JUMP_FORCE = -5;
 
     const getAssetData = (typeIndex: number, position: 'top' | 'bottom'): ObstacleData => {
         const isBoat = typeIndex === 0 || typeIndex === 1;
@@ -107,7 +111,7 @@ const FlappyGame: React.FC = () => {
         if ((isBoat || isNormalBench) && position === 'top') rotation = 180;
         if (isClippedBench && position === 'bottom') rotation = 180;
 
-        const width = typeIndex === 0 ? 450 : 320;
+        const width = typeIndex === 0 ? 380 : 270;
 
         let finalTopPos = -20;
         if (typeIndex === 0 && position === 'top') {
@@ -246,7 +250,7 @@ const FlappyGame: React.FC = () => {
                     p1InvincibleRef.current = true;
                     setP1Invincible(true);
 
-                    const newScore = Math.max(0, p1ScoreRef.current - 2);
+                    const newScore = Math.max(0, p1ScoreRef.current - 1);
                     p1ScoreRef.current = newScore;
                     setP1Score(newScore);
                     emitScoreUpdate(player1.userId, player1.characterId, newScore);
@@ -254,6 +258,8 @@ const FlappyGame: React.FC = () => {
                     p1YRef.current = window.innerHeight / 2;
                     p1VelRef.current = 0;
                     setP1Y(p1YRef.current);
+                    setP1Hit(true);
+                    setTimeout(() => setP1Hit(false), 500);
 
                     setTimeout(() => {
                         p1InvincibleRef.current = false;
@@ -265,7 +271,7 @@ const FlappyGame: React.FC = () => {
                     p2InvincibleRef.current = true;
                     setP2Invincible(true);
 
-                    const newScore = Math.max(0, p2ScoreRef.current - 2);
+                    const newScore = Math.max(0, p2ScoreRef.current - 1);
                     p2ScoreRef.current = newScore;
                     setP2Score(newScore);
                     emitScoreUpdate(player2.userId, player2.characterId, newScore);
@@ -273,6 +279,8 @@ const FlappyGame: React.FC = () => {
                     p2YRef.current = window.innerHeight / 2;
                     p2VelRef.current = 0;
                     setP2Y(p2YRef.current);
+                    setP2Hit(true);
+                    setTimeout(() => setP2Hit(false), 500);
 
                     setTimeout(() => {
                         p2InvincibleRef.current = false;
@@ -302,13 +310,15 @@ const FlappyGame: React.FC = () => {
                 p1InvincibleRef.current = true;
                 setP1Invincible(true);
 
-                const newScore = Math.max(0, p1ScoreRef.current - 2);
+                const newScore = Math.max(0, p1ScoreRef.current - 1);
                 p1ScoreRef.current = newScore;
                 setP1Score(newScore);
                 emitScoreUpdate(player1.userId, player1.characterId, newScore);
 
                 p1YRef.current = window.innerHeight / 2;
                 p1VelRef.current = 0;
+                setP1Hit(true);
+                setTimeout(() => setP1Hit(false), 500);
 
                 setTimeout(() => {
                     p1InvincibleRef.current = false;
@@ -335,13 +345,15 @@ const FlappyGame: React.FC = () => {
                 p2InvincibleRef.current = true;
                 setP2Invincible(true);
 
-                const newScore = Math.max(0, p2ScoreRef.current - 2);
+                const newScore = Math.max(0, p2ScoreRef.current - 1);
                 p2ScoreRef.current = newScore;
                 setP2Score(newScore);
                 emitScoreUpdate(player2.userId, player2.characterId, newScore);
 
                 p2YRef.current = window.innerHeight / 2;
                 p2VelRef.current = 0;
+                setP2Hit(true);
+                setTimeout(() => setP2Hit(false), 500);
 
                 setTimeout(() => {
                     p2InvincibleRef.current = false;
@@ -484,6 +496,31 @@ const FlappyGame: React.FC = () => {
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, []);
 
+    // Periodic scoring: +5 every 2 seconds for surviving
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const room = getRoomState();
+            const player1 = room.players.find(p => p.role === "P1");
+            const player2 = room.players.find(p => p.role === "P2");
+
+            if (player1) {
+                const newScore = p1ScoreRef.current + 5;
+                p1ScoreRef.current = newScore;
+                setP1Score(newScore);
+                emitScoreUpdate(player1.userId, player1.characterId, newScore);
+            }
+
+            if (player2) {
+                const newScore = p2ScoreRef.current + 5;
+                p2ScoreRef.current = newScore;
+                setP2Score(newScore);
+                emitScoreUpdate(player2.userId, player2.characterId, newScore);
+            }
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
             <video
@@ -492,6 +529,18 @@ const FlappyGame: React.FC = () => {
                 playsInline
                 className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-1"
             />
+
+            <style>{`
+                @keyframes respawn-bounce {
+                    0% { transform: scale(0) rotate(0deg); opacity: 0; }
+                    35% { transform: scale(1.4) rotate(-12deg); opacity: 1; }
+                    65% { transform: scale(0.85) rotate(6deg); }
+                    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+                }
+                .animate-respawn {
+                    animation: respawn-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                }
+            `}</style>
 
             {/* Player 1 info */}
             <div className="fixed top-8 left-8 z-30 flex items-center">
@@ -537,23 +586,34 @@ const FlappyGame: React.FC = () => {
                         top: `${p1Y}px`,
                         width: `${BIRD_WIDTH}px`,
                         height: `${BIRD_HEIGHT}px`,
-                        opacity: p1Invincible ? 0.6 : 1,
-                        transition: 'opacity 0.1s ease',
                     }}
                 >
                     <span className="mb-1 rounded bg-black/60 px-2 py-0.5 text-xs font-bold text-white whitespace-nowrap">
                         {p1.username}
                     </span>
-                    <img
-                        src={p1Char}
-                        alt={p1.username}
-                        className="w-full h-full object-contain"
-                        style={{
-                            transform: `rotate(${Math.min(Math.max(p1VelRef.current * 4, -30), 70)}deg)`,
-                            transition: 'transform 0.05s linear',
-                            filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))'
-                        }}
-                    />
+                    {p1Hit ? (
+                        <div className="w-full h-full animate-respawn">
+                            <img
+                                src={p1Char}
+                                alt={p1.username}
+                                className="w-full h-full object-contain"
+                                style={{ filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))' }}
+                            />
+                        </div>
+                    ) : (
+                        <img
+                            src={p1Char}
+                            alt={p1.username}
+                            className="w-full h-full object-contain"
+                            style={{
+                                transform: `rotate(${Math.min(Math.max(p1VelRef.current * 4, -30), 70)}deg)`,
+                                transition: 'transform 0.05s linear, filter 0.3s ease',
+                                filter: p1Invincible
+                                    ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3)) drop-shadow(0 0 6px rgba(255,215,0,0.6)) drop-shadow(0 0 12px rgba(255,200,0,0.3))'
+                                    : 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))',
+                            }}
+                        />
+                    )}
                 </div>
             )}
 
@@ -565,23 +625,34 @@ const FlappyGame: React.FC = () => {
                         top: `${p2Y}px`,
                         width: `${BIRD_WIDTH}px`,
                         height: `${BIRD_HEIGHT}px`,
-                        opacity: p2Invincible ? 0.6 : 1,
-                        transition: 'opacity 0.1s ease',
                     }}
                 >
                     <span className="mb-1 rounded bg-black/60 px-2 py-0.5 text-xs font-bold text-white whitespace-nowrap">
                         {p2.username}
                     </span>
-                    <img
-                        src={p2Char}
-                        alt={p2.username}
-                        className="w-full h-full object-contain"
-                        style={{
-                            transform: `rotate(${Math.min(Math.max(p2VelRef.current * 4, -30), 70)}deg)`,
-                            transition: 'transform 0.05s linear',
-                            filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))'
-                        }}
-                    />
+                    {p2Hit ? (
+                        <div className="w-full h-full animate-respawn">
+                            <img
+                                src={p2Char}
+                                alt={p2.username}
+                                className="w-full h-full object-contain"
+                                style={{ filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))' }}
+                            />
+                        </div>
+                    ) : (
+                        <img
+                            src={p2Char}
+                            alt={p2.username}
+                            className="w-full h-full object-contain"
+                            style={{
+                                transform: `rotate(${Math.min(Math.max(p2VelRef.current * 4, -30), 70)}deg)`,
+                                transition: 'transform 0.05s linear, filter 0.3s ease',
+                                filter: p2Invincible
+                                    ? 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3)) drop-shadow(0 0 6px rgba(255,215,0,0.6)) drop-shadow(0 0 12px rgba(255,200,0,0.3))'
+                                    : 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))',
+                            }}
+                        />
+                    )}
                 </div>
             )}
 
