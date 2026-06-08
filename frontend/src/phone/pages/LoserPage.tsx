@@ -6,6 +6,7 @@ import SadMisu from "../../assets/loser/SadMisu.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
 import Estrella3 from "../../assets/welcome/Estrella3.svg";
 import Rayo from "../../assets/welcome/Rayo.svg";
+import { getRoomState, resetRoomState } from "../../lib/roomStore";
 
 interface FloatingElementProps {
     src: string;
@@ -39,13 +40,27 @@ const LoserPage: React.FC = () => {
     }, []);
 
     const handlePlayAgain = () => {
-        // TO-DO: Add logic to reconnect to the same room
-        console.log("Play Again pressed - reconnect to same room");
+        const { roomId, minigameId, socket } = getRoomState();
+        if (socket) {
+            socket.emit("player__leave", { roomId });
+            socket.disconnect();
+        }
+        resetRoomState();
+        if (roomId) {
+            navigate(`/joined-room?roomId=${encodeURIComponent(roomId)}${minigameId ? `&minigameId=${encodeURIComponent(minigameId)}` : ""}`, { replace: true });
+        } else {
+            navigate("/home-phone", { replace: true });
+        }
     };
 
     const handleExitParty = () => {
-        // TO-DO: Add logic to leave the room
-        navigate("/home-phone");
+        const { roomId, socket } = getRoomState();
+        if (socket) {
+            socket.emit("player__leave", { roomId });
+            socket.disconnect();
+        }
+        resetRoomState();
+        navigate("/home-phone", { replace: true });
     };
 
     return (
@@ -121,9 +136,9 @@ const LoserPage: React.FC = () => {
                     delay="0.6s" />
             </div>
 
-            <div className="relative z-10 w-full h-full flex flex-col items-center pt-15 px-6">
+            <div className="relative z-10 w-full h-screen flex flex-col items-center justify-between px-6 pt-16 pb-0">
                 {/* Main Content */}
-                <div className="flex flex-col items-center animate-fade-in">
+                <div className="flex flex-col items-center text-center animate-fade-in">
                     <h1
                         className="text-[#ED1C24] text-[40px] font-extrabold leading-10 tracking-[-1px] text-center mb-3"
                         style={{ fontFamily: '"Baloo 2", sans-serif' }}
@@ -131,14 +146,16 @@ const LoserPage: React.FC = () => {
                         Oops! Better luck next time!
                     </h1>
                     <p
-                        className="text-[#ED1C24] text-base leading-5 text-center mb-10"
+                        className="text-[#ED1C24] text-base leading-5 text-center"
                         style={{ fontFamily: '"Nunito", sans-serif' }}
                     >
                         Don't worry, your plushy squad <br /> still thinks you're awesome.
                     </p>
+                </div>
 
-                    {/* Buttons */}
-                    <div className="w-full max-w-70 flex flex-col mt-26 gap-4">
+                {/* Buttons Container - Centered vertically in the remaining space */}
+                <div className="flex-1 flex flex-col justify-center items-center w-full z-20">
+                    <div className="w-full max-w-70 flex flex-col gap-4 animate-fade-in">
                         <PinkButton
                             text="Play Again"
                             onClick={handlePlayAgain}
@@ -163,12 +180,12 @@ const LoserPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Character - Anchored to bottom */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80%]">
+                {/* Character - Anchored to bottom in normal flow to keep layout responsive */}
+                <div className="w-[75%] max-w-[280px] select-none pointer-events-none mt-auto z-10">
                     <img
                         src={SadMisu}
                         alt="Sad Misu"
-                        className="w-full"
+                        className="w-full h-auto block"
                     />
                 </div>
             </div>
