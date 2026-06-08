@@ -12,13 +12,14 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 import MisuIcon from '../../../assets/profile-pic/Misu-Icon.svg';
 import MochiIcon from '../../../assets/profile-pic/Mochi-Icon.svg';
 import YukiIcon from '../../../assets/profile-pic/Yuki-Icon.svg';
+import CakeInstructionsModal from '../../../components/CakeInstructionsModal';
 const CakeGame: React.FC = () => {
     const navigate = useNavigate();
     const videoRef = useRef<HTMLVideoElement>(null);
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
     const [score] = useState(0);
-    const [gamePhase, setGamePhase] = useState<"alert" | "line" | "playing">("alert");
+    const [gamePhase, setGamePhase] = useState<"instructions" | "alert" | "line" | "playing">("instructions");
     const [profileIcon, setProfileIcon] = useState<string>(MochiIcon);
 
     useEffect(() => {
@@ -31,7 +32,9 @@ const CakeGame: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (gamePhase === "alert") {
+        if (gamePhase === "instructions") {
+            return;
+        } else if (gamePhase === "alert") {
             const t = setTimeout(() => setGamePhase("line"), 4000);
             return () => clearTimeout(t);
         } else if (gamePhase === "line") {
@@ -155,9 +158,13 @@ const CakeGame: React.FC = () => {
                 }
             `}</style>
 
+            {gamePhase === "instructions" && (
+                <CakeInstructionsModal onStart={() => setGamePhase("alert")} />
+            )}
+
             {gamePhase === "alert" && (
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 px-5" style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}>
-                    <div 
+                    <div
                         className="flex w-full max-w-140 flex-col items-center rounded-[40px] bg-[#FAFAFA] p-10 pb-12 text-center shadow-2xl"
                         style={{ animation: "alert-anim 5s forwards" }}
                     >
@@ -172,14 +179,14 @@ const CakeGame: React.FC = () => {
                         </div>
                         <h2 className="mb-5 text-[34px] font-extrabold text-[#ED1C24] leading-tight" style={{ fontFamily: "'Baloo 2', cursive" }}>Keep Your Distance</h2>
                         <p className="text-[20px] font-semibold text-[#583921] leading-[1.4]">
-                           Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
+                            Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
                         </p>
                     </div>
                 </div>
             )}
 
             {gamePhase === "line" && (
-                <div 
+                <div
                     className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
                     style={{ animation: "line-anim 3s forwards" }}
                 >
@@ -187,7 +194,7 @@ const CakeGame: React.FC = () => {
                         <div className="absolute right-1/2 mr-10" style={{ animation: "bounce-left 1s infinite" }}>
                             <ArrowLeft color="#ED1C24" size={200} strokeWidth={2.5} />
                         </div>
-                        
+
                         <div className="w-1.25 h-full rounded-full bg-[#ED1C24]" />
 
                         <div className="absolute left-1/2 ml-10" style={{ animation: "bounce-right 1s infinite" }}>
@@ -198,15 +205,19 @@ const CakeGame: React.FC = () => {
             )}
 
             {/* Contadores de puntos */}
-            <div className="fixed top-8 left-70 -translate-x-1/2 z-30">
-                <GamePoints points={p1Score} />
-            </div>
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={90} />
-            </div>
-            <div className="fixed top-8 right-40 -translate-x-1/2 z-30">
-                <GamePoints points={p2Score} />
-            </div>
+            {gamePhase !== "instructions" && (
+                <>
+                    <div className="fixed top-8 left-[80px] z-30">
+                        <GamePoints points={p1Score} playerRole="P1" />
+                    </div>
+                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                        <Timer initialSeconds={60} />
+                    </div>
+                    <div className="fixed top-8 right-[80px] z-30">
+                        <GamePoints points={p2Score} playerRole="P2" />
+                    </div>
+                </>
+            )}
 
             <img
                 src={Catapulta}

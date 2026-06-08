@@ -3,19 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import MiniCharacterCard from "../../components/MiniCharacterCard";
 import Navbar from "../../components/mobile/Navbar";
+import UnlockCharacterPopup from "../../components/UnlockCharacterPopup";
 
 interface Character {
     id: string;
     character_name: string; // Updated from name
     collection_name?: string;
-    img_url: string; 
+    img_url: string;
     bg_color?: string;
 }
 
 const CHARACTER_COLORS = ["#76D6FF", "#FF7BE2", "#FFE23F", "#925FDF"];
 
 const getImageUrl = (char: any) => {
-    
+
 
 
     const path = char.img_url || char.url || char.image || char.image_url;
@@ -36,6 +37,7 @@ const getRandomColor = (id: string) => {
 export default function BlockedCharacters() {
     const [characters, setCharacters] = useState<Character[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isUnlockPopupOpen, setIsUnlockPopupOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -61,7 +63,7 @@ export default function BlockedCharacters() {
                     .from("user_characters")
                     .select("character_id")
                     .eq("user_id", userId);
-                
+
                 if (userCharError) {
                     console.error("Error fetching user characters:", userCharError);
                 } else if (userChars) {
@@ -84,7 +86,7 @@ export default function BlockedCharacters() {
 
     return (
         <div className="relative min-h-svh w-screen overflow-x-hidden bg-[#ED1C24] md:hidden">
-   
+
             <div
                 style={{
                     position: "absolute",
@@ -112,7 +114,7 @@ export default function BlockedCharacters() {
                     paddingBottom: "120px",
                 }}
             >
-               
+
                 <div style={{ height: "90px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <h1
                         style={{
@@ -129,7 +131,7 @@ export default function BlockedCharacters() {
                     </h1>
                 </div>
 
-              
+
                 <div style={{ height: "30px" }} />
 
 
@@ -196,8 +198,8 @@ export default function BlockedCharacters() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(3, 95px)",
-                            gap: "35px",
+                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                            gap: "15px",
                             justifyContent: "center",
                             width: "100%",
                             maxWidth: "400px",
@@ -207,14 +209,19 @@ export default function BlockedCharacters() {
                             <MiniCharacterCard
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
-                                bgColor="#343434" 
-                                onClick={() => console.log(`Blocked ${char.character_name}`)}
+                                bgColor="#343434"
+                                onClick={() => setIsUnlockPopupOpen(true)}
                                 isLocked={true}
                             />
                         ))}
                     </div>
                 )}
             </div>
+
+            <UnlockCharacterPopup
+                isOpen={isUnlockPopupOpen}
+                onClose={() => setIsUnlockPopupOpen(false)}
+            />
 
             <Navbar />
         </div>

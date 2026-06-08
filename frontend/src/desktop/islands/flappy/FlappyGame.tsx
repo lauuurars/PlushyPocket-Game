@@ -12,6 +12,7 @@ import woodenbench from '../../../assets/flappybird/woodenbench.svg';
 import woodenbench2 from '../../../assets/flappybird/woodenbench2.svg';
 import woodenbench3 from '../../../assets/flappybird/woodenbench3.svg';
 import Timer from '../../../components/Timer';
+import FlappyInstructionsModal from '../../../components/FlappyInstructionsModal';
 
 // Characters
 import Cinamon from '../../../assets/flappybird/characters/Cinamon.svg';
@@ -87,6 +88,8 @@ const FlappyGame: React.FC = () => {
         }
         return char;
     });
+    const [score, setScore] = useState(0);
+    const [showInstructions, setShowInstructions] = useState(true);
 
     // Configuración Estricta
     const SPEED = 2;
@@ -492,7 +495,9 @@ const FlappyGame: React.FC = () => {
 
     // Animation loop lifecycle
     useEffect(() => {
-        requestRef.current = requestAnimationFrame(animate);
+        if (!showInstructions) {
+            requestRef.current = requestAnimationFrame(animate);
+        }
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, []);
 
@@ -520,6 +525,7 @@ const FlappyGame: React.FC = () => {
 
         return () => clearInterval(interval);
     }, []);
+    }, [showInstructions]); // Add dependency to fix the infinite effect loop on pause
 
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
@@ -572,6 +578,24 @@ const FlappyGame: React.FC = () => {
                     />
                 </div>
             </div>
+            {/* Contadores de puntos*/}
+            {!showInstructions && (
+                <>
+                    <div className="fixed top-8 left-[80px] z-30">
+                        <GamePoints points={score} playerRole="P1" />
+                    </div>
+                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                        <Timer initialSeconds={90} />
+                    </div>
+                    <div className="fixed top-8 right-[80px] z-30">
+                        <GamePoints points={score} playerRole="P2" />
+                    </div>
+                </>
+            )}
+
+            {showInstructions && (
+                <FlappyInstructionsModal onStart={() => setShowInstructions(false)} />
+            )}
 
             <div className="z-30 relative">
                 <Ocean />

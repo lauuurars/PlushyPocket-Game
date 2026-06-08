@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import MiniCharacterCard from "../../components/MiniCharacterCard";
 import Navbar from "../../components/mobile/Navbar";
+import FlappyCharacterAlert from "../../components/FlappyCharacterAlert";
 
 interface Character {
     id: string;
@@ -31,6 +32,24 @@ export default function Characters() {
     const [characters, setCharacters] = useState<Character[]>([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    // FlappyCharacterAlert state
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+    const [confirmedCharacterId, setConfirmedCharacterId] = useState<string | null>(null);
+
+    function handleCharacterClick(char: Character) {
+        setSelectedCharacter(char);
+        setAlertOpen(true);
+    }
+
+    function handleAlertConfirm() {
+        if (selectedCharacter) {
+            setConfirmedCharacterId(selectedCharacter.id);
+        }
+        setAlertOpen(false);
+        // TODO: navigate to Flappy Bird, e.g. navigate("/flappy");
+    }
 
     useEffect(() => {
         async function fetchCharacters() {
@@ -187,8 +206,8 @@ export default function Characters() {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(3, 95px)",
-                            gap: "35px",
+                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                            gap: "15px",
                             justifyContent: "center",
                             width: "100%",
                             maxWidth: "400px",
@@ -199,7 +218,8 @@ export default function Characters() {
                                 key={char.id}
                                 imageSrc={getImageUrl(char)}
                                 bgColor={char.bg_color || getColorByIndex(index)}
-                                onClick={() => console.log(`Clicked ${char.character_name}`)}
+                                onClick={() => handleCharacterClick(char)}
+                                isSelected={confirmedCharacterId === char.id}
                             />
                         ))}
                     </div>
@@ -207,6 +227,17 @@ export default function Characters() {
             </div>
 
             <Navbar />
+
+            {/* Flappy Bird character confirmation alert */}
+            {selectedCharacter && (
+                <FlappyCharacterAlert
+                    isOpen={alertOpen}
+                    characterName={selectedCharacter.character_name}
+                    characterImageUrl={getImageUrl(selectedCharacter) || ""}
+                    onClose={() => setAlertOpen(false)}
+                    onConfirm={handleAlertConfirm}
+                />
+            )}
         </div>
     );
 }

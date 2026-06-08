@@ -74,7 +74,8 @@ export default function StartGame() {
         };
 
         const handleRoomUpdate = (payload: RoomUpdatePayload) => {
-            if (payload.playersInRoom >= 1) {
+            const mobilePlayers = payload.players.filter(p => p.role === "P1" || p.role === "P2").length;
+            if (mobilePlayers >= 2) {
                 socket.disconnect();
                 navigate(`/party-room?roomId=${encodeURIComponent(payload.roomId)}&minigameId=${encodeURIComponent(payload.minigameId)}&islandName=${encodeURIComponent(selection.islandName)}`);
             }

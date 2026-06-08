@@ -1,5 +1,5 @@
 import { Music4, Volume2, VolumeX, Camera } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import UnlockItemPopup from "../../components/UnlockItemPopup";
 import Cloud from "../../assets/homePhone/cloud.svg";
@@ -10,7 +10,7 @@ import Yuki from "../../assets/homePhone/yukifull.svg";
 import Ocean from "../../assets/homePhone/oceanHome.svg";
 import Palmtree from "../../assets/homePhone/palmtree.svg";
 import Sand from "../../assets/homePhone/sand.svg";
-import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3";
+import { globalAudio } from "../../lib/audioManager";
 import Navbar from "../../components/mobile/Navbar";
 import { fetchPartyRoomUserProfile, persistCharacter, persistUsername } from "../../lib/api";
 
@@ -21,19 +21,12 @@ const HomePhone = () => {
     const [character, setCharacter] = useState(() => {
         return localStorage.getItem("character") ?? "Mochi";
     });
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [isMuted, setIsMuted] = useState(false);
-    const [startedMusic, setStartedMusic] = useState(false);
+    const [isMuted, setIsMuted] = useState(globalAudio.isMuted());
+    const [startedMusic, setStartedMusic] = useState(globalAudio.hasStarted());
     const [showPopup, setShowPopup] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Setup background music
-        const audio = new Audio(BackgroundMusic);
-        audio.loop = true;
-        audio.volume = 0.4;
-        audioRef.current = audio;
-
         void fetchPartyRoomUserProfile().then((profile) => {
             if (!profile) return;
             setUsername(profile.displayName);
@@ -46,24 +39,12 @@ const HomePhone = () => {
             navigate("/choose-character", { replace: true });
         });
 
-        return () => {
-            audio.pause();
-            audio.src = "";
-        };
     }, [navigate]);
 
     const toggleMute = () => {
-        const audioMute = audioRef.current;
-        if (!audioMute) return;
-
-        if (!startedMusic) {
-            audioMute.play().catch(console.error);
-            setStartedMusic(true);
-            setIsMuted(false);
-        } else {
-            audioMute.muted = !audioMute.muted;
-            setIsMuted(!isMuted);
-        }
+        const muted = globalAudio.toggleMute();
+        setIsMuted(muted);
+        setStartedMusic(globalAudio.hasStarted());
     };
 
     const getCharacterImage = () => {

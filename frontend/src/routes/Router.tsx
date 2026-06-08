@@ -19,6 +19,7 @@ import JoinRoom from "../phone/pages/JoinRoom";
 import WaitingRoom from "../phone/pages/WaitingRoom";
 import Profile from "../phone/pages/Profile";
 import Rewards from "../phone/pages/Rewards";
+import RedeemedSuccess from "../phone/pages/RedeemedSuccess";
 import { supabase } from "../lib/supabaseClient";
 import ShoutCake from "../phone/islands/cake/ShoutCake";
 import Results from "../desktop/pages/Results";
@@ -31,6 +32,7 @@ import Error404 from "../desktop/pages/Error404";
 import Onboarding1 from "../phone/onboarding/Onboarding1";
 import Onboarding2 from "../phone/onboarding/Onboarding2";
 import Onboarding3 from "../phone/onboarding/Onboarding3";
+import UnlockedReward from "../phone/pages/UnlockedReward";
 
 type Viewport = "pc" | "mobile";
 
@@ -136,7 +138,8 @@ const router = createBrowserRouter(
         },
         {
             path: "/results",
-            Component: Results
+            Component: Results,
+            loader: requireViewport("pc"),
         },
         // Loading - mobile
         {
@@ -180,15 +183,13 @@ const router = createBrowserRouter(
         // QRGame - mobile
         {
             path: "/qr-game",
-            Component: QRGame
-            ,
+            Component: QRGame,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // QRCharacter - mobile
         {
             path: "/qr-character",
-            Component: QRCharacter
-            ,
+            Component: QRCharacter,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // Choose-character - mobile
@@ -217,11 +218,18 @@ const router = createBrowserRouter(
         },
         {
             path: "/profile",
-            Component: Profile
+            Component: Profile,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" }))
         },
         {
             path: "/rewards",
-            Component: Rewards
+            Component: Rewards,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" }))
+        },
+        {
+            path: "/redeemed/:userRewardId",
+            Component: RedeemedSuccess,
+            loader: requireViewport("mobile")
         },
         {
             path: "/shout-cake",
@@ -235,11 +243,13 @@ const router = createBrowserRouter(
         },
         {
             path: "/characters",
-            Component: Characters
+            Component: Characters,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/blocked-characters",
-            Component: BlockedCharacters
+            Component: BlockedCharacters,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
             path: "/loser",
@@ -249,6 +259,11 @@ const router = createBrowserRouter(
         {
             path: "/winner",
             Component: WinnerPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/unlocked-reward",
+            Component: UnlockedReward,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         // 404 - PC

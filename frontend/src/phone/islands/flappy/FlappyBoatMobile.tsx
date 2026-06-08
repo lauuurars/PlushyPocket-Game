@@ -3,8 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Socket } from "socket.io-client";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
-import Background from "../../../assets/moleAssets/HammerBg.jpg";
 import bigBoat from "../../../assets/flappybird/bigBoat.png";
+import WaterWave from "../../../assets/flappybird/FlappyBoatWaterMobile.svg";
 
 export default function FlappyGame() {
   const navigate = useNavigate();
@@ -212,14 +212,14 @@ export default function FlappyGame() {
 
       <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-18">
         <h1
-          className="text-center text-[44px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
+          className="text-center text-[40px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
           style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
         >
-          Flappy Boat
+          Fly as high as<br/>you can!
         </h1>
 
         <div
-          className="mt-14 flex w-full flex-1 items-center justify-center"
+          className="mt-6 flex w-full flex-1 items-center justify-center relative z-10"
         >
           <img
             src={bigBoat}
@@ -229,7 +229,7 @@ export default function FlappyGame() {
           />
         </div>
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center mt-auto z-20 mb-2">
           <h2
             className="text-center text-[54px] font-extrabold leading-12 tracking-[-1px] text-[#ED1C24]"
             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
@@ -237,7 +237,7 @@ export default function FlappyGame() {
             Game Points
           </h2>
           <p
-            className="mt-2 text-center text-[34px] font-extrabold leading-9 tracking-[-1px] text-[#583921]"
+            className="mt-2 text-center text-[40px] font-extrabold leading-9 tracking-[-1px] text-[#583921]"
             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
           >
             {score} pts

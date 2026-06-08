@@ -16,9 +16,18 @@ export default function PartyRoom() {
     const [searchParams] = useSearchParams();
     const [scale, setScale] = useState(1);
     const [room, setRoom] = useState<RoomUpdatePayload | null>(null);
+    const [startPayload, setStartPayload] = useState<GameStartPayload | null>(null);
 
     const roomId = (searchParams.get("roomId") ?? "").trim();
     const islandName = (searchParams.get("islandName") ?? "Sanrio Island").trim();
+
+    useEffect(() => {
+        if (!startPayload) return;
+        const t = setTimeout(() => {
+            navigate(`/${startPayload.minigameId}`, { replace: true });
+        }, 5000);
+        return () => clearTimeout(t);
+    }, [navigate, startPayload]);
 
     useEffect(() => {
         if (!roomId) return;
@@ -48,7 +57,7 @@ export default function PartyRoom() {
                 players: payload.players,
                 minigameId: payload.minigameId,
             });
-            navigate(`/${payload.minigameId}`, { replace: true });
+            setStartPayload(payload);
         };
 
         socket.on("room_update", onRoomUpdate);

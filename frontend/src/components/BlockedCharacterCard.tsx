@@ -13,7 +13,7 @@ export default function BlockedCharacterCard({
     imageSrc,
     bgColor = "#333333",
     imageAlign = "center",
-    hideName = true, // Por defecto oculto para que se vea como en la foto
+    hideName = true, 
 }: BlockedCharacterCardProps) {
     return (
         <div className="flex flex-col items-center gap-2 opacity-80">
@@ -32,7 +32,7 @@ export default function BlockedCharacterCard({
                     />
                 )}
 
-                {/* Dark overlay and Lock icon */}
+            
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                     <Lock className="h-10 w-10 text-white drop-shadow-md" />
                 </div>

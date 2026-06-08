@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Music4, Volume2, VolumeX } from "lucide-react";
 
@@ -12,7 +12,7 @@ import Estrella3 from "../../assets/welcome/Estrella3.svg";
 import Flor from "../../assets/welcome/Flor.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 import Corazon from "../../assets/welcome/Corazon.svg";
-import BackgroundMusic from "../../assets/welcome/Pocket Music.mp3"
+import { globalAudio } from "../../lib/audioManager";
 import { VioletButton } from "../../components/VioletButton";
 
 // --- elemento decorativo flotante -------------------
@@ -39,9 +39,8 @@ function FloatingElement({ src, alt, style, animationClass, size, delay = "0s" }
 }
 
 export default function Welcome() {
-    const audioRef = useRef<HTMLAudioElement | null>(null)
-    const [isMuted, setIsMuted] = useState(false);
-    const [startedMusic, setStartedMusic] = useState(false);
+    const [isMuted, setIsMuted] = useState(globalAudio.isMuted());
+    const [startedMusic, setStartedMusic] = useState(globalAudio.hasStarted());
     const [ready, setReady] = useState(false);
     const navigate = useNavigate();
 
@@ -52,31 +51,12 @@ export default function Welcome() {
         return () => clearTimeout(t);
     }, []);
 
-    //  background music :D
-    useEffect(() => {
-        const audio = new Audio(BackgroundMusic);
-        audio.loop = true;
-        audio.volume = 0.4;
-        audioRef.current = audio;
-
-        return () => {
-            audio.pause();
-            audio.src = "";
-        }
-    }, [])
+    // remove local background music setup
 
     const toggleMute = () => {
-        const audioMute = audioRef.current
-        if (!audioMute) return;
-
-        if (!startedMusic) {
-            audioMute.play().catch(console.error)
-            setStartedMusic(true);
-            setIsMuted(false);
-        } else {
-            audioMute.muted = !audioMute.muted
-            setIsMuted(!isMuted)
-        }
+        const muted = globalAudio.toggleMute();
+        setIsMuted(muted);
+        setStartedMusic(globalAudio.hasStarted());
     };
 
     return (
@@ -280,7 +260,10 @@ export default function Welcome() {
                     >
                         <VioletButton
                             text="Let's Play"
-                            onClick={() => navigate("/home")}
+                            onClick={() => {
+                                globalAudio.play();
+                                navigate("/home");
+                            }}
                             icon={<svg
                                 width="28"
                                 height="28"
