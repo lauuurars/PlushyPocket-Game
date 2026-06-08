@@ -253,7 +253,7 @@ export default function HammerMole() {
                     className="text-center text-[44px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
                     style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
                 >
-                    Tap the hammer
+                    Move your phone
                     <br />
                     to hit moles!
                 </h1>
@@ -263,7 +263,7 @@ export default function HammerMole() {
                         onClick={requestMotionPermission}
                         className="mt-6 rounded-full bg-white px-6 py-3 font-bold text-[#ED1C24] shadow-md"
                     >
-                        Activar sensor de movimiento
+                        Enable Motion Controls
                     </button>
                 )}
 
