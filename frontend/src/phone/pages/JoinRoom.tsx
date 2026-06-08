@@ -9,6 +9,7 @@ import Corazon from "../../assets/welcome/Corazon.svg";
 import Pinguino from "../../assets/onboarding/pinguino.svg";
 import { createRealtimeSocket, fetchPartyRoomUserProfile, type GameStartPayload, type PlayerJoinPayload } from "../../lib/api";
 import { updateRoomState } from "../../lib/roomStore";
+import FullRoomAlert from "../../components/FullRoomAlert";
 
 const GAME_ROUTES: Record<string, string> = {
   "cake": "/shout-cake",
@@ -23,10 +24,16 @@ export default function JoinRoom() {
     const minigameId = (searchParams.get("minigameId") ?? "").trim();
     const [ready, setReady] = useState(false);
     const [joinError, setJoinError] = useState<string | null>(null);
+    const [isFullRoomAlertOpen, setIsFullRoomAlertOpen] = useState(false);
     const joinedRef = useRef(false);
     const navigatedRef = useRef(false);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const userIdRef = useRef<string | null>(null);
+
+    const handleCloseFullRoom = () => {
+        setIsFullRoomAlertOpen(false);
+        navigate("/home-phone");
+    };
 
     useEffect(() => {
         const t = setTimeout(() => setReady(true), 80);
@@ -42,8 +49,8 @@ export default function JoinRoom() {
         const onRoomNotFound = (p: { message?: string }) => {
             setJoinError(p?.message ?? "Sala no encontrada");
         };
-        const onRoomFull = (p: { message?: string }) => {
-            setJoinError(p?.message ?? "La sala está llena");
+        const onRoomFull = () => {
+            setIsFullRoomAlertOpen(true);
         };
         const onConnectError = () => {
             setJoinError("No se pudo conectar al servidor. Verifica que el servidor esté corriendo.");
@@ -333,6 +340,7 @@ export default function JoinRoom() {
                     </div>
                 </div>
             ) : null}
+            <FullRoomAlert isOpen={isFullRoomAlertOpen} onClose={handleCloseFullRoom} />
         </>
     );
 }
