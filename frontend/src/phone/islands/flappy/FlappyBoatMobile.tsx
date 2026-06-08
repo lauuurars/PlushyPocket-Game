@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Socket } from "socket.io-client";
-import type { GameOverPayload } from "../../../lib/api";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
 import Background from "../../../assets/moleAssets/HammerBg.jpg";
@@ -13,11 +12,6 @@ export default function FlappyGame() {
   const roomId = searchParams.get("roomId");
 
   const [score, setScore] = useState(0);
-  const [gameOverData, setGameOverData] = useState<{
-    winnerId: string;
-    myScore: number;
-    opponentScore: number;
-  } | null>(null);
   const [tapFeedback, setTapFeedback] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
@@ -56,14 +50,10 @@ export default function FlappyGame() {
 
 
 
-    socket.on("game_over", (payload: GameOverPayload) => {
+    socket.on("game_over", (payload: { winnerId: string; scores: Record<string, number> }) => {
       if (cancelled) return;
-      const myId = userIdRef.current;
-      const myScore = payload.scores[myId] ?? 0;
-      const opponentScore = Object.entries(payload.scores).find(
-        ([id]) => id !== myId,
-      )?.[1] ?? 0;
-      setGameOverData({ winnerId: payload.winnerId, myScore, opponentScore });
+      const isWinner = payload.winnerId === userIdRef.current;
+      navigate(isWinner ? '/winner' : '/loser', { replace: true });
     });
 
     socket.on("game_action", (data: { userId: string; action: string; payload?: { currentScore?: number; score?: number } }) => {
@@ -117,27 +107,6 @@ export default function FlappyGame() {
     }
     jump();
   };
-
-  if (gameOverData) {
-    const isWinner = gameOverData.winnerId === userIdRef.current;
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ED1C24] p-8 text-center">
-        <h1 className="text-5xl font-extrabold text-white" style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}>
-          {isWinner ? "You Win!" : "You Lose"}
-        </h1>
-        <div className="rounded-2xl bg-white/20 p-6 text-white">
-          <p className="text-2xl font-bold">Your Score: {gameOverData.myScore}</p>
-          <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
-        </div>
-        <button
-          onClick={() => navigate("/home")}
-          className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ED1C24]"
-        >
-          Go Home
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div
