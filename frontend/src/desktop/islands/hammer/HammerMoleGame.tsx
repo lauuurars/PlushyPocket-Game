@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import type { Socket } from 'socket.io-client';
 import type { ActiveCharacter, Character, Position, Side } from '../../../types/hammerTypes';
+import { createRealtimeSocket } from '../../../lib/api';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -31,10 +33,19 @@ const SIDE_CONFIG: Record<Side, { rotation: number, offset: string, ranges: numb
 
 const HammerMoleGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
+    const socketRef = useRef<Socket | null>(null);
+    const activeCharactersRef = useRef<ActiveCharacter[]>([]);
+
     const [activeCharacters, setActiveCharacters] = useState<ActiveCharacter[]>([]);
     const [score, setScore] = useState(0);
     const [showInstructions, setShowInstructions] = useState(true);
 
+    // Sincronizar ref con state para poder leerlo dentro del socket handler
+    useEffect(() => {
+        activeCharactersRef.current = activeCharacters;
+    }, [activeCharacters]);
+
+    // Cámara
     useEffect(() => {
         let stream: MediaStream | null = null;
         const startCamera = async () => {
@@ -53,8 +64,45 @@ const HammerMoleGame: React.FC = () => {
         };
     }, []);
 
+    // Socket — escucha golpes del celular
+    useEffect(() => {
+        const socket = createRealtimeSocket() as unknown as Socket;
+        socketRef.current = socket;
 
-    // Controla la aparición aleatoria de los personajes 
+        socket.on('player_action', (data: {
+            userId: string;
+            action: string;
+            payload: { direction: string };
+        }) => {
+            if (data.action !== 'hammer_swing') return;
+
+            const { direction } = data.payload;
+            const current = activeCharactersRef.current;
+
+            // Buscar topo activo en esa dirección
+            const hit = current.find(c => c.side === direction);
+            if (!hit) return;
+
+            // Eliminar el topo (anti doble-golpe)
+            setActiveCharacters(prev => prev.filter(c => c.id !== hit.id));
+
+            // Sumar puntos
+            setScore(prev => prev + 10);
+
+            // Confirmar al cel que pegó
+            socket.emit('hit_confirmed', {
+                userId: data.userId,
+                characterName: hit.character.name,
+                points: 10,
+            });
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, []);
+
+    // Aparición aleatoria de personajes
     useEffect(() => {
         if (showInstructions) return;
 
@@ -180,7 +228,6 @@ const HammerMoleGame: React.FC = () => {
             <img src={partedeabajo} alt="Marco Inferior" className="fixed -bottom-30 left-0 w-screen h-auto z-20 pointer-events-none" />
             <img src={ladoizquierdo} alt="Marco Izquierdo" className="fixed top-0 -left-2.5 h-screen w-auto z-10 pointer-events-none" />
 
-
             <iframe
                 width="0"
                 height="0"
@@ -190,11 +237,7 @@ const HammerMoleGame: React.FC = () => {
                 title="Background Music"
             ></iframe>
         </div>
-
     );
-
-
-
 };
 
 export default HammerMoleGame;
