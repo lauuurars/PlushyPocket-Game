@@ -8,7 +8,7 @@ const STRATEGIES: Record<string, ScoringFn> = {
         return Math.round(Math.min(maxRms / 0.12, 1) * 250)
     },
     "flappy-boat": (data) => {
-        return data.score ?? 0
+        return (data.payload?.score as number) ?? data.score ?? 0
     },
     "hammer-mole": (data) => {
         return data.score ?? 0

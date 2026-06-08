@@ -1,28 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Socket } from "socket.io-client";
-import type { GameOverPayload } from "../../../lib/api";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
 import bigBoat from "../../../assets/flappybird/bigBoat.png";
-import WaterWave from "../../../assets/flappybird/FlappyBoatWaterMobile.svg";
 
 export default function FlappyGame() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const roomId = searchParams.get("roomId");
 
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [score, setScore] = useState(0);
-  const [gameOverData, setGameOverData] = useState<{
-    winnerId: string;
-    myScore: number;
-    opponentScore: number;
-  } | null>(null);
+  const [tapFeedback, setTapFeedback] = useState(false);
+
+  // Gyroscope
+  const [gyroPermission, setGyroPermission] = useState<boolean | null>(null);
+  const motionInitialYRef = useRef<number | null>(null);
+  const canGyroJumpRef = useRef(true);
 
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef<string>("");
   const characterIdRef = useRef<string>("mochi");
+  const touchFiredRef = useRef(false);
+  const tapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -45,25 +45,36 @@ export default function FlappyGame() {
 
       const userId = profile?.id ?? localStorage.getItem("plushyPocket_dbUserId") ?? "";
       const username = profile?.displayName ?? "Player";
-      const characterId = profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
+      const flappyCharacter = sessionStorage.getItem("flappyCharacter");
+      const characterId = flappyCharacter ?? profile?.character_selected ?? localStorage.getItem("character") ?? "mochi";
 
       userIdRef.current = userId;
       characterIdRef.current = characterId;
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
 
-    socket.on("game_timer_tick", (data: { remaining: number }) => {
-      if (!cancelled) setTimeRemaining(data.remaining);
-    });
 
-    socket.on("game_over", (payload: GameOverPayload) => {
+
+    socket.on("game_over", (payload: { winnerId: string; scores: Record<string, number> }) => {
       if (cancelled) return;
-      const myId = userIdRef.current;
-      const myScore = payload.scores[myId] ?? 0;
-      const opponentScore = Object.entries(payload.scores).find(
-        ([id]) => id !== myId,
-      )?.[1] ?? 0;
-      setGameOverData({ winnerId: payload.winnerId, myScore, opponentScore });
+      sessionStorage.removeItem("flappyCharacter");
+      const isWinner = payload.winnerId === userIdRef.current;
+      if (isWinner) {
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) navigate('/winner', { replace: true });
+        }, 5000);
+        const onReward = (rewardPayload: { userId: string; rewardId: string }) => {
+          clearTimeout(timeoutId);
+          if (!cancelled && rewardPayload.userId === userIdRef.current) {
+            navigate(`/unlocked-reward?rewardId=${encodeURIComponent(rewardPayload.rewardId)}`, {
+              state: { fromGame: true }
+            });
+          }
+        };
+        socket.on("reward_assigned", onReward);
+      } else {
+        navigate('/loser', { replace: true });
+      }
     });
 
     socket.on("game_action", (data: { userId: string; action: string; payload?: { currentScore?: number; score?: number } }) => {
@@ -82,72 +93,144 @@ export default function FlappyGame() {
     };
   }, [roomId]);
 
-  if (gameOverData) {
-    const isWinner = gameOverData.winnerId === userIdRef.current;
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ED1C24] p-8 text-center">
-        <h1 className="text-5xl font-extrabold text-white" style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}>
-          {isWinner ? "You Win!" : "You Lose"}
-        </h1>
-        <div className="rounded-2xl bg-white/20 p-6 text-white">
-          <p className="text-2xl font-bold">Your Score: {gameOverData.myScore}</p>
-          <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
-        </div>
-        <button
-          onClick={() => navigate("/home")}
-          className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ED1C24]"
-        >
-          Go Home
-        </button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    };
+  }, []);
+
+  // Auto-detect gyro support
+  useEffect(() => {
+    const hasDeviceOrientation = typeof DeviceOrientationEvent !== 'undefined';
+    const hasDeviceMotion = typeof DeviceMotionEvent !== 'undefined';
+    const orientNeedsPermission = hasDeviceOrientation &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    const motionNeedsPermission = hasDeviceMotion &&
+      typeof (DeviceMotionEvent as any).requestPermission === 'function';
+
+    if (orientNeedsPermission || motionNeedsPermission) {
+      // iOS or Android — need user gesture for permission
+      return;
+    }
+
+    // No permission required — auto-enable if any sensor API exists
+    if (hasDeviceOrientation || hasDeviceMotion) {
+      setGyroPermission(true);
+    } else {
+      setGyroPermission(false);
+    }
+  }, []);
+
+  const requestGyroPermission = async () => {
+    // Try DeviceOrientation first (iOS), fall back to DeviceMotion (Android)
+    if (typeof (DeviceOrientationEvent as any)?.requestPermission === 'function') {
+      const result = await (DeviceOrientationEvent as any).requestPermission();
+      if (result === 'granted') {
+        setGyroPermission(true);
+        return;
+      }
+    }
+    if (typeof (DeviceMotionEvent as any)?.requestPermission === 'function') {
+      const result = await (DeviceMotionEvent as any).requestPermission();
+      if (result === 'granted') {
+        setGyroPermission(true);
+        return;
+      }
+    }
+    setGyroPermission(false);
+  };
+
+  const jump = () => {
+    const socket = socketRef.current;
+    if (socket && roomId && userIdRef.current) {
+      socket.emit("player_action", {
+        userId: userIdRef.current,
+        characterId: characterIdRef.current,
+        action: "jump",
+        timestamp: Date.now(),
+        roomId,
+      });
+    }
+    setTapFeedback(true);
+    if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    tapTimeoutRef.current = setTimeout(() => setTapFeedback(false), 120);
+  };
+
+  // Tilt control via devicemotion (works on both iOS and Android)
+  useEffect(() => {
+    if (!gyroPermission) return;
+
+    const handler = (event: DeviceMotionEvent) => {
+      const y = event.accelerationIncludingGravity?.y;
+      if (y == null) return;
+
+      const referenceY = motionInitialYRef.current;
+
+      if (referenceY === null) {
+        motionInitialYRef.current = y;
+        return;
+      }
+
+      // When phone is vertical: y ≈ -9.8
+      // Tilt forward (top away from you): y → 0 (higher)
+      // Tilt backward (top toward you): y becomes more negative (lower)
+      const delta = y - referenceY; // positive = forward tilt
+
+      if (Math.abs(delta) > 2.5 && canGyroJumpRef.current) {
+        canGyroJumpRef.current = false;
+        jump();
+      }
+
+      if (Math.abs(delta) < 1) {
+        canGyroJumpRef.current = true;
+      }
+    };
+
+    window.addEventListener('devicemotion', handler);
+    return () => window.removeEventListener('devicemotion', handler);
+  }, [gyroPermission]);
+
+  const handleTouchStart: React.TouchEventHandler = (e) => {
+    e.preventDefault();
+    touchFiredRef.current = true;
+    jump();
+  };
+
+  const handleClick: React.MouseEventHandler = () => {
+    if (touchFiredRef.current) {
+      touchFiredRef.current = false;
+      return;
+    }
+    jump();
+  };
+
   return (
-    <div className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA]">
-      <style>{`
-        @keyframes floatBoat {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          33%      { transform: translateY(-15px) rotate(3deg); }
-          66%      { transform: translateY(8px) rotate(-2deg); }
-        }
-        @keyframes waveWater {
-          0%, 100% { transform: translateX(0) translateY(0); }
-          50%      { transform: translateX(-8%) translateY(16px); }
-        }
-        .animate-boat {
-          animation: floatBoat 3.5s ease-in-out infinite;
-          transform-origin: bottom center;
-        }
-        .animate-water {
-          animation: waveWater 4s ease-in-out infinite;
-        }
-      `}</style>
+    <div
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
+      className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA] select-none"
+      style={{ touchAction: "manipulation" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
 
       <div
         className="absolute left-1/2 -top-95 h-155 w-155 -translate-x-1/2 rounded-full bg-[#ED1C24]"
       />
 
-      {timeRemaining !== null && (
-        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
-          <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ED1C24] shadow-md">
-            {timeRemaining}s
-          </span>
-        </div>
-      )}
-
-      <img 
-        src={WaterWave} 
-        alt="Water waves" 
-        className="absolute bottom-0 left-[-15%] w-[130%] max-w-none z-0 object-cover animate-water" 
-        style={{ minHeight: "35vh" }}
-      />
-
-      <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-14">
+      <div className="relative z-10 flex h-full w-full flex-col items-center px-8 pb-14 pt-18">
         <h1
           className="text-center text-[40px] font-extrabold leading-10 tracking-[-1px] text-[#FAFAFA]"
           style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
         >
-          Fly as high as<br/>you can!
+          Fly as high as<br />you can!
         </h1>
 
         <div
@@ -156,7 +239,7 @@ export default function FlappyGame() {
           <img
             src={bigBoat}
             alt="Boat"
-            className="w-[360px] max-w-[95vw] select-none pointer-events-none drop-shadow-2xl animate-boat"
+            className={`w-[320px] max-w-[88vw] select-none pointer-events-none transition-transform duration-75 ${tapFeedback ? "scale-90" : "scale-100"}`}
             draggable={false}
           />
         </div>
@@ -174,6 +257,19 @@ export default function FlappyGame() {
           >
             {score} pts
           </p>
+          {gyroPermission === null && (
+            <button
+              onClick={requestGyroPermission}
+              className="mt-4 rounded-full bg-white px-6 py-2 text-sm font-bold text-[#ED1C24] shadow-md"
+            >
+              Enable Tilt Control
+            </button>
+          )}
+          {gyroPermission === true && (
+            <p className="mt-3 text-xs text-gray-500">
+              Tap or tilt to jump
+            </p>
+          )}
         </div>
       </div>
     </div>

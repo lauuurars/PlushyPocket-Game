@@ -6,21 +6,28 @@ interface TimerProps {
     /** Server-synced seconds left. When set, local countdown is disabled. */
     remaining?: number | null;
     onTimeUp?: () => void;
+    serverRemaining?: number;
 }
 
-export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeUp }) => {
+export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeUp, serverRemaining }) => {
     const [timeLeft, setTimeLeft] = useState(initialSeconds);
     const [isUrgent, setIsUrgent] = useState(false);
-    const isSynced = remaining != null;
-    const displayTime = isSynced ? remaining : timeLeft;
 
-    // Local countdown for games without server sync (e.g. Cake, Flappy)
+    // Support both remaining (hammer-mole) and serverRemaining (develop)
+    const effectiveServerRemaining = serverRemaining ?? (remaining !== null ? remaining : undefined);
+    const isSynced = effectiveServerRemaining !== undefined;
+    const displayTime = isSynced ? effectiveServerRemaining : timeLeft;
+
+    // Countdown / Sync logic
     useEffect(() => {
-        if (isSynced) return;
+        if (isSynced) {
+            if (effectiveServerRemaining <= 0) {
+                onTimeUp?.();
+            }
+            return;
+        }
 
-        setTimeLeft(initialSeconds);
-
-        if (initialSeconds <= 0) {
+        if (timeLeft <= 0) {
             onTimeUp?.();
             return;
         }
@@ -36,11 +43,7 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeU
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [isSynced, initialSeconds, onTimeUp]);
-
-    useEffect(() => {
-        if (isSynced && remaining <= 0) onTimeUp?.();
-    }, [isSynced, remaining, onTimeUp]);
+    }, [isSynced, effectiveServerRemaining, onTimeUp]);
 
     useEffect(() => {
         setIsUrgent(displayTime <= 10 && displayTime > 0);

@@ -46,9 +46,9 @@ export default function Characters() {
     function handleAlertConfirm() {
         if (selectedCharacter) {
             setConfirmedCharacterId(selectedCharacter.id);
+            sessionStorage.setItem("flappyCharacter", selectedCharacter.character_name.toLowerCase());
         }
         setAlertOpen(false);
-        // TODO: navigate to Flappy Bird, e.g. navigate("/flappy");
     }
 
     useEffect(() => {

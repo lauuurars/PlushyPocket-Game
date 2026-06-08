@@ -135,6 +135,7 @@ const router = createBrowserRouter(
         {
             path: "/home",
             Component: Home,
+            loader: requireViewport("pc")
         },
         {
             path: "/results",

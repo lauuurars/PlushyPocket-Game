@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import BgResults from "../../assets/results/BgResults.svg";
+import BgResults from "../../assets/results/BgResults.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
-import { PinkButton } from "../../components/PinkButton";
+
 import type { PartyResultsNavState } from "../../lib/api";
-import { PLAYER_1_FIXED_AVATAR_URL } from "../partyMocks";
+import { getRoomState, resetRoomState } from "../../lib/roomStore";
+import { supabase } from "../../lib/supabaseClient";
+import { profilePicturePublicUrl } from "../../lib/api";
+
+import MochiIcon from "../../assets/profile-pic/Mochi-Icon.svg";
+import MisuIcon from "../../assets/profile-pic/Misu-Icon.svg";
+import YukiIcon from "../../assets/profile-pic/Yuki-Icon.svg";
 
 function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
     if (!s || typeof s !== "object") return false;
@@ -21,11 +27,26 @@ function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
 export default function Results() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    const handleExit = () => {
+        const { socket } = getRoomState();
+        if (socket) {
+            socket.emit("room__close", { roomId: roomCode });
+            // Add a brief timeout to ensure the emit is sent over WebSocket before connection closes
+            setTimeout(() => {
+                socket.disconnect();
+            }, 100);
+        }
+        resetRoomState();
+    };
     const navState = location.state as unknown;
     const [scale, setScale] = useState(1);
     const [party] = useState<PartyResultsNavState | null>(() =>
         isValidPartyNavState(navState) ? navState : null,
     );
+
+    const [p1Avatar, setP1Avatar] = useState<string>("");
+    const [p2Avatar, setP2Avatar] = useState<string>("");
 
     const roomCode = party?.roomCode ?? "----";
     const winnerPlayer = party?.winnerPlayer ?? 1;
@@ -35,6 +56,68 @@ export default function Results() {
     const p1Score = party?.player1Score ?? 0;
     const p2Score = party?.player2Score ?? 0;
     const rewardName = party?.rewardName;
+
+    const p1 = getRoomState().players.find(p => p.role === "P1") ?? null;
+    const p2 = getRoomState().players.find(p => p.role === "P2") ?? null;
+
+    const p1UserId = party?.player1UserId || p1?.userId;
+    const p1CharacterId = party?.player1CharacterId || p1?.characterId;
+    const p2UserId = party?.player2UserId || p2?.userId;
+    const p2CharacterId = party?.player2CharacterId || p2?.characterId;
+
+    const getPlayerAvatar = async (userId: string, characterId: string | null | undefined): Promise<string> => {
+        try {
+            const { data, error } = await supabase
+                .from("users")
+                .select("character_selected, profile_picture_path")
+                .eq("id", userId)
+                .maybeSingle();
+
+            if (!error && data?.profile_picture_path) {
+                const pathLower = data.profile_picture_path.toLowerCase();
+                const isDefaultChar = pathLower.includes("mochi.svg") || pathLower.includes("misu.svg") || pathLower.includes("yuki.svg") ||
+                                      pathLower.includes("mochi.png") || pathLower.includes("misu.png") || pathLower.includes("yuki.png");
+                if (!isDefaultChar) {
+                    const url = profilePicturePublicUrl(data.profile_picture_path);
+                    if (url) return url;
+                }
+            }
+
+            const char = (data?.character_selected || characterId || "").toLowerCase();
+            if (char.includes("misu")) return MisuIcon;
+            if (char.includes("yuki")) return YukiIcon;
+            return MochiIcon;
+        } catch {
+            const char = (characterId || "").toLowerCase();
+            if (char.includes("misu")) return MisuIcon;
+            if (char.includes("yuki")) return YukiIcon;
+            return MochiIcon;
+        }
+    };
+
+    useEffect(() => {
+        if (p1UserId) {
+            void getPlayerAvatar(p1UserId, p1CharacterId).then((url) => setP1Avatar(url));
+        } else {
+            setP1Avatar("");
+        }
+    }, [p1UserId, p1CharacterId]);
+
+    useEffect(() => {
+        if (p2UserId) {
+            void getPlayerAvatar(p2UserId, p2CharacterId).then((url) => setP2Avatar(url));
+        } else {
+            setP2Avatar("");
+        }
+    }, [p2UserId, p2CharacterId]);
+
+    const avatarFor = (characterId: string | null | undefined, defaultRole: "P1" | "P2"): string => {
+        const key = (characterId ?? "").toLowerCase();
+        if (key.includes("misu")) return MisuIcon;
+        if (key.includes("yuki")) return YukiIcon;
+        if (key.includes("mochi")) return MochiIcon;
+        return defaultRole === "P1" ? MochiIcon : MisuIcon;
+    };
 
     useEffect(() => {
         const updateScale = () => {
@@ -52,7 +135,13 @@ export default function Results() {
     return (
         <div
             className="flex w-screen items-center justify-center overflow-hidden bg-[#ED1C24]"
-            style={{ height: "100svh" }}
+            style={{
+                height: "100svh",
+                backgroundImage: `url("${BgResults}")`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+            }}
         >
             <div className="relative" style={{ width: 1512 * scale, height: 982 * scale }}>
                 <div
@@ -64,306 +153,294 @@ export default function Results() {
                         transformOrigin: "top left",
                     }}
                 >
-                    <div
-                        aria-hidden
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundImage: `url("${BgResults}")`,
-                            backgroundSize: "cover",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                            zIndex: 0,
-                        }}
-                    />
 
                     <div className="relative w-full" style={{ zIndex: 2, height: 982 }}>
-                <div
-                    className="absolute text-[#FAFAFA]"
-                    style={{
-                        top: "62px",
-                        left: "79px",
-                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                        fontWeight: 700,
-                        fontSize: "35px",
-                        letterSpacing: "-1px",
-                        lineHeight: "72px",
-                    }}
-                >
-                    Party Room - {roomCode}
-                </div>
-
-                <img
-                    src={Rayo}
-                    alt=""
-                    aria-hidden
-                    className="absolute"
-                    style={{
-                        top: "97px",
-                        left: "416px",
-                        width: "31px",
-                        height: "auto",
-                        transform: "rotate(12deg)",
-                    }}
-                />
-
-                <h1
-                    className="absolute m-0 text-center text-[#FAFAFA]"
-                    style={{
-                        top: "118px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: "611px",
-                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                        fontWeight: 800,
-                        fontSize: "90px",
-                        letterSpacing: "-1px",
-                        lineHeight: "72px",
-                    }}
-                >
-                    The winner is...
-                </h1>
-
-                <p
-                    className="absolute m-0 text-center text-[#FFFDF6]"
-                    style={{
-                        top: "190px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: "291px",
-                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                        fontWeight: 700,
-                        fontSize: "55px",
-                        letterSpacing: "-1.04px",
-                        lineHeight: "83px",
-                    }}
-                >
-                    {winnerName}
-                </p>
-
-                {rewardName ? (
-                    <p
-                        className="absolute m-0 text-center text-[#FFD700]"
-                        style={{
-                            top: "250px",
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            fontFamily: "'Nunito', system-ui, sans-serif",
-                            fontWeight: 700,
-                            fontSize: "28px",
-                        }}
-                    >
-                        Reward: {rewardName}
-                    </p>
-                ) : null}
-
-                <div
-                    className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
-                    style={{ top: "307px", width: "min(1050px, 80vw)" }}
-                >
-                    <div className="relative flex flex-col items-center">
-                        {winnerPlayer === 1 && (
-                            <img
-                                src={Corona}
-                                alt=""
-                                aria-hidden
-                                style={{
-                                    position: "absolute",
-                                    top: "-18px",
-                                    left: "-12px",
-                                    width: "62px",
-                                    height: "auto",
-                                    transform: "rotate(-18deg)",
-                                }}
-                            />
-                        )}
-
                         <div
-                            className="relative overflow-hidden rounded-full"
+                            className="absolute text-[#FAFAFA]"
                             style={{
-                                width: "296px",
-                                height: "296px",
-                                border: "12px solid #FAFAFA",
-                                backgroundColor: "rgba(250,250,250,0.12)",
-                            }}
-                        >
-                            <img
-                                src={PLAYER_1_FIXED_AVATAR_URL}
-                                alt=""
-                                className="h-full w-full object-contain object-center"
-                                draggable={false}
-                            />
-                        </div>
-
-                        <p
-                            className="m-0 mt-[18px] text-center text-[#FFFDF6]"
-                            style={{
+                                top: "62px",
+                                left: "-230px",
                                 fontFamily: "'Baloo 2', system-ui, sans-serif",
                                 fontWeight: 700,
-                                fontSize: "41px",
-                                letterSpacing: "-0.77px",
-                                lineHeight: "61px",
+                                fontSize: "45px",
+                                letterSpacing: "-1px",
+                                lineHeight: "72px",
                             }}
                         >
-                            Player 1
-                        </p>
-                        <p
-                            className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
+                            Party Room - {roomCode}
+                        </div>
+
+                        <img
+                            src={Rayo}
+                            alt=""
+                            aria-hidden
+                            className="absolute"
                             style={{
-                                fontFamily: "'Nunito', system-ui, sans-serif",
-                                fontWeight: 600,
-                                fontSize: "23px",
-                                letterSpacing: "-0.43px",
-                                lineHeight: "34px",
+                                top: "150px",
+                                left: "1200px",
+                                width: "80px",
+                                height: "auto",
+                                transform: "rotate(80deg)",
+                            }}
+                        />
+
+                        <h1
+                            className="absolute m-0 text-center text-[#FAFAFA]"
+                            style={{
+                                top: "118px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "611px",
+                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                fontWeight: 800,
+                                fontSize: "90px",
+                                letterSpacing: "-1px",
+                                lineHeight: "72px",
                             }}
                         >
-                            {player1Name}
-                        </p>
+                            The winner is...
+                        </h1>
+
                         <p
-                            className="m-0 mt-1 text-center text-[#FFD700]"
+                            className="absolute m-0 text-center text-[#FFFDF6]"
                             style={{
-                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                top: "190px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "500px",
+                                fontFamily: "'Baloo 2', system-ui, sans-serif",
                                 fontWeight: 700,
-                                fontSize: "20px",
+                                fontSize: "55px",
+                                letterSpacing: "-1.04px",
+                                lineHeight: "83px",
                             }}
                         >
-                            {p1Score} pts
+                            {winnerName}
                         </p>
-                    </div>
 
-                    <p
-                        className="m-0 text-center text-[#FFFDF6]"
-                        style={{
-                            marginTop: "120px",
-                            fontFamily: "'Baloo 2', system-ui, sans-serif",
-                            fontWeight: 800,
-                            fontSize: "72px",
-                            letterSpacing: "-1.38px",
-                            lineHeight: "109px",
-                        }}
-                    >
-                        VS
-                    </p>
-
-                    <div className="relative flex flex-col items-center">
-                        {winnerPlayer === 2 && (
-                            <img
-                                src={Corona}
-                                alt=""
-                                aria-hidden
+                        {rewardName ? (
+                            <p
+                                className="absolute m-0 text-center text-[#FFD700]"
                                 style={{
-                                    position: "absolute",
-                                    top: "-18px",
-                                    left: "-12px",
-                                    width: "62px",
-                                    height: "auto",
-                                    transform: "rotate(-18deg)",
+                                    top: "265px",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    fontFamily: "'Nunito', system-ui, sans-serif",
+                                    fontWeight: 700,
+                                    fontSize: "28px",
                                 }}
-                            />
-                        )}
+                            >
+                                Reward: {rewardName}
+                            </p>
+                        ) : null}
 
                         <div
-                            className="relative overflow-hidden rounded-full"
-                            style={{
-                                width: "296px",
-                                height: "296px",
-                                border: "12px solid #FAFAFA",
-                                backgroundColor: "rgba(250,250,250,0.12)",
-                            }}
+                            className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
+                            style={{ top: "280px", width: "min(1050px, 80vw)" }}
                         >
-                            <div
-                                className="flex h-full w-full items-center justify-center rounded-full bg-[rgba(250,250,250,0.08)] text-6xl font-bold text-[#FAFAFA]"
+                            <div className="relative flex flex-col items-center">
+                                {winnerPlayer === 1 && (
+                                    <img
+                                        src={Corona}
+                                        alt=""
+                                        aria-hidden
+                                        style={{
+                                            position: "absolute",
+                                            top: "-18px",
+                                            left: "-12px",
+                                            width: "62px",
+                                            height: "auto",
+                                            transform: "rotate(-18deg)",
+                                            zIndex: 10,
+                                        }}
+                                    />
+                                )}
+
+                                <div
+                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                    style={{
+                                        width: "350px",
+                                        height: "350px",
+                                        border: "12px solid #FAFAFA",
+                                    }}
+                                >
+                                    <img
+                                        src={p1Avatar || avatarFor(p1CharacterId, "P1")}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        draggable={false}
+                                    />
+                                </div>
+
+                                <p
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "41px",
+                                        letterSpacing: "-0.77px",
+                                        lineHeight: "61px",
+                                    }}
+                                >
+                                    Player 1
+                                </p>
+                                <p
+                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 600,
+                                        fontSize: "35px",
+                                        letterSpacing: "-0.43px",
+                                        lineHeight: "34px",
+                                    }}
+                                >
+                                    {player1Name}
+                                </p>
+                                <p
+                                    className="m-0 mt-1 text-center text-[#FFD700]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "20px",
+                                    }}
+                                >
+                                    {p1Score} pts
+                                </p>
+                            </div>
+
+                            <p
+                                className="m-0 text-center text-[#FFFDF6]"
+                                style={{
+                                    marginTop: "120px",
+                                    fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                    fontWeight: 800,
+                                    fontSize: "72px",
+                                    letterSpacing: "-1.38px",
+                                    lineHeight: "109px",
+                                }}
                             >
-                                P2
+                                VS
+                            </p>
+
+                            <div className="relative flex flex-col items-center">
+                                {winnerPlayer === 2 && (
+                                    <img
+                                        src={Corona}
+                                        alt=""
+                                        aria-hidden
+                                        style={{
+                                            position: "absolute",
+                                            top: "-18px",
+                                            left: "-12px",
+                                            width: "80px",
+                                            height: "auto",
+                                            transform: "rotate(-18deg)",
+                                            zIndex: 10,
+                                        }}
+                                    />
+                                )}
+
+                                <div
+                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                    style={{
+                                        width: "350px",
+                                        height: "350px",
+                                        border: "12px solid #FAFAFA",
+                                    }}
+                                >
+                                    <img
+                                        src={p2Avatar || avatarFor(p2CharacterId, "P2")}
+                                        alt=""
+                                        className="h-full w-full object-cover"
+                                        draggable={false}
+                                    />
+                                </div>
+
+                                <p
+                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "41px",
+                                        letterSpacing: "-0.77px",
+                                        lineHeight: "61px",
+                                    }}
+                                >
+                                    Player 2
+                                </p>
+                                <p
+                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 600,
+                                        fontSize: "35px",
+                                        letterSpacing: "-0.43px",
+                                        lineHeight: "34px",
+                                    }}
+                                >
+                                    {player2Name}
+                                </p>
+                                <p
+                                    className="m-0 mt-1 text-center text-[#FFD700]"
+                                    style={{
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 700,
+                                        fontSize: "20px",
+                                    }}
+                                >
+                                    {p2Score} pts
+                                </p>
                             </div>
                         </div>
 
                         <p
-                            className="m-0 mt-[18px] text-center text-[#FFFDF6]"
+                            className="absolute m-0 text-center text-[#FFFDF6]"
                             style={{
-                                fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                fontWeight: 700,
-                                fontSize: "41px",
-                                letterSpacing: "-0.77px",
-                                lineHeight: "61px",
-                            }}
-                        >
-                            Player 2
-                        </p>
-                        <p
-                            className="m-0 -mt-[6px] text-center text-[#FFFDF6]"
-                            style={{
+                                top: "800px",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                width: "517px",
                                 fontFamily: "'Nunito', system-ui, sans-serif",
                                 fontWeight: 600,
-                                fontSize: "23px",
-                                letterSpacing: "-0.43px",
-                                lineHeight: "34px",
+                                fontSize: "40px",
+                                letterSpacing: "-0.76px",
+                                lineHeight: "60px",
                             }}
                         >
-                            {player2Name}
+                            Want to try another game?
                         </p>
-                        <p
-                            className="m-0 mt-1 text-center text-[#FFD700]"
-                            style={{
-                                fontFamily: "'Nunito', system-ui, sans-serif",
-                                fontWeight: 700,
-                                fontSize: "20px",
-                            }}
+
+                        <div
+                            className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center gap-6"
+                            style={{ top: "870px" }}
                         >
-                            {p2Score} pts
-                        </p>
+                            <div style={{ transform: "scale(0.88)", transformOrigin: "center" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleExit();
+                                        navigate("/home");
+                                    }}
+                                    className="flex items-center justify-center gap-1 px-13 py-5 cursor-pointer rounded-full text-[#FAFAFA] text-2xl md:text-[20px] font-bold bg-[#FF7BE2] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
+                                >
+                                    Go for It
+                                </button>
+                            </div>
+
+                            <div style={{ transform: "scale(0.88)", transformOrigin: "center" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        handleExit();
+                                        navigate("/welcome");
+                                    }}
+                                    className="flex items-center justify-center gap-1 px-13 py-5 cursor-pointer rounded-full text-[#FAFAFA] text-2xl md:text-[20px] font-bold bg-[#979797] hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg"
+                                >
+                                    Not Now
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <p
-                    className="absolute m-0 text-center text-[#FFFDF6]"
-                    style={{
-                        top: "762px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        width: "517px",
-                        fontFamily: "'Nunito', system-ui, sans-serif",
-                        fontWeight: 600,
-                        fontSize: "40px",
-                        letterSpacing: "-0.76px",
-                        lineHeight: "60px",
-                    }}
-                >
-                    Want to try another game?
-                </p>
-
-                <div
-                    className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center gap-6"
-                    style={{ top: "852px" }}
-                >
-                    <div style={{ transform: "scale(0.88)", transformOrigin: "center" }}>
-                        <PinkButton
-                            text="Go for It"
-                            onClick={() => {
-                                navigate("/home");
-                            }}
-                        />
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            navigate("/welcome");
-                        }}
-                        className="flex items-center justify-center rounded-[27px] bg-[#979797] shadow-[0px_3px_7px_rgba(76,76,76,0.25)] transition-transform active:scale-[0.98]"
-                        style={{
-                            padding: "17px 48px 19px",
-                            fontFamily: "'Nunito', system-ui, sans-serif",
-                            fontWeight: 600,
-                            fontSize: "21px",
-                            color: "#FAFAFA",
-                            lineHeight: "21px",
-                        }}
-                    >
-                        Not Now
-                    </button>
-                </div>
-            </div>
                 </div>
             </div>
         </div>

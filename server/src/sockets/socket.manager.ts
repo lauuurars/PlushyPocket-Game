@@ -107,6 +107,7 @@ const startGameClock = (io: socketio.Server, room: Room) => {
 const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string) => {
     const room = rooms[roomId]
     if (!room) return
+    if (room.status === "RESULTS") return
 
     cleanupGameTimers(roomId)
 
@@ -131,7 +132,7 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
 
         const rewardAssignedPayload: RewardAssignedPayload = {
             userId: result.winner.id,
-            rewardId: result.reward.id,
+            rewardId: result.user_reward.id,
             rewardName: result.reward.reward_name,
             rewardType: result.reward.reward_type,
             status: result.user_reward.status,
@@ -335,6 +336,15 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room) return
 
             io.to(room.roomId).emit("room_closed", { roomId: room.roomId })
+
+            // Disconnect both players in the room
+            for (const player of room.players) {
+                const playerSocket = io.sockets.sockets.get(player.socketId)
+                if (playerSocket) {
+                    playerSocket.disconnect(true)
+                }
+            }
+
             delete rooms[room.roomId]
         })
 
