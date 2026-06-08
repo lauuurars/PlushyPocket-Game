@@ -16,6 +16,7 @@ export interface RoomCallbacks {
   onRewardAssigned?: (payload: RewardAssignedPayload) => void;
   onScoreUpdate?: (userId: string, score: number) => void;
   onTimerTick?: (remaining: number) => void;
+  onGameAction?: (data: { userId: string; action: string; payload?: Record<string, unknown> }) => void;
 }
 
 const state: RoomState = {
@@ -64,6 +65,7 @@ export function attachRoomListeners(socket: Socket) {
       state.scores[data.userId] = score;
       callbacks.onScoreUpdate?.(data.userId, score);
     }
+    callbacks.onGameAction?.(data);
   });
 
   socket.on("game_timer_tick", (data: { remaining: number }) => {
