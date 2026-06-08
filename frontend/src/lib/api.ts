@@ -380,6 +380,10 @@ export type PartyResultsNavState = {
     /** Lista de URLs públicas (.svg antes que `.png`). */
     player1AvatarUrls?: string[];
     player2AvatarUrl?: string | null;
+    player1UserId?: string;
+    player2UserId?: string;
+    player1CharacterId?: string;
+    player2CharacterId?: string;
 };
 
 /** Perfil del usuario enlazado a `LOCAL_STORAGE_DB_USER_ID_KEY` (misma sesión activa). */

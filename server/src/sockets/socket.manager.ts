@@ -305,6 +305,15 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room) return
 
             io.to(room.roomId).emit("room_closed", { roomId: room.roomId })
+
+            // Disconnect both players in the room
+            for (const player of room.players) {
+                const playerSocket = io.sockets.sockets.get(player.socketId)
+                if (playerSocket) {
+                    playerSocket.disconnect(true)
+                }
+            }
+
             delete rooms[room.roomId]
         })
 
