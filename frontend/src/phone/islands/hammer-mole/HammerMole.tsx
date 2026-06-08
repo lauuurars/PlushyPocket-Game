@@ -65,6 +65,7 @@ export default function HammerMole() {
     const userIdRef = useRef<string>("");
     const characterIdRef = useRef<string>("mochi");
     const lastSwingRef = useRef(0);
+    const hitsRef = useRef(0);
 
     const addLog = useCallback((msg: string, color = "#fff") => {
         const entry: DebugLog = { id: debugIdCounter++, msg, color };
@@ -135,14 +136,23 @@ export default function HammerMole() {
             return;
         }
 
-        addLog(`🔨 Swing → ${direction}`, "#facc15");
+        // Incrementar hits localmente
+        hitsRef.current += 1;
+        const newScore = hitsRef.current * 10;
+
+        addLog(`🔨 Swing → ${direction} (hit #${hitsRef.current})`, "#facc15");
+
         socket.emit('player_action', {
             userId: userIdRef.current,
             characterId: characterIdRef.current,
-            action: 'hammer_swing',
+            action: 'score_update',        // ← el servidor solo procesa score_update
             timestamp: Date.now(),
             roomId,
-            payload: { direction },
+            payload: {
+                hits: hitsRef.current,
+                currentScore: newScore,
+                direction,                  // ← mandamos la dirección dentro del payload
+            },
         });
     }, [roomId, addLog]);
 

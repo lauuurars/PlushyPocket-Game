@@ -234,10 +234,12 @@ export const initializeSockets = (rawServer: HttpServer) => {
                     }, 1000)
 
                     gameTimers[room.roomId] = setTimeout(() => {
-                        for (const player of room.players) {
-                            const data = room.playerData[player.userId] ?? {}
-                            const score = calculateScore(room.minigameId, { score: 0, payload: data })
-                            room.scores[player.userId] = score
+                        if (room.minigameId !== "hammer-mole") {
+                            for (const player of room.players) {
+                                const data = room.playerData[player.userId] ?? {}
+                                const score = calculateScore(room.minigameId, { score: 0, payload: data })
+                                room.scores[player.userId] = score
+                            }
                         }
 
                         const { winnerId, loserId } = determineWinner(room.scores)
@@ -262,11 +264,13 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room) return
             if (room.status !== "IN_GAME") return
 
-            // Track score updates in real-time
+            // Track score updates in real-time (hammer-mole scores only on hit_confirmed)
             if (data.action === "score_update" && data.payload) {
-                const score = calculateScore(room.minigameId, { score: 0, payload: data.payload })
-                room.scores[data.userId] = score
                 room.playerData[data.userId] = data.payload as Record<string, unknown>
+                if (room.minigameId !== "hammer-mole") {
+                    const score = calculateScore(room.minigameId, { score: 0, payload: data.payload })
+                    room.scores[data.userId] = score
+                }
             }
 
             io.to(roomId).emit("game_action", {
@@ -279,7 +283,22 @@ export const initializeSockets = (rawServer: HttpServer) => {
             })
         })
 
-        // 5. player leave
+        // 5. hit confirmed (screen validates mole hits, relay to players)
+        socket.on("hit_confirmed", (data: { userId: string; points: number; characterName?: string }) => {
+            const session = sessions[socket.id]
+            if (!session || session.clientType !== "screen") return
+
+            const roomId = session.roomId
+            if (!roomId) return
+
+            const room = rooms[roomId]
+            if (!room || room.status !== "IN_GAME") return
+
+            room.scores[data.userId] = (room.scores[data.userId] ?? 0) + data.points
+            io.to(roomId).emit("hit_confirmed", data)
+        })
+
+        // 6. player leave
         socket.on("player__leave", (data: { roomId?: string; userId?: string }) => {
             const roomId = data.roomId ?? getRoomIdFromSocket(socket)
             const userId = data.userId ?? sessions[socket.id]?.userId
@@ -296,7 +315,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             emitRoomUpdate(io, room)
         })
 
-        // 6. room close
+        // 7. room close
         socket.on("room__close", (data: { roomId: string }) => {
             const session = sessions[socket.id]
             if (!session || session.clientType !== "screen") return
@@ -307,7 +326,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             delete rooms[room.roomId]
         })
 
-        // 7. game end
+        // 8. game end
         socket.on("game_end", async (data: GameEndPayload) => {
             const { roomId, winnerId, loserId } = data
             const room = rooms[roomId]
@@ -319,7 +338,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             await processGameEnd(io, roomId, winnerId, loserId)
         })
 
-        // 8. disconnect
+        // 9. disconnect
         socket.on("disconnect", () => {
             console.log(`Jugador desconectado: ${socket.id}`)
 

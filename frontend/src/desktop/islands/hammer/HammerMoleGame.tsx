@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Socket } from 'socket.io-client';
 import type { ActiveCharacter, Character, Position, Side } from '../../../types/hammerTypes';
-import { createRealtimeSocket } from '../../../lib/api';
+import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
+import { clearRoomCallbacks, getRoomState, setRoomCallbacks } from '../../../lib/roomStore';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -80,12 +82,19 @@ function spawnInitial(): ActiveCharacter[] {
 }
 
 const HammerMoleGame: React.FC = () => {
+    const navigate = useNavigate();
     const videoRef = useRef<HTMLVideoElement>(null);
     const socketRef = useRef<Socket | null>(null);
     const activeCharactersRef = useRef<ActiveCharacter[]>([]);
+    const gameStartedRef = useRef(false);
 
     const [activeCharacters, setActiveCharacters] = useState<ActiveCharacter[]>([]);
-    const [score, setScore] = useState(0);
+    const [p1Score, setP1Score] = useState(0);
+    const [p2Score, setP2Score] = useState(0);
+    const [timeRemaining, setTimeRemaining] = useState<number | null>(() => {
+        const stored = getRoomState().timeRemaining;
+        return stored > 0 ? stored : null;
+    });
     const [showInstructions, setShowInstructions] = useState(true);
 
     // Mantener ref sincronizado para leerlo dentro del socket handler
@@ -123,25 +132,34 @@ const HammerMoleGame: React.FC = () => {
         };
     }, []);
 
-    // Socket — escucha golpes del celular
+    // Socket — reutiliza la conexión de PartyRoom y escucha golpes del celular
     useEffect(() => {
-        const socket = createRealtimeSocket() as unknown as Socket;
-        socketRef.current = socket;
+        const { socket } = getRoomState();
+        if (!socket) return;
 
-        socket.on('player_action', (data: {
+        socketRef.current = socket as unknown as Socket;
+
+        const handleGameAction = (data: {
             userId: string;
             action: string;
-            payload: { direction: string };
+            payload: { direction?: string; hits?: number; currentScore?: number };
         }) => {
-            if (data.action !== 'hammer_swing') return;
+            if (data.action !== 'score_update') return;
+            if (!data.payload?.direction) return;
+            if (!gameStartedRef.current) return;
 
             const { direction } = data.payload;
             const current = activeCharactersRef.current;
             const hit = current.find(c => c.side === direction);
             if (!hit) return;
 
-            // Sumar puntos y reemplazar topo inmediatamente
-            setScore(prev => prev + 10);
+            const room = getRoomState();
+            const p1 = room.players.find(p => p.role === 'P1');
+            const p2 = room.players.find(p => p.role === 'P2');
+
+            if (data.userId === p1?.userId) setP1Score(prev => prev + 10);
+            if (data.userId === p2?.userId) setP2Score(prev => prev + 10);
+
             replaceCharacter(hit.id);
 
             socket.emit('hit_confirmed', {
@@ -149,16 +167,65 @@ const HammerMoleGame: React.FC = () => {
                 characterName: hit.character.name,
                 points: 10,
             });
+        };
+
+        socket.on('game_action', handleGameAction);
+
+        setRoomCallbacks({
+            onTimerTick: (remaining) => setTimeRemaining(remaining),
+            onGameOver: (payload: GameOverPayload) => {
+                const room = getRoomState();
+                const p1 = room.players.find(p => p.role === 'P1');
+                const p2 = room.players.find(p => p.role === 'P2');
+                const player1Score = p1 ? (payload.scores[p1.userId] ?? 0) : 0;
+                const player2Score = p2 ? (payload.scores[p2.userId] ?? 0) : 0;
+
+                navigate('/results', {
+                    replace: true,
+                    state: {
+                        roomCode: payload.roomId,
+                        winnerPlayer: (p1 && payload.winnerId === p1.userId ? 1 : 2) as 1 | 2,
+                        winnerName: (p1 && payload.winnerId === p1.userId ? p1 : p2)?.username ?? 'Player',
+                        player1Name: p1?.username ?? 'Player 1',
+                        player2Name: p2?.username ?? 'Player 2',
+                        player1Score,
+                        player2Score,
+                    },
+                });
+            },
+            onRewardAssigned: (payload: RewardAssignedPayload) => {
+                const room = getRoomState();
+                const p1 = room.players.find(p => p.role === 'P1');
+                const p2 = room.players.find(p => p.role === 'P2');
+                const winnerPlayer = (p1 && payload.userId === p1.userId ? 1 : 2) as 1 | 2;
+                const winnerName = (p1 && payload.userId === p1.userId ? p1 : p2)?.username ?? 'Player';
+
+                navigate('/results', {
+                    replace: true,
+                    state: {
+                        roomCode: room.roomId,
+                        winnerPlayer,
+                        winnerName,
+                        player1Name: p1?.username ?? 'Player 1',
+                        player2Name: p2?.username ?? 'Player 2',
+                        player1Score: room.scores[p1?.userId ?? ''] ?? 0,
+                        player2Score: room.scores[p2?.userId ?? ''] ?? 0,
+                        rewardName: payload.rewardName,
+                    },
+                });
+            },
         });
 
         return () => {
-            socket.disconnect();
+            socket.off('game_action', handleGameAction);
+            clearRoomCallbacks();
         };
-    }, [replaceCharacter]);
+    }, [replaceCharacter, navigate]);
 
     // Spawn inicial al arrancar el juego
     const handleStart = useCallback(() => {
         setShowInstructions(false);
+        gameStartedRef.current = true;
         setActiveCharacters(spawnInitial());
     }, []);
 
@@ -181,13 +248,13 @@ const HammerMoleGame: React.FC = () => {
             {!showInstructions && (
                 <>
                     <div className="fixed top-6 left-[80px] z-30">
-                        <GamePoints points={score} playerRole="P1" />
+                        <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={90} />
+                        <Timer initialSeconds={60} remaining={timeRemaining} />
                     </div>
                     <div className="fixed top-6 right-[80px] z-30">
-                        <GamePoints points={score} playerRole="P2" />
+                        <GamePoints points={p2Score} playerRole="P2" />
                     </div>
                 </>
             )}
