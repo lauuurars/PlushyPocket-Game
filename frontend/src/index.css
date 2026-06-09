@@ -4,7 +4,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Nunito", sans-serif;
+    --font-sans: "Nunito", sans-serif;
+    --breakpoint-3xl: 160rem; /* 2560px */
 }
 
 :root {
