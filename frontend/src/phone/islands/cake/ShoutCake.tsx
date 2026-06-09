@@ -19,7 +19,6 @@ const SEGMENT_COLORS = [
 
 const KOALA_BY_TIER = [koala1Svg, koala2Svg, koala3Svg] as const;
 const TOTAL_SEGMENTS = SEGMENT_COLORS.length;
-const POINTS_MAX = 250;
 const RMS_SENSITIVITY = 0.12;
 const LEVEL_ATTACK = 0.45;
 const LEVEL_RELEASE = 0.12;
@@ -39,6 +38,7 @@ export default function ShoutCake() {
   const [koalaTier, setKoalaTier] = useState<0 | 1 | 2>(2);
   const [micHint, setMicHint] = useState<string | null>(null);
   const [needsTap, setNeedsTap] = useState(false);
+  const [score, setScore] = useState(0);
 
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -50,7 +50,7 @@ export default function ShoutCake() {
   const userIdRef = useRef<string>("");
   const characterIdRef = useRef<string>("mochi");
   const maxRmsRef = useRef(0);
-  const lastEmitRef = useRef(0);
+  const canFireRef = useRef(true);
 
   // Socket connection — reuse from WaitingRoom or create new
   useEffect(() => {
@@ -80,6 +80,16 @@ export default function ShoutCake() {
       characterIdRef.current = characterId;
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
+
+    socket.on("game_action", (data: { userId: string; action: string; payload?: { score?: number } }) => {
+      if (cancelled) return;
+      if (data.action === "score_update") {
+        const newScore = data.payload?.score ?? 0;
+        if (data.userId === userIdRef.current) {
+          setScore(newScore);
+        }
+      }
+    });
 
     socket.on("game_over", (payload: GameOverPayload) => {
       if (cancelled) return;
@@ -157,26 +167,25 @@ export default function ShoutCake() {
       const tier = tierFromFilled(clamped);
       setKoalaTier((t) => (t !== tier ? tier : t));
 
-      // Track max RMS and emit score to server
-      if (target > maxRmsRef.current) maxRmsRef.current = target;
+      // Fire catapult when bar fills
+      if (clamped === TOTAL_SEGMENTS && canFireRef.current) {
+        canFireRef.current = false;
+        const socket = socketRef.current;
+        if (socket && userIdRef.current && roomId) {
+          socket.emit("player_action", {
+            userId: userIdRef.current,
+            characterId: characterIdRef.current,
+            action: "catapult_fire",
+            timestamp: Date.now(),
+            roomId,
+          });
+        }
+        levelRef.current = 0;
+        maxRmsRef.current = 0;
+      }
 
-      const now = Date.now();
-      const socket = socketRef.current;
-      if (socket && userIdRef.current && roomId && now - lastEmitRef.current > 500) {
-        lastEmitRef.current = now;
-        const currentScore = Math.round((clamped / TOTAL_SEGMENTS) * POINTS_MAX);
-        socket.emit("player_action", {
-          userId: userIdRef.current,
-          characterId: characterIdRef.current,
-          action: "score_update",
-          timestamp: now,
-          roomId,
-          payload: {
-            maxRms: maxRmsRef.current,
-            avgRms: levelRef.current,
-            currentScore,
-          },
-        });
+      if (clamped < 5) {
+        canFireRef.current = true;
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -240,9 +249,6 @@ export default function ShoutCake() {
 
   const fillFromIndex = TOTAL_SEGMENTS - filledSegments;
   const koalaSrc = KOALA_BY_TIER[koalaTier];
-  const displayPoints = Math.round(
-    (filledSegments / TOTAL_SEGMENTS) * POINTS_MAX,
-  );
 
   return (
     <>
@@ -338,7 +344,7 @@ export default function ShoutCake() {
             className="mt-3 text-[35px] leading-[37px] tracking-[-1px] text-[#583921]"
             style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}
           >
-            {displayPoints} pts
+            {score} pts
           </p>
         </footer>
       </div>
