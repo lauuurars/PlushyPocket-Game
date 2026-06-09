@@ -9,7 +9,8 @@ import CatapultaFour from '../../../assets/cake/Catapulta4.svg';
 import pastelazo from '../../../assets/cake/pastelazo.svg';
 import Point1 from '../../../assets/cake/Point1.svg';
 import Poin2 from '../../../assets/cake/Poin2.svg';
-import { getRoomState, setRoomCallbacks, clearRoomCallbacks } from '../../../lib/roomStore';
+import { getRoomState, setRoomCallbacks, clearRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
+import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 
 import { fetchPartyRoomUserProfile } from '../../../lib/api';
@@ -54,6 +55,7 @@ const CakeGame: React.FC = () => {
     const [flyingCakes, setFlyingCakes] = useState<Array<{ id: number; fromP1: boolean }>>([]);
     const [pointPopups, setPointPopups] = useState<Array<{ id: number; forP1: boolean }>>([]);
     const cakeIdRef = useRef(0);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
 
     useEffect(() => {
         void fetchPartyRoomUserProfile().then((profile) => {
@@ -88,6 +90,36 @@ const CakeGame: React.FC = () => {
         };
         startCamera();
         document.body.style.overflow = 'hidden';
+        return () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            document.body.style.overflow = 'auto';
+        };
+    }, []);
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+
+        const handlePlayerDisconnect = () => {
+            setShowDisconnectAlert(true);
+            setGamePhase("instructions"); // Stop any active game updates / phases
+
+            const roomId = getRoomState().roomId;
+            setTimeout(() => {
+                if (socket) {
+                    socket.emit("room__close", { roomId });
+                    setTimeout(() => {
+                        socket.disconnect();
+                    }, 100);
+                }
+                resetRoomState();
+                navigate("/home");
+            }, 3000);
+        };
+
+        if (socket) {
+            socket.on("player_left", handlePlayerDisconnect);
+            socket.on("player_disconnected", handlePlayerDisconnect);
+        }
 
         setRoomCallbacks({
             onScoreUpdate: (userId, score) => {
@@ -191,8 +223,10 @@ const CakeGame: React.FC = () => {
         });
 
         return () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            document.body.style.overflow = 'auto';
+            if (socket) {
+                socket.off("player_left", handlePlayerDisconnect);
+                socket.off("player_disconnected", handlePlayerDisconnect);
+            }
             clearRoomCallbacks();
         };
     }, [navigate]);
@@ -399,6 +433,7 @@ const CakeGame: React.FC = () => {
                 alt="Catapulta P1"
                 className="fixed bottom-0 left-10 z-20 w-110 pointer-events-none"
             />
+            <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>
     );
 };

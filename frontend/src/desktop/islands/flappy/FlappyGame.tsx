@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Ocean from './Ocean';
 import type { ObstacleData, Column } from '../../../types/flappyTypes';
-import { getRoomState, setRoomCallbacks, clearRoomCallbacks } from '../../../lib/roomStore';
+import { getRoomState, setRoomCallbacks, clearRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
+import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 
 // Assets
@@ -79,6 +80,8 @@ const FlappyGame: React.FC = () => {
     const passedColumnsP2 = useRef<Set<number>>(new Set());
 
     const [showInstructions, setShowInstructions] = useState(true);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
+    const disconnectAlertActiveRef = useRef(false);
 
     // Configuración Estricta
     const SPEED = 2;
@@ -203,6 +206,7 @@ const FlappyGame: React.FC = () => {
     };
 
     const animate = () => {
+        if (disconnectAlertActiveRef.current) return;
         setColumns(prev => {
             const rightmostX = Math.max(...prev.map(c => c.x));
             const lastCol = prev.reduce((p, c) => (p.x > c.x ? p : c));
@@ -379,6 +383,31 @@ const FlappyGame: React.FC = () => {
 
     // Set Socket Callbacks & Listeners
     useEffect(() => {
+        const { socket } = getRoomState();
+
+        const handlePlayerDisconnect = () => {
+            disconnectAlertActiveRef.current = true;
+            setShowDisconnectAlert(true);
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+
+            const roomId = getRoomState().roomId;
+            setTimeout(() => {
+                if (socket) {
+                    socket.emit("room__close", { roomId });
+                    setTimeout(() => {
+                        socket.disconnect();
+                    }, 100);
+                }
+                resetRoomState();
+                navigate("/home");
+            }, 3000);
+        };
+
+        if (socket) {
+            socket.on("player_left", handlePlayerDisconnect);
+            socket.on("player_disconnected", handlePlayerDisconnect);
+        }
+
         setRoomCallbacks({
             onScoreUpdate: (userId, score) => {
                 const room = getRoomState();
@@ -472,6 +501,10 @@ const FlappyGame: React.FC = () => {
         });
 
         return () => {
+            if (socket) {
+                socket.off("player_left", handlePlayerDisconnect);
+                socket.off("player_disconnected", handlePlayerDisconnect);
+            }
             clearRoomCallbacks();
         };
     }, [navigate]);
@@ -502,6 +535,7 @@ const FlappyGame: React.FC = () => {
     // Periodic scoring: +5 every 2 seconds for surviving
     useEffect(() => {
         const interval = setInterval(() => {
+            if (disconnectAlertActiveRef.current) return;
             const room = getRoomState();
             const player1 = room.players.find(p => p.role === "P1");
             const player2 = room.players.find(p => p.role === "P2");
@@ -714,17 +748,7 @@ const FlappyGame: React.FC = () => {
                     )}
                 </React.Fragment>
             ))}
-
-            {/* Le agregue musiquita jajaaj */}
-            <iframe
-                width="0"
-                height="0"
-                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04&"
-                frameBorder="0"
-                allow="autoplay"
-                className="hidden"
-                title="Background Music"
-            ></iframe>
+            <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>
     );
 };

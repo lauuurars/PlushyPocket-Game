@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import type { Socket } from 'socket.io-client';
 import type { ActiveCharacter, Character, Position, Side } from '../../../types/hammerTypes';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
-import { clearRoomCallbacks, getRoomState, setRoomCallbacks } from '../../../lib/roomStore';
+import { clearRoomCallbacks, getRoomState, setRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
+import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -94,6 +95,7 @@ const HammerMoleGame: React.FC = () => {
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
     const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [showInstructions, setShowInstructions] = useState(true);
     const [pointPopups, setPointPopups] = useState<Array<{ id: number; position: React.CSSProperties; forP1: boolean }>>([]);
@@ -212,6 +214,28 @@ const HammerMoleGame: React.FC = () => {
             });
         };
 
+        const handlePlayerDisconnect = () => {
+            setShowDisconnectAlert(true);
+            gameStartedRef.current = false;
+            setActiveCharacters([]);
+
+            const room = getRoomState();
+            const roomId = room.roomId;
+            setTimeout(() => {
+                if (socket) {
+                    socket.emit("room__close", { roomId });
+                    setTimeout(() => {
+                        socket.disconnect();
+                    }, 100);
+                }
+                resetRoomState();
+                navigate("/home");
+            }, 3000);
+        };
+
+        socket.on('player_left', handlePlayerDisconnect);
+        socket.on('player_disconnected', handlePlayerDisconnect);
+
         socket.on('game_action', handleGameAction);
 
         setRoomCallbacks({
@@ -259,6 +283,8 @@ const HammerMoleGame: React.FC = () => {
 
         return () => {
             socket.off('game_action', handleGameAction);
+            socket.off('player_left', handlePlayerDisconnect);
+            socket.off('player_disconnected', handlePlayerDisconnect);
             clearRoomCallbacks();
         };
     }, [replaceCharacter, navigate]);
@@ -383,6 +409,7 @@ const HammerMoleGame: React.FC = () => {
                 src="https://www.youtube.com/embed/pxDHwSwDMr0?autoplay=1&loop=1&playlist=pxDHwSwDMr0"
                 allow="autoplay" className="hidden" title="Background Music"
             />
+            <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>
     );
 };

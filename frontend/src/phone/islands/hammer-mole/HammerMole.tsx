@@ -4,7 +4,7 @@ import type { Socket } from "socket.io-client";
 import type { GameOverPayload } from "../../../lib/api";
 import { createRealtimeSocket, fetchPartyRoomUserProfile } from "../../../lib/api";
 import { getRoomState, updateRoomState } from "../../../lib/roomStore";
-import { useGameTimer } from "../../../lib/useGameTimer";
+
 import Background from "../../../assets/moleAssets/HammerBg.jpg";
 import Hammer from "../../../assets/moleAssets/Hammer.svg";
 
@@ -54,14 +54,9 @@ export default function HammerMole() {
     const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [score, setScore] = useState(0);
     const [needsPermission, setNeedsPermission] = useState(iosNeedsPermission);
-    const [userId, setUserId] = useState("");
     const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
     const [rawAccel, setRawAccel] = useState({ x: 0, y: 0, mag: 0 });
-    const [gameOverData, setGameOverData] = useState<{
-        winnerId: string;
-        myScore: number;
-        opponentScore: number;
-    } | null>(null);
+
 
     const socketRef = useRef<Socket | null>(null);
     const userIdRef = useRef<string>("");
@@ -100,7 +95,6 @@ export default function HammerMole() {
 
             userIdRef.current = id;
             characterIdRef.current = characterId;
-            setUserId(id);
             socket.emit("player__join", { userId: id, username, roomId, characterId });
             addLog(`👤 Join: ${username}`, "#60a5fa");
         })();
@@ -284,27 +278,7 @@ export default function HammerMole() {
         }
     };
 
-    // Fin del juego
-    if (gameOverData) {
-        const isWinner = gameOverData.winnerId === userId;
-        return (
-            <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ED1C24] p-8 text-center">
-                <h1 className="text-5xl font-extrabold text-white" style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}>
-                    {isWinner ? "You Win!" : "You Lose"}
-                </h1>
-                <div className="rounded-2xl bg-white/20 p-6 text-white">
-                    <p className="text-2xl font-bold">Your Score: {gameOverData.myScore}</p>
-                    <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
-                </div>
-                <button
-                    onClick={() => navigate("/home-phone")}
-                    className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ED1C24]"
-                >
-                    Go Home
-                </button>
-            </div>
-        );
-    }
+
 
     return (
         <div className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA] md:hidden">
