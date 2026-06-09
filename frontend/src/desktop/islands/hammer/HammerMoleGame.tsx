@@ -259,6 +259,12 @@ const HammerMoleGame: React.FC = () => {
         setShowInstructions(false);
         gameStartedRef.current = true;
         setActiveCharacters(spawnInitial());
+
+        const socket = socketRef.current;
+        const { roomId } = getRoomState();
+        if (socket && roomId) {
+            socket.emit("start_game_clock", { roomId });
+        }
     }, []);
 
     return (

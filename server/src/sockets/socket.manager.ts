@@ -258,11 +258,17 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 try {
                     await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
                     room.status = "IN_GAME"
-                    const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
-                    room.gameEndTime = Date.now() + durationMs
-                    io.to(room.roomId).emit("game_start", toGameStartPayload(room))
-                    emitRoomUpdate(io, room)
-                    startGameClock(io, room)
+                    
+                    if (room.minigameId === "hammer-mole") {
+                        io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+                        emitRoomUpdate(io, room)
+                    } else {
+                        const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+                        room.gameEndTime = Date.now() + durationMs
+                        io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+                        emitRoomUpdate(io, room)
+                        startGameClock(io, room)
+                    }
                 } catch (error: any) {
                     io.to(room.roomId).emit("game_error", { message: error.message ?? "Error al iniciar partida" })
                 }
@@ -346,6 +352,20 @@ export const initializeSockets = (rawServer: HttpServer) => {
             }
 
             delete rooms[room.roomId]
+        })
+
+        // start game clock for games that don't start automatically (like hammer-mole)
+        socket.on("start_game_clock", (data: { roomId: string }) => {
+            const room = rooms[data.roomId]
+            if (!room) return
+            if (room.status !== "IN_GAME" || room.gameEndTime) return
+
+            const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+            room.gameEndTime = Date.now() + durationMs
+
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+            startGameClock(io, room)
         })
 
         // 8. game end
