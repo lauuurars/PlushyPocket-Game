@@ -190,6 +190,7 @@ const CakeGame: React.FC = () => {
                     replace: true,
                     state: {
                         roomCode: payload.roomId,
+                        isDraw: payload.isDraw ?? false,
                         winnerPlayer: (p1 && payload.winnerId === p1.userId ? 1 : 2) as 1 | 2,
                         winnerName: (p1 && payload.winnerId === p1.userId ? p1 : p2)?.username ?? "Player",
                         player1Name: p1?.username ?? "Player 1",
@@ -209,17 +210,20 @@ const CakeGame: React.FC = () => {
                 const p2 = room.players.find(p => p.role === "P2");
                 const winnerPlayer = (p1 && payload.userId === p1.userId ? 1 : 2) as 1 | 2;
                 const winnerName = (p1 && payload.userId === p1.userId ? p1 : p2)?.username ?? "Player";
+                const p1Score = room.scores[p1?.userId ?? ""] ?? 0;
+                const p2Score = room.scores[p2?.userId ?? ""] ?? 0;
 
                 navigate('/results', {
                     replace: true,
                     state: {
                         roomCode: room.roomId,
+                        isDraw: p1Score === p2Score,
                         winnerPlayer,
                         winnerName,
                         player1Name: p1?.username ?? "Player 1",
                         player2Name: p2?.username ?? "Player 2",
-                        player1Score: room.scores[p1?.userId ?? ""] ?? 0,
-                        player2Score: room.scores[p2?.userId ?? ""] ?? 0,
+                        player1Score: p1Score,
+                        player2Score: p2Score,
                         rewardName: payload.rewardName,
                         player1UserId: p1?.userId,
                         player2UserId: p2?.userId,

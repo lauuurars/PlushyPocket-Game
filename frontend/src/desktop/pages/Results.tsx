@@ -290,24 +290,9 @@ export default function Results() {
                         >
                             {/* JUGADOR 1 */}
                             <div className="relative flex flex-col items-center">
-                                {!isDraw && winnerPlayer === 1 && (
-                                    <img
-                                        src={Corona}
-                                        alt=""
-                                        aria-hidden
-                                        style={{
-                                            position: "absolute",
-                                            top: "-18px",
-                                            left: "-12px",
-                                            width: "62px",
-                                            height: "auto",
-                                            transform: "rotate(-18deg)",
-                                            zIndex: 10,
-                                        }}
-                                    />
                                 {isP1Connected ? (
                                     <>
-                                        {winnerPlayer === 1 && (
+                                        {!isDraw && winnerPlayer === 1 && (
                                             <img
                                                 src={Corona}
                                                 alt=""
@@ -431,24 +416,9 @@ export default function Results() {
 
                             {/* JUGADOR 2 */}
                             <div className="relative flex flex-col items-center">
-                                {!isDraw && winnerPlayer === 2 && (
-                                    <img
-                                        src={Corona}
-                                        alt=""
-                                        aria-hidden
-                                        style={{
-                                            position: "absolute",
-                                            top: "-18px",
-                                            left: "-12px",
-                                            width: "80px",
-                                            height: "auto",
-                                            transform: "rotate(-18deg)",
-                                            zIndex: 10,
-                                        }}
-                                    />
                                 {isP2Connected ? (
                                     <>
-                                        {winnerPlayer === 2 && (
+                                        {!isDraw && winnerPlayer === 2 && (
                                             <img
                                                 src={Corona}
                                                 alt=""
@@ -461,7 +431,7 @@ export default function Results() {
                                                     height: "auto",
                                                     transform: "rotate(-18deg)",
                                                     zIndex: 10,
-                                                }}
+                                                    }}
                                             />
                                         )}
 

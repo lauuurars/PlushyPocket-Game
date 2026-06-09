@@ -469,6 +469,7 @@ const FlappyGame: React.FC = () => {
                     replace: true,
                     state: {
                         roomCode: payload.roomId,
+                        isDraw: payload.isDraw ?? false,
                         winnerPlayer: (player1 && payload.winnerId === player1.userId ? 1 : 2) as 1 | 2,
                         winnerName: (player1 && payload.winnerId === player1.userId ? player1 : player2)?.username ?? "Player",
                         player1Name: player1?.username ?? "Player 1",
@@ -488,17 +489,20 @@ const FlappyGame: React.FC = () => {
                 const player2 = room.players.find(p => p.role === "P2");
                 const winnerPlayer = (player1 && payload.userId === player1.userId ? 1 : 2) as 1 | 2;
                 const winnerName = (player1 && payload.userId === player1.userId ? player1 : player2)?.username ?? "Player";
+                const p1Score = room.scores[player1?.userId ?? ""] ?? 0;
+                const p2Score = room.scores[player2?.userId ?? ""] ?? 0;
 
                 navigate('/results', {
                     replace: true,
                     state: {
                         roomCode: room.roomId,
+                        isDraw: p1Score === p2Score,
                         winnerPlayer,
                         winnerName,
                         player1Name: player1?.username ?? "Player 1",
                         player2Name: player2?.username ?? "Player 2",
-                        player1Score: room.scores[player1?.userId ?? ""] ?? 0,
-                        player2Score: room.scores[player2?.userId ?? ""] ?? 0,
+                        player1Score: p1Score,
+                        player2Score: p2Score,
                         rewardName: payload.rewardName,
                         player1UserId: player1?.userId,
                         player2UserId: player2?.userId,
