@@ -55,7 +55,62 @@ const getRoomIdFromSocket = (socket: socketio.Socket) => {
     return inferred
 }
 
-const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string) => {
+const calcRemainingSeconds = (gameEndTime: number) =>
+    Math.max(0, Math.ceil((gameEndTime - Date.now()) / 1000))
+
+const emitGameTimerTick = (io: socketio.Server, room: Room, target?: socketio.Socket) => {
+    if (!room.gameEndTime) return
+    const payload = {
+        remaining: calcRemainingSeconds(room.gameEndTime),
+        gameEndTime: room.gameEndTime,
+    }
+    if (target) target.emit("game_timer_tick", payload)
+    else io.to(room.roomId).emit("game_timer_tick", payload)
+}
+
+const toGameStartPayload = (room: Room): GameStartPayload => ({
+    roomId: room.roomId,
+    minigameId: room.minigameId,
+    players: room.players.map(toPlayerInfoPayload),
+    gameEndTime: room.gameEndTime,
+})
+
+const startGameClock = (io: socketio.Server, room: Room) => {
+    if (!room.gameEndTime) return
+
+    const durationMs = Math.max(0, room.gameEndTime - Date.now())
+    emitGameTimerTick(io, room)
+
+    tickerIntervals[room.roomId] = setInterval(() => {
+        emitGameTimerTick(io, room)
+    }, 1000)
+
+    gameTimers[room.roomId] = setTimeout(() => {
+        for (const player of room.players) {
+            if (!(player.userId in room.scores)) {
+                room.scores[player.userId] = 0;
+            }
+        }
+
+        if (room.minigameId !== "hammer-mole") {
+            for (const player of room.players) {
+                const data = room.playerData[player.userId] ?? {}
+                const score = calculateScore(room.minigameId, { score: 0, payload: data })
+                room.scores[player.userId] = score
+            }
+        }
+
+        const { winnerId, loserId, isDraw } = determineWinner(room.scores);
+        if (!winnerId || !loserId) {
+            io.to(room.roomId).emit("game_error", { message: "No se pudo determinar un ganador" });
+            return;
+        }
+
+        void processGameEnd(io, room.roomId, winnerId, loserId, isDraw);
+    }, durationMs)
+}
+
+const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string, isDraw = false) => {
     const room = rooms[roomId]
     if (!room) return
     if (room.status === "RESULTS") return
@@ -65,8 +120,8 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
     room.status = "RESULTS"
     emitRoomUpdate(io, room)
 
-    const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores }
-    io.to(roomId).emit("game_over", gameOverPayload)
+    const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores, isDraw };
+    io.to(roomId).emit("game_over", gameOverPayload);
 
     try {
         const rewards = await GameRepository.listGameRewards()
@@ -112,37 +167,18 @@ const beginGame = async (io: socketio.Server, room: Room, requestSocket?: socket
 
         await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
         room.status = "IN_GAME"
-        const gameStartPayload: GameStartPayload = {
-            roomId: room.roomId,
-            minigameId: room.minigameId,
-            players: room.players.map(toPlayerInfoPayload),
+
+        if (room.minigameId === "hammer-mole") {
+            // El clock lo arranca la pantalla con start_game_clock
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+        } else {
+            const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+            room.gameEndTime = Date.now() + durationMs
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+            startGameClock(io, room)
         }
-        io.to(room.roomId).emit("game_start", gameStartPayload)
-        emitRoomUpdate(io, room)
-
-        const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
-        room.gameEndTime = Date.now() + durationMs
-
-        tickerIntervals[room.roomId] = setInterval(() => {
-            const remaining = Math.max(0, Math.ceil((room.gameEndTime! - Date.now()) / 1000))
-            io.to(room.roomId).emit("game_timer_tick", { remaining })
-        }, 1000)
-
-        gameTimers[room.roomId] = setTimeout(() => {
-            for (const player of room.players) {
-                const data = room.playerData[player.userId] ?? {}
-                const score = calculateScore(room.minigameId, { score: 0, payload: data })
-                room.scores[player.userId] = score
-            }
-
-            const { winnerId, loserId } = determineWinner(room.scores)
-            if (!winnerId || !loserId) {
-                io.to(room.roomId).emit("game_error", { message: "No se pudo determinar un ganador" })
-                return
-            }
-
-            void processGameEnd(io, room.roomId, winnerId, loserId)
-        }, durationMs)
     } catch (error: any) {
         io.to(room.roomId).emit("game_error", { message: error.message ?? "Error al iniciar partida" })
     }
@@ -197,13 +233,9 @@ export const initializeSockets = (rawServer: HttpServer) => {
             socket.join(room.roomId)
             emitRoomUpdate(io, room)
 
-            if (room.status === "IN_GAME") {
-                const gameStartPayload: GameStartPayload = {
-                    roomId: room.roomId,
-                    minigameId: room.minigameId,
-                    players: room.players.map(toPlayerInfoPayload),
-                }
-                socket.emit("game_start", gameStartPayload)
+            if (room.status === "IN_GAME" || room.status === "READY") {
+                socket.emit("game_start", toGameStartPayload(room))
+                if (room.status === "IN_GAME") emitGameTimerTick(io, room, socket)
             }
         })
 
@@ -235,12 +267,8 @@ export const initializeSockets = (rawServer: HttpServer) => {
 
                 /* If game is already in progress, re-emit game_start so the new socket doesn't miss it */
                 if (room.status === "IN_GAME") {
-                    const gameStartPayload: GameStartPayload = {
-                        roomId: room.roomId,
-                        minigameId: room.minigameId,
-                        players: room.players.map(toPlayerInfoPayload),
-                    }
-                    socket.emit("game_start", gameStartPayload)
+                    socket.emit("game_start", toGameStartPayload(room))
+                    emitGameTimerTick(io, room, socket)
                 }
             } else {
                 role = room.players.some(p => p.role === "P1") ? "P2" : "P1"
@@ -273,11 +301,13 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room) return
             if (room.status !== "IN_GAME") return
 
-            // Track score updates in real-time
+            // Track score updates in real-time (hammer-mole scores only on hit_confirmed)
             if (data.action === "score_update" && data.payload) {
-                const score = calculateScore(room.minigameId, { score: 0, payload: data.payload })
-                room.scores[data.userId] = score
                 room.playerData[data.userId] = data.payload as Record<string, unknown>
+                if (room.minigameId !== "hammer-mole") {
+                    const score = calculateScore(room.minigameId, { score: 0, payload: data.payload })
+                    room.scores[data.userId] = score
+                }
             }
 
             io.to(roomId).emit("game_action", {
@@ -290,7 +320,30 @@ export const initializeSockets = (rawServer: HttpServer) => {
             })
         })
 
-        // 5. player leave
+        // 5. hit confirmed (screen validates mole hits, relay to players)
+        socket.on("hit_confirmed", (data: { userId: string; points: number; characterName?: string }) => {
+            const session = sessions[socket.id]
+            if (!session || session.clientType !== "screen") return
+
+            const roomId = session.roomId
+            if (!roomId) return
+
+            const room = rooms[roomId]
+            if (!room || room.status !== "IN_GAME") return
+
+            room.scores[data.userId] = (room.scores[data.userId] ?? 0) + data.points
+
+            // ✅ Inicializar score del otro jugador si no existe
+            for (const player of room.players) {
+                if (!(player.userId in room.scores)) {
+                    room.scores[player.userId] = 0
+                }
+            }
+
+            io.to(roomId).emit("hit_confirmed", data)
+        })
+
+        // 6. player leave
         socket.on("player__leave", (data: { roomId?: string; userId?: string }) => {
             const roomId = data.roomId ?? getRoomIdFromSocket(socket)
             const userId = data.userId ?? sessions[socket.id]?.userId
@@ -308,7 +361,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             emitRoomUpdate(io, room)
         })
 
-        // 6. room close
+        // 7. room close
         socket.on("room__close", (data: { roomId: string }) => {
             const session = sessions[socket.id]
             if (!session || session.clientType !== "screen") return
@@ -328,7 +381,21 @@ export const initializeSockets = (rawServer: HttpServer) => {
             delete rooms[room.roomId]
         })
 
-        // 7. game end
+        // start game clock for games that don't start automatically (like hammer-mole)
+        socket.on("start_game_clock", (data: { roomId: string }) => {
+            const room = rooms[data.roomId]
+            if (!room) return
+            if (room.status !== "IN_GAME" || room.gameEndTime) return
+
+            const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+            room.gameEndTime = Date.now() + durationMs
+
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+            startGameClock(io, room)
+        })
+
+        // 8. game end
         socket.on("game_end", async (data: GameEndPayload) => {
             const { roomId, winnerId, loserId } = data
             const room = rooms[roomId]

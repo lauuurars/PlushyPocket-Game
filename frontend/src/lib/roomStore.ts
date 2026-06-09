@@ -9,6 +9,7 @@ export interface RoomState {
   players: PlayerInfoPayload[];
   scores: Record<string, number>;
   timeRemaining: number;
+  gameEndTime: number | null;
 }
 
 export interface RoomCallbacks {
@@ -27,6 +28,7 @@ const state: RoomState = {
   players: [],
   scores: {},
   timeRemaining: 0,
+  gameEndTime: null,
 };
 
 let callbacks: RoomCallbacks = {};
@@ -58,12 +60,19 @@ export function resetRoomState() {
   state.players = [];
   state.scores = {};
   state.timeRemaining = 0;
+  state.gameEndTime = null;
   callbacks = {};
 }
 
 export function attachRoomListeners(socket: Socket) {
   // Prevent duplicate listeners
   detachRoomListeners(socket);
+
+  socket.on("game_start", (payload: { gameEndTime?: number }) => {
+    if (payload.gameEndTime) {
+      state.gameEndTime = payload.gameEndTime;
+    }
+  });
 
   socket.on("game_action", (data: { userId: string; action: string; payload?: Record<string, unknown> }) => {
     if (data.action === "score_update" && data.payload?.score != null) {
@@ -74,7 +83,8 @@ export function attachRoomListeners(socket: Socket) {
     callbacks.onGameAction?.(data);
   });
 
-  socket.on("game_timer_tick", (data: { remaining: number }) => {
+  socket.on("game_timer_tick", (data: { remaining: number; gameEndTime?: number }) => {
+    if (data.gameEndTime) state.gameEndTime = data.gameEndTime;
     state.timeRemaining = data.remaining;
     callbacks.onTimerTick?.(data.remaining);
   });
@@ -102,6 +112,7 @@ export function attachRoomListeners(socket: Socket) {
 }
 
 export function detachRoomListeners(socket: Socket) {
+  socket.off("game_start");
   socket.off("game_action");
   socket.off("game_timer_tick");
   socket.off("game_over");

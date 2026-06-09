@@ -52,6 +52,12 @@ export interface GameStartPayload {
     roomId: string;
     players: PlayerInfoPayload[];
     minigameId: string
+    gameEndTime?: number
+}
+
+export interface GameTimerTickPayload {
+    remaining: number
+    gameEndTime: number
 }
 
 export interface GameEndPayload {
@@ -59,6 +65,7 @@ export interface GameEndPayload {
     winnerId: string;   // users.id del ganador
     loserId: string;    // users.id del perdedor
     scores: Record<string, number>  // userId -> puntaje final
+    isDraw?: boolean;
 }
 
 export type GameOverPayload = GameEndPayload

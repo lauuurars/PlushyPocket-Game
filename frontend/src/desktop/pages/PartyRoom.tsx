@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import BgParty from "../../assets/startGame/Bg Party.svg?url";
@@ -24,14 +24,30 @@ export default function PartyRoom() {
 
     const roomId = (searchParams.get("roomId") ?? "").trim();
     const islandName = (searchParams.get("islandName") ?? "Sanrio Island").trim();
+    const minigameIdFromUrl = (searchParams.get("minigameId") ?? "").trim();
+
+    const COUNTDOWN_SECONDS = 5;
+    const [countdown, setCountdown] = useState<number | null>(null);
+    const countdownRef = useRef<number>(COUNTDOWN_SECONDS);
 
     useEffect(() => {
         if (!startPayload) return;
-        const t = setTimeout(() => {
-            navigate(`/${startPayload.minigameId}`, { replace: true });
-        }, 5000);
-        return () => clearTimeout(t);
-    }, [navigate, startPayload]);
+
+        countdownRef.current = COUNTDOWN_SECONDS;
+        setCountdown(COUNTDOWN_SECONDS);
+
+        const interval = setInterval(() => {
+            countdownRef.current -= 1;
+            setCountdown(countdownRef.current);
+            if (countdownRef.current <= 0) {
+                clearInterval(interval);
+                const destination = startPayload.minigameId || minigameIdFromUrl;
+                navigate(`/${destination}`, { replace: true });
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [navigate, startPayload, minigameIdFromUrl]);
 
     useEffect(() => {
         if (!roomId) return;
@@ -60,6 +76,7 @@ export default function PartyRoom() {
             updateRoomState({
                 players: payload.players,
                 minigameId: payload.minigameId,
+                ...(payload.gameEndTime ? { gameEndTime: payload.gameEndTime } : {}),
             });
             setStartPayload(payload);
         };
@@ -144,6 +161,14 @@ export default function PartyRoom() {
     };
 
     return (
+        <>
+        <style>{`
+            @keyframes countdown-pop {
+                0%   { transform: scale(1.15); }
+                40%  { transform: scale(1); }
+                100% { transform: scale(1.15); }
+            }
+        `}</style>
         <div
             className="flex w-screen items-center justify-center overflow-hidden bg-[#ED1C24]"
             style={{
@@ -341,9 +366,60 @@ export default function PartyRoom() {
                                 </p>
                             </div>
                         </div>
+                        {/* Countdown — visible only after game_start fires */}
+                        {countdown !== null && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    bottom: "80px",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                }}
+                            >
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontFamily: "'Nunito', system-ui, sans-serif",
+                                        fontWeight: 600,
+                                        fontSize: "26px",
+                                        color: "rgba(255,253,246,0.85)",
+                                        letterSpacing: "-0.5px",
+                                    }}
+                                >
+                                    Get ready! Starting in…
+                                </p>
+                                <div
+                                    style={{
+                                        width: "96px",
+                                        height: "96px",
+                                        borderRadius: "50%",
+                                        background: "#FFD700",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                        fontWeight: 900,
+                                        fontSize: "52px",
+                                        color: "#583921",
+                                        boxShadow: "0 4px 24px rgba(0,0,0,0.25)",
+                                        border: "4px solid white",
+                                        transition: "transform 0.15s",
+                                        transform: "scale(1)",
+                                        animation: "countdown-pop 1s ease-in-out infinite",
+                                    }}
+                                >
+                                    {countdown}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
         </div>
+        </>
     );
 }

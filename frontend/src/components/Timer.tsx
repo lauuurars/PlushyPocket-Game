@@ -3,19 +3,25 @@ import { Clock } from 'lucide-react';
 
 interface TimerProps {
     initialSeconds: number;
+    /** Server-synced seconds left. When set, local countdown is disabled. */
+    remaining?: number | null;
     onTimeUp?: () => void;
     serverRemaining?: number;
 }
 
-export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp, serverRemaining }) => {
+export const Timer: React.FC<TimerProps> = ({ initialSeconds, remaining, onTimeUp, serverRemaining }) => {
     const [timeLeft, setTimeLeft] = useState(initialSeconds);
     const [isUrgent, setIsUrgent] = useState(false);
 
-    const displaySeconds = serverRemaining ?? timeLeft;
+    // Support both remaining (hammer-mole) and serverRemaining (develop)
+    const effectiveServerRemaining = serverRemaining ?? (remaining !== null ? remaining : undefined);
+    const isSynced = effectiveServerRemaining !== undefined;
+    const displayTime = isSynced ? effectiveServerRemaining : timeLeft;
 
+    // Countdown / Sync logic
     useEffect(() => {
-        if (serverRemaining !== undefined) {
-            if (serverRemaining <= 0) {
+        if (isSynced) {
+            if (effectiveServerRemaining <= 0) {
                 onTimeUp?.();
             }
             return;
@@ -29,7 +35,6 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp, serverRe
         const timer = setInterval(() => {
             setTimeLeft(prev => {
                 if (prev <= 1) {
-                    clearInterval(timer);
                     onTimeUp?.();
                     return 0;
                 }
@@ -38,11 +43,11 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp, serverRe
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [onTimeUp, serverRemaining]);
+    }, [isSynced, effectiveServerRemaining, onTimeUp]);
 
     useEffect(() => {
-        setIsUrgent(displaySeconds <= 10 && displaySeconds > 0);
-    }, [displaySeconds]);
+        setIsUrgent(displayTime <= 10 && displayTime > 0);
+    }, [displayTime]);
 
     const formatTime = (totalSeconds: number): string => {
         const minutes = Math.floor(totalSeconds / 60);
@@ -90,7 +95,7 @@ export const Timer: React.FC<TimerProps> = ({ initialSeconds, onTimeUp, serverRe
                     className="text-[48px] font-bold leading-[27px] text-[#FAFAFA]"
                     style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
                 >
-                    {formatTime(displaySeconds)}
+                    {formatTime(displayTime)}
                 </p>
             </div>
         </div>

@@ -55,9 +55,15 @@ export default function FlappyGame() {
 
 
 
-    socket.on("game_over", (payload: { winnerId: string; scores: Record<string, number> }) => {
+    socket.on("game_over", (payload: { winnerId: string; scores: Record<string, number>; isDraw?: boolean }) => {
       if (cancelled) return;
       sessionStorage.removeItem("flappyCharacter");
+
+      if (payload.isDraw) {
+        navigate('/draw', { replace: true });
+        return;
+      }
+
       const isWinner = payload.winnerId === userIdRef.current;
       if (isWinner) {
         const timeoutId = setTimeout(() => {

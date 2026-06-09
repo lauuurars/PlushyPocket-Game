@@ -20,10 +20,20 @@ export function calculateScore(minigameId: string, data: PlayerGameData): number
     return fn(data)
 }
 
-export function determineWinner(scores: Record<string, number>): { winnerId: string | null; loserId: string | null } {
-    const entries = Object.entries(scores)
-    if (entries.length < 2) return { winnerId: null, loserId: null }
+export function determineWinner(scores: Record<string, number>): {
+    winnerId: string | null;
+    loserId: string | null;
+    isDraw: boolean;
+} {
+    const entries = Object.entries(scores);
+    if (entries.length < 2) return { winnerId: null, loserId: null, isDraw: false };
 
-    const sorted = entries.sort((a, b) => b[1] - a[1])
-    return { winnerId: sorted[0][0], loserId: sorted[1][0] }
+    const sorted = entries.sort((a, b) => b[1] - a[1]);
+    const isDraw = sorted[0][1] === sorted[1][1];
+
+    return {
+        winnerId: sorted[0][0],
+        loserId: sorted[1][0],
+        isDraw,
+    };
 }
