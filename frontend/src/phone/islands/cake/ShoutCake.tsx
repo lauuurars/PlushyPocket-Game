@@ -39,12 +39,6 @@ export default function ShoutCake() {
   const [koalaTier, setKoalaTier] = useState<0 | 1 | 2>(2);
   const [micHint, setMicHint] = useState<string | null>(null);
   const [needsTap, setNeedsTap] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [gameOverData, setGameOverData] = useState<{
-    winnerId: string;
-    myScore: number;
-    opponentScore: number;
-  } | null>(null);
 
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -87,18 +81,25 @@ export default function ShoutCake() {
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
 
-    socket.on("game_timer_tick", (data: { remaining: number }) => {
-      if (!cancelled) setTimeRemaining(data.remaining);
-    });
-
     socket.on("game_over", (payload: GameOverPayload) => {
       if (cancelled) return;
-      const myId = userIdRef.current;
-      const myScore = payload.scores[myId] ?? 0;
-      const opponentScore = Object.entries(payload.scores).find(
-        ([id]) => id !== myId,
-      )?.[1] ?? 0;
-      setGameOverData({ winnerId: payload.winnerId, myScore, opponentScore });
+      const isWinner = payload.winnerId === userIdRef.current;
+      if (isWinner) {
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) navigate('/winner', { replace: true });
+        }, 5000);
+        const onReward = (rewardPayload: { userId: string; rewardId: string }) => {
+          clearTimeout(timeoutId);
+          if (!cancelled && rewardPayload.userId === userIdRef.current) {
+            navigate(`/unlocked-reward?rewardId=${encodeURIComponent(rewardPayload.rewardId)}`, {
+              state: { fromGame: true }
+            });
+          }
+        };
+        socket.on("reward_assigned", onReward);
+      } else {
+        navigate('/loser', { replace: true });
+      }
     });
 
     return () => {
@@ -235,27 +236,7 @@ export default function ShoutCake() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // If game is over, show results overlay
-  if (gameOverData) {
-    const isWinner = gameOverData.winnerId === userIdRef.current;
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ed1c24] p-8 text-center">
-        <h1 className="text-5xl font-extrabold text-white" style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}>
-          {isWinner ? "You Win!" : "You Lose"}
-        </h1>
-        <div className="rounded-2xl bg-white/20 p-6 text-white">
-          <p className="text-2xl font-bold">Your Score: {gameOverData.myScore}</p>
-          <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
-        </div>
-        <button
-          onClick={() => navigate("/home-phone")}
-          className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ed1c24]"
-        >
-          Go Home
-        </button>
-      </div>
-    );
-  }
+
 
   const fillFromIndex = TOTAL_SEGMENTS - filledSegments;
   const koalaSrc = KOALA_BY_TIER[koalaTier];
@@ -279,15 +260,6 @@ export default function ShoutCake() {
           draggable={false}
           aria-hidden
         />
-
-        {/* Timer */}
-        {timeRemaining !== null && (
-          <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
-            <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ed1c24] shadow-md">
-              {timeRemaining}s
-            </span>
-          </div>
-        )}
 
         {/* Red header dome */}
         <header className="relative z-10 shrink-0 px-6 pb-14 pt-[max(3rem,env(safe-area-inset-top))] text-center">

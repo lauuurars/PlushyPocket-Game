@@ -18,9 +18,9 @@ const CakeGame: React.FC = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
-    const [score] = useState(0);
     const [gamePhase, setGamePhase] = useState<"instructions" | "alert" | "line" | "playing">("instructions");
     const [profileIcon, setProfileIcon] = useState<string>(MochiIcon);
+    const [serverRemaining, setServerRemaining] = useState<number | undefined>(undefined);
 
     useEffect(() => {
         void fetchPartyRoomUserProfile().then((profile) => {
@@ -64,7 +64,8 @@ const CakeGame: React.FC = () => {
                 if (p1 && userId === p1.userId) setP1Score(score);
                 if (p2 && userId === p2.userId) setP2Score(score);
             },
-            onTimerTick: () => {
+            onTimerTick: (remaining) => {
+                setServerRemaining(remaining);
                 const room = getRoomState();
                 const p1 = room.players.find(p => p.role === "P1");
                 const p2 = room.players.find(p => p.role === "P2");
@@ -219,7 +220,7 @@ const CakeGame: React.FC = () => {
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} />
+                        <Timer initialSeconds={60} serverRemaining={serverRemaining} />
                     </div>
                     <div className="fixed top-8 right-[80px] z-30">
                         <GamePoints points={p2Score} playerRole="P2" />
