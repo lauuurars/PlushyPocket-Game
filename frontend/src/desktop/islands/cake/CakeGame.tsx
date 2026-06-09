@@ -11,6 +11,7 @@ import Point1 from '../../../assets/cake/Point1.svg';
 import Poin2 from '../../../assets/cake/Poin2.svg';
 import { getRoomState, setRoomCallbacks, clearRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
 import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
+import { globalAudio } from '../../../lib/audioManager';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 
 import { fetchPartyRoomUserProfile } from '../../../lib/api';
@@ -56,6 +57,13 @@ const CakeGame: React.FC = () => {
     const [pointPopups, setPointPopups] = useState<Array<{ id: number; forP1: boolean }>>([]);
     const cakeIdRef = useRef(0);
     const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
+
+    useEffect(() => {
+        globalAudio.pause();
+        return () => {
+            globalAudio.play();
+        };
+    }, []);
 
     useEffect(() => {
         void fetchPartyRoomUserProfile().then((profile) => {
@@ -432,6 +440,11 @@ const CakeGame: React.FC = () => {
                 src={firingP1 ? CatapultaFour : CatapultaTwo}
                 alt="Catapulta P1"
                 className="fixed bottom-0 left-10 z-20 w-110 pointer-events-none"
+            />
+            <iframe
+                width="0" height="0"
+                src="https://www.youtube.com/embed/kYmZ64g3s3E?autoplay=1&loop=1&playlist=kYmZ64g3s3E"
+                allow="autoplay" className="hidden" title="Background Music"
             />
             <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>

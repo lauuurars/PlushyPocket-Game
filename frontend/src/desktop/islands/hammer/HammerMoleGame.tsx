@@ -5,6 +5,7 @@ import type { ActiveCharacter, Character, Position, Side } from '../../../types/
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 import { clearRoomCallbacks, getRoomState, setRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
 import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
+import { globalAudio } from '../../../lib/audioManager';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -99,6 +100,14 @@ const HammerMoleGame: React.FC = () => {
     const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [showInstructions, setShowInstructions] = useState(true);
     const [pointPopups, setPointPopups] = useState<Array<{ id: number; position: React.CSSProperties; forP1: boolean }>>([]);
+
+    // Pausar música de fondo del home al entrar y reanudar al salir
+    useEffect(() => {
+        globalAudio.pause();
+        return () => {
+            globalAudio.play();
+        };
+    }, []);
 
     // Mantener ref sincronizado para leerlo dentro del socket handler
     useEffect(() => {
