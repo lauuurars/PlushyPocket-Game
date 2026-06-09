@@ -280,6 +280,7 @@ export default function HammerMole() {
         }
     };
 
+    // Fin del juego
     if (gameOverData) {
         const isWinner = gameOverData.winnerId === userId;
         return (
