@@ -5,7 +5,7 @@ import BgResults from "../../assets/results/BgResults.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 
-import type { PartyResultsNavState } from "../../lib/api";
+import type { GameStartPayload, PartyResultsNavState } from "../../lib/api";
 import { getRoomState, resetRoomState } from "../../lib/roomStore";
 import { supabase } from "../../lib/supabaseClient";
 import { profilePicturePublicUrl } from "../../lib/api";
@@ -39,6 +39,21 @@ export default function Results() {
         }
         resetRoomState();
     };
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        const onGameStart = (payload: GameStartPayload) => {
+            navigate(`/${payload.minigameId}`, { replace: true });
+        };
+
+        socket.on("game_start", onGameStart);
+        return () => {
+            socket.off("game_start", onGameStart);
+        };
+    }, [navigate]);
+
     const navState = location.state as unknown;
     const [scale, setScale] = useState(1);
     const [party] = useState<PartyResultsNavState | null>(() =>
