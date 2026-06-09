@@ -53,6 +53,7 @@ export type GameEndPayload = {
     winnerId: string;
     loserId: string;
     scores: Record<string, number>;
+    isDraw?: boolean;
 };
 
 export type GameOverPayload = GameEndPayload;

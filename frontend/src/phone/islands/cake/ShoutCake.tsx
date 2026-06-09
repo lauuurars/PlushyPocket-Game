@@ -93,6 +93,12 @@ export default function ShoutCake() {
 
     socket.on("game_over", (payload: GameOverPayload) => {
       if (cancelled) return;
+
+      if (payload.isDraw) {
+        navigate('/draw', { replace: true });
+        return;
+      }
+
       const isWinner = payload.winnerId === userIdRef.current;
       if (isWinner) {
         const timeoutId = setTimeout(() => {

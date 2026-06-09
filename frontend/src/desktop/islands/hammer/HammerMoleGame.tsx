@@ -219,19 +219,18 @@ const HammerMoleGame: React.FC = () => {
                 const room = getRoomState();
                 const p1 = room.players.find(p => p.role === 'P1');
                 const p2 = room.players.find(p => p.role === 'P2');
-                const player1Score = p1 ? (payload.scores[p1.userId] ?? 0) : 0;
-                const player2Score = p2 ? (payload.scores[p2.userId] ?? 0) : 0;
 
                 navigate('/results', {
                     replace: true,
                     state: {
                         roomCode: payload.roomId,
+                        isDraw: payload.isDraw ?? false,
                         winnerPlayer: (p1 && payload.winnerId === p1.userId ? 1 : 2) as 1 | 2,
-                        winnerName: (p1 && payload.winnerId === p1.userId ? p1 : p2)?.username ?? 'Player',
+                        winnerName: payload.isDraw ? 'Draw!' : (p1 && payload.winnerId === p1.userId ? p1 : p2)?.username ?? 'Player',
                         player1Name: p1?.username ?? 'Player 1',
                         player2Name: p2?.username ?? 'Player 2',
-                        player1Score,
-                        player2Score,
+                        player1Score: p1 ? (payload.scores[p1.userId] ?? 0) : 0,
+                        player2Score: p2 ? (payload.scores[p2.userId] ?? 0) : 0,
                     },
                 });
             },

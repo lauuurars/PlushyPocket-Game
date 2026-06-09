@@ -100,17 +100,17 @@ const startGameClock = (io: socketio.Server, room: Room) => {
             }
         }
 
-        const { winnerId, loserId } = determineWinner(room.scores)
+        const { winnerId, loserId, isDraw } = determineWinner(room.scores);
         if (!winnerId || !loserId) {
-            io.to(room.roomId).emit("game_error", { message: "No se pudo determinar un ganador" })
-            return
+            io.to(room.roomId).emit("game_error", { message: "No se pudo determinar un ganador" });
+            return;
         }
 
-        void processGameEnd(io, room.roomId, winnerId, loserId)
+        void processGameEnd(io, room.roomId, winnerId, loserId, isDraw);
     }, durationMs)
 }
 
-const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string) => {
+const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: string, loserId: string, isDraw = false) => {
     const room = rooms[roomId]
     if (!room) return
     if (room.status === "RESULTS") return
@@ -120,8 +120,8 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
     room.status = "RESULTS"
     emitRoomUpdate(io, room)
 
-    const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores }
-    io.to(roomId).emit("game_over", gameOverPayload)
+    const gameOverPayload: GameOverPayload = { roomId, winnerId, loserId, scores: room.scores, isDraw };
+    io.to(roomId).emit("game_over", gameOverPayload);
 
     try {
         const rewards = await GameRepository.listGameRewards()

@@ -123,13 +123,17 @@ export default function HammerMole() {
         socket.on("game_over", (payload: GameOverPayload) => {
             if (cancelled) return;
             const myId = userIdRef.current;
-            const isWinner = payload.winnerId === myId;
 
+            if (payload.isDraw) {
+                navigate('/draw', { replace: true }); // o la ruta que tengas para empate
+                return;
+            }
+
+            const isWinner = payload.winnerId === myId;
             if (isWinner) {
                 const timeoutId = setTimeout(() => {
                     if (!cancelled) navigate('/winner', { replace: true });
                 }, 5000);
-
                 socket.on("reward_assigned", (rewardPayload: { userId: string; rewardId: string }) => {
                     clearTimeout(timeoutId);
                     if (!cancelled && rewardPayload.userId === myId) {

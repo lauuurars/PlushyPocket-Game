@@ -28,6 +28,7 @@ import HammerMole from "../phone/islands/hammer-mole/HammerMole";
 import FlappyBoatMobile from "../phone/islands/flappy/FlappyBoatMobile";
 import LoserPage from "../phone/pages/LoserPage";
 import WinnerPage from "../phone/pages/WinnerPage";
+import DrawPage from "../phone/pages/DrawPage";
 import Error404 from "../desktop/pages/Error404";
 import Onboarding1 from "../phone/onboarding/Onboarding1";
 import Onboarding2 from "../phone/onboarding/Onboarding2";
@@ -260,6 +261,11 @@ const router = createBrowserRouter(
         {
             path: "/winner",
             Component: WinnerPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/draw",
+            Component: DrawPage,
             loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
         },
         {
