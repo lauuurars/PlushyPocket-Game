@@ -86,6 +86,12 @@ const startGameClock = (io: socketio.Server, room: Room) => {
     }, 1000)
 
     gameTimers[room.roomId] = setTimeout(() => {
+        for (const player of room.players) {
+            if (!(player.userId in room.scores)) {
+                room.scores[player.userId] = 0;
+            }
+        }
+
         if (room.minigameId !== "hammer-mole") {
             for (const player of room.players) {
                 const data = room.playerData[player.userId] ?? {}
@@ -314,6 +320,14 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room || room.status !== "IN_GAME") return
 
             room.scores[data.userId] = (room.scores[data.userId] ?? 0) + data.points
+
+            // ✅ Inicializar score del otro jugador si no existe
+            for (const player of room.players) {
+                if (!(player.userId in room.scores)) {
+                    room.scores[player.userId] = 0
+                }
+            }
+
             io.to(roomId).emit("hit_confirmed", data)
         })
 
