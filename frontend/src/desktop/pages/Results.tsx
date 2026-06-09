@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BgResults from "../../assets/results/BgResults.svg?url";
@@ -85,6 +85,8 @@ export default function Results() {
         return getRoomState().players;
     });
 
+    const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         const { socket } = getRoomState();
         if (!socket) return;
@@ -96,9 +98,21 @@ export default function Results() {
             const activeP1 = payload.players.some(p => p.userId === p1UserId);
             const activeP2 = payload.players.some(p => p.userId === p2UserId);
 
-            if (!activeP1 && !activeP2) {
-                handleExit();
-                navigate("/home");
+            if (activeP1 || activeP2) {
+                // If at least one player is present, cancel any pending room closure
+                if (closeTimeoutRef.current) {
+                    clearTimeout(closeTimeoutRef.current);
+                    closeTimeoutRef.current = null;
+                }
+            } else {
+                // If both players have left, schedule room closure after a 3-second delay
+                // to allow them to reconnect if they chose "Play Again"
+                if (!closeTimeoutRef.current) {
+                    closeTimeoutRef.current = setTimeout(() => {
+                        handleExit();
+                        navigate("/home");
+                    }, 3000);
+                }
             }
         };
 
@@ -106,6 +120,9 @@ export default function Results() {
 
         return () => {
             socket.off("room_update", handleRoomUpdate);
+            if (closeTimeoutRef.current) {
+                clearTimeout(closeTimeoutRef.current);
+            }
         };
     }, [navigate, p1UserId, p2UserId]);
 
