@@ -16,7 +16,7 @@ The game addresses a real retail challenge: **low visibility of new collections 
  
 ---
  
-## 🎮 How It Works
+## 🎮 How It Works?
  
 ```
 Customer scans QR code  →  Phone becomes a controller  →  Game appears on store display
@@ -127,7 +127,7 @@ VITE_SERVER_URL=http://localhost:3000
 ```bash
 # Start the backend
 cd server
-npm run dev
+npm start
  
 # Start the frontend (in a new terminal)
 cd frontend

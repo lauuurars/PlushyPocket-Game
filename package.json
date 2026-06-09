@@ -1,0 +1,8 @@
+{
+  "name": "plushypocket-game",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm start --prefix Server",
+    "dev": "npm run dev --prefix Server"
+  }
+}

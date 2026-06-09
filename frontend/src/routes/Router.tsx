@@ -1,0 +1,285 @@
+import { createBrowserRouter, redirect, type LoaderFunction } from "react-router-dom";
+import Welcome from "../desktop/pages/Welcome";
+import FlappyGame from "../desktop/islands/flappy/FlappyGame";
+import HammerMoleGame from "../desktop/islands/hammer/HammerMoleGame";
+import LoadingScreen from "../phone/onboarding/LoadingScreen";
+import SignUp from "../phone/register/SignUp";
+import LogIn from "../phone/register/LogIn";
+import Age from "../phone/register/Age";
+import CakeGame from "../desktop/islands/cake/CakeGame";
+import QRGame from "../phone/pages/QRGame";
+import QRCharacter from "../phone/pages/QRCharacter";
+import StartGame from "../desktop/pages/StartGame";
+import Home from "../desktop/pages/Home";
+import ChooseCharacter from "../phone/pages/ChooseCharacter";
+import HomePhone from "../phone/pages/HomePage";
+import Characters from '../phone/pages/Characters';
+import BlockedCharacters from '../phone/pages/BlockedCharacters';
+import JoinRoom from "../phone/pages/JoinRoom";
+import WaitingRoom from "../phone/pages/WaitingRoom";
+import Profile from "../phone/pages/Profile";
+import Rewards from "../phone/pages/Rewards";
+import RedeemedSuccess from "../phone/pages/RedeemedSuccess";
+import { supabase } from "../lib/supabaseClient";
+import ShoutCake from "../phone/islands/cake/ShoutCake";
+import Results from "../desktop/pages/Results";
+import PartyRoom from "../desktop/pages/PartyRoom";
+import HammerMole from "../phone/islands/hammer-mole/HammerMole";
+import FlappyBoatMobile from "../phone/islands/flappy/FlappyBoatMobile";
+import LoserPage from "../phone/pages/LoserPage";
+import WinnerPage from "../phone/pages/WinnerPage";
+import DrawPage from "../phone/pages/DrawPage";
+import Error404 from "../desktop/pages/Error404";
+import Onboarding1 from "../phone/onboarding/Onboarding1";
+import Onboarding2 from "../phone/onboarding/Onboarding2";
+import Onboarding3 from "../phone/onboarding/Onboarding3";
+import UnlockedReward from "../phone/pages/UnlockedReward";
+
+type Viewport = "pc" | "mobile";
+
+const MD_MIN_WIDTH_PX = 768;
+
+function isPcViewport(): boolean {
+    return typeof window !== "undefined" && window.matchMedia(`(min-width: ${MD_MIN_WIDTH_PX}px)`).matches;
+}
+
+function requireViewport(viewport: Viewport): LoaderFunction {
+    return () => {
+        const pc = isPcViewport();
+
+        if (viewport === "pc" && !pc) {
+            throw redirect("/loading");
+        }
+
+        if (viewport === "mobile" && pc) {
+            throw redirect("/");
+        }
+
+        return null;
+    };
+}
+
+function requireAuth(options: { redirectTo: string }): LoaderFunction {
+    return async () => {
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+            throw redirect(options.redirectTo);
+        }
+
+        return null;
+    };
+}
+
+function composeLoaders(...loaders: LoaderFunction[]): LoaderFunction {
+    return async (args) => {
+        for (const loader of loaders) {
+            const res = await loader(args);
+            if (res != null) return res;
+        }
+        return null;
+    };
+}
+
+const router = createBrowserRouter(
+    [
+        // Welcome - PC
+        {
+            path: "/",
+            Component: Welcome,
+            loader: requireViewport("pc"),
+        },
+        {
+            path: "/welcome",
+            Component: Welcome,
+            loader: requireViewport("pc"),
+        },
+        // Flappy boat - PC
+        {
+            path: "/flappy-boat",
+            Component: FlappyGame,
+            loader: composeLoaders(requireViewport("pc")),
+        },
+        // Flappy boat - Mobile
+        {
+            path: "/flappy-boat-mobile",
+            Component: FlappyBoatMobile,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // Hammer mole - PC
+        {
+            path: "/hammer-mole",
+            Component: HammerMoleGame,
+            loader: composeLoaders(requireViewport("pc")),
+        },
+        // Cake - PC
+        {
+            path: "/cake",
+            Component: CakeGame,
+            loader: composeLoaders(requireViewport("pc")),
+        },
+        // Start-game - PC 
+        {
+            path: "/start-game",
+            Component: StartGame,
+            loader: requireViewport("pc"),
+        },
+        // Party Room - PC
+        {
+            path: "/party-room",
+            Component: PartyRoom,
+            loader: requireViewport("pc"),
+        },
+        // Home (island hub) - PC
+        {
+            path: "/home",
+            Component: Home,
+            loader: requireViewport("pc")
+        },
+        {
+            path: "/results",
+            Component: Results,
+            loader: requireViewport("pc"),
+        },
+        // Loading - mobile
+        {
+            path: "/loading",
+            Component: LoadingScreen,
+            loader: requireViewport("mobile"),
+        },
+        // Sign-up - mobile
+        {
+            path: "/signup",
+            Component: SignUp,
+            loader: requireViewport("mobile"),
+        },
+        {
+            path: "/onboarding1",
+            Component: Onboarding1,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/onboarding2",
+            Component: Onboarding2,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/onboarding3",
+            Component: Onboarding3,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // Login - mobile
+        {
+            path: "/login",
+            Component: LogIn,
+            loader: requireViewport("mobile"),
+        },
+        // Age - mobile
+        {
+            path: "/age",
+            Component: Age,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // QRGame - mobile
+        {
+            path: "/qr-game",
+            Component: QRGame,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // QRCharacter - mobile
+        {
+            path: "/qr-character",
+            Component: QRCharacter,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // Choose-character - mobile
+        {
+            path: "/choose-character",
+            Component: ChooseCharacter,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // Home-phone - mobile
+        {
+            path: "/home-phone",
+            Component: HomePhone,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // Joined-room - mobile
+        {
+            path: "/joined-room",
+            Component: JoinRoom,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        //waiting-room - mobile
+        {
+            path: "/waiting-room",
+            Component: WaitingRoom,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/profile",
+            Component: Profile,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" }))
+        },
+        {
+            path: "/rewards",
+            Component: Rewards,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" }))
+        },
+        {
+            path: "/redeemed/:userRewardId",
+            Component: RedeemedSuccess,
+            loader: requireViewport("mobile")
+        },
+        {
+            path: "/shout-cake",
+            Component: ShoutCake,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/hammer",
+            Component: HammerMole,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/characters",
+            Component: Characters,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/blocked-characters",
+            Component: BlockedCharacters,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/loser",
+            Component: LoserPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/winner",
+            Component: WinnerPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/draw",
+            Component: DrawPage,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        {
+            path: "/unlocked-reward",
+            Component: UnlockedReward,
+            loader: composeLoaders(requireViewport("mobile"), requireAuth({ redirectTo: "/login" })),
+        },
+        // 404 - PC
+        {
+            path: "*",
+            Component: Error404,
+            loader: requireViewport("pc"),
+        },
+    ]
+)
+
+export default router;
