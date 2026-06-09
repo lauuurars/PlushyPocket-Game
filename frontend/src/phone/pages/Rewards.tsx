@@ -129,8 +129,20 @@ export default function Rewards() {
         }
     };
 
-    const discounts = userRewards.filter(ur => ur.rewards.reward_type === 'discount');
-    const bonuses = userRewards.filter(ur => ur.rewards.reward_type === 'bonus');
+    const sortRewards = (a: UserReward, b: UserReward) => {
+        const aInactive = a.status === "redeemed" || (a.status === "expired" || isExpired(a.expires_at));
+        const bInactive = b.status === "redeemed" || (b.status === "expired" || isExpired(b.expires_at));
+        if (aInactive && !bInactive) return 1;
+        if (!aInactive && bInactive) return -1;
+        return 0;
+    };
+
+    const discounts = userRewards
+        .filter(ur => ur.rewards.reward_type === 'discount')
+        .sort(sortRewards);
+    const bonuses = userRewards
+        .filter(ur => ur.rewards.reward_type === 'bonus')
+        .sort(sortRewards);
 
     return (
         <div className="relative w-full overflow-hidden flex flex-col md:hidden"
