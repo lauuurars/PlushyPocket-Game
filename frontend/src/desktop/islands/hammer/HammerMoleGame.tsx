@@ -4,7 +4,6 @@ import type { Socket } from 'socket.io-client';
 import type { ActiveCharacter, Character, Position, Side } from '../../../types/hammerTypes';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 import { clearRoomCallbacks, getRoomState, setRoomCallbacks } from '../../../lib/roomStore';
-import { useGameTimer } from '../../../lib/useGameTimer';
 import partedearriba from '../../../assets/marcoHammerMole/partedearriba.svg';
 import partedeabajo from '../../../assets/marcoHammerMole/partedeabajotopos.svg';
 import ladoizquierdo from '../../../assets/marcoHammerMole/ladoizquierdotopos.svg';
@@ -12,6 +11,8 @@ import cinnamoroll from '../../../assets/marcoHammerMole/cinnamoroll.svg';
 import kuromi from '../../../assets/marcoHammerMole/kuromi.svg';
 import myMelody from '../../../assets/marcoHammerMole/myMelody.svg';
 import pompompurin from '../../../assets/marcoHammerMole/pompompurin.svg';
+import Point1 from '../../../assets/cake/Point1.svg';
+import Poin2 from '../../../assets/cake/Poin2.svg';
 import GamePoints from '../../../components/GamePoints';
 import Timer from '../../../components/Timer';
 import HammerInstructionsModal from '../../../components/HammerInstructionsModal';
@@ -95,6 +96,7 @@ const HammerMoleGame: React.FC = () => {
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
     const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [showInstructions, setShowInstructions] = useState(true);
+    const [pointPopups, setPointPopups] = useState<Array<{ id: number; position: React.CSSProperties; forP1: boolean }>>([]);
 
     // Mantener ref sincronizado para leerlo dentro del socket handler
     useEffect(() => {
@@ -187,6 +189,14 @@ const HammerMoleGame: React.FC = () => {
             const room = getRoomState();
             const p1 = room.players.find(p => p.role === 'P1');
             const p2 = room.players.find(p => p.role === 'P2');
+
+            // Popup sobre el personaje golpeado
+            const isP1 = data.userId === p1?.userId;
+            const popupId = Date.now();
+            setPointPopups(prev => [...prev, { id: popupId, position: hit.position, forP1: isP1 }]);
+            setTimeout(() => {
+                setPointPopups(prev => prev.filter(p => p.id !== popupId));
+            }, 1500);
 
             if (data.userId === p1?.userId) setP1Score(prev => prev + 5);
             if (data.userId === p2?.userId) setP2Score(prev => prev + 5);
@@ -283,13 +293,19 @@ const HammerMoleGame: React.FC = () => {
                     filter: sepia(1) saturate(20) hue-rotate(-50deg) brightness(0.8) drop-shadow(0 0 20px #ff0000);
                     transition: filter 0.1s ease-in-out;
                 }
+
+                @keyframes float-up {
+                    0%   { opacity: 1; transform: translateY(0)     scale(1);   }
+                    100% { opacity: 0; transform: translateY(-80px) scale(1.2); }
+                }
+                .animate-float-up { animation: float-up 1.5s ease-out forwards; }
             `}</style>
 
             <video ref={videoRef} autoPlay playsInline className="fixed top-0 left-0 w-screen h-dvh object-cover -scale-x-100 z-0" />
 
             {!showInstructions && (
                 <>
-                    <div className="fixed top-6 left-[80px] z-30">
+                    <div className="fixed top-6 left-20 z-30">
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
@@ -297,7 +313,7 @@ const HammerMoleGame: React.FC = () => {
                             <Timer initialSeconds={60} remaining={timeRemaining} />
                         )}
                     </div>
-                    <div className="fixed top-6 right-[80px] z-30">
+                    <div className="fixed top-6 right-20 z-30">
                         <GamePoints points={p2Score} playerRole="P2" />
                     </div>
                 </>
@@ -333,6 +349,31 @@ const HammerMoleGame: React.FC = () => {
                     </div>
                 );
             })}
+
+            {pointPopups.map(popup => (
+                <div
+                    key={popup.id}
+                    className="absolute z-40 flex flex-col items-center pointer-events-none animate-float-up"
+                    style={{
+                        ...popup.position,
+                        transform: 'translateX(-50%)',
+                    }}
+                >
+                    <div className="relative flex items-center justify-center">
+                        <img
+                            src={popup.forP1 ? Point1 : Poin2}
+                            alt=""
+                            className="w-40 h-40 object-contain"
+                        />
+                        <span
+                            className="absolute pb-1 text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                            style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
+                        >
+                            +5
+                        </span>
+                    </div>
+                </div>
+            ))}
 
             <img src={partedearriba} alt="Marco Superior" className="fixed -top-35 left-0 w-screen h-auto z-20 pointer-events-none" />
             <img src={partedeabajo} alt="Marco Inferior" className="fixed -bottom-30 left-0 w-screen h-auto z-20 pointer-events-none" />
