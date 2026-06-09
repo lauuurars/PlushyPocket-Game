@@ -58,9 +58,6 @@ Customer scans QR code  →  Phone becomes a controller  →  Game appears on st
  
 ### Sensor & Interaction Technologies
  
-#### 🤖 MediaPipe
-Enables **facial detection** on the main screen's camera feed. Used for visual interactions like detecting when a player's face is hit (e.g., pie-in-the-face mechanics). Runs entirely in the browser via the `getUserMedia` API.
- 
 #### 📱 Mobile Sensors (Accelerometer & Gyroscope)
 The phone acts as a physical controller. Using the **DeviceMotion** and **DeviceOrientation** Web APIs, the game reads tilt, shake, and rotation data to control in-game actions — no app installation needed.
  
@@ -76,11 +73,32 @@ Handles all **real-time synchronization** between the mobile controller and the 
 ---
  
 ## 📁 Project Structure
- 
+
 ```
-📁 Plushy-Pocket-Game
-├── 📂 frontend       # React + TypeScript + Vite — UI, canvas, sensors, routing
-└── 📂 server         # Node.js + Express — game logic, sockets, auth, Supabase
+📁 PlushyPocket-Game
+├── 📂 frontend
+│   └── 📂 src
+│       ├── 📂 assets
+│       ├── 📂 components
+│       ├── 📂 desktop
+│       │   ├── 📂 islands
+│       │   └── 📂 pages
+│       ├── 📂 lib
+│       ├── 📂 phone
+│       │   ├── 📂 islands
+│       │   ├── 📂 onboarding
+│       │   ├── 📂 pages
+│       │   └── 📂 register
+│       ├── 📂 routes
+│       └── 📂 types
+└── 📂 server
+    └── 📂 src
+        ├── 📂 auth
+        ├── 📂 config
+        ├── 📂 game
+        ├── 📂 sockets
+        ├── 📂 types
+        └── 📂 user
 ```
  
 ---
@@ -96,7 +114,7 @@ Handles all **real-time synchronization** between the mobile controller and the 
  
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/plushy-pocket-game.git
+git clone https://github.com/lauuurars/PlushyPocket-Game.git
 cd plushy-pocket-game
  
 # Install frontend dependencies
