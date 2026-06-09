@@ -4,8 +4,7 @@ type ScoringFn = (data: PlayerGameData) => number
 
 const STRATEGIES: Record<string, ScoringFn> = {
     "cake": (data) => {
-        const maxRms = (data.payload?.maxRms as number) ?? 0
-        return Math.round(Math.min(maxRms / 0.12, 1) * 250)
+        return (data.payload?.score as number) ?? data.score ?? 0
     },
     "flappy-boat": (data) => {
         return (data.payload?.score as number) ?? data.score ?? 0

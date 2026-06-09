@@ -19,7 +19,6 @@ const SEGMENT_COLORS = [
 
 const KOALA_BY_TIER = [koala1Svg, koala2Svg, koala3Svg] as const;
 const TOTAL_SEGMENTS = SEGMENT_COLORS.length;
-const POINTS_MAX = 250;
 const RMS_SENSITIVITY = 0.12;
 const LEVEL_ATTACK = 0.45;
 const LEVEL_RELEASE = 0.12;
@@ -39,12 +38,7 @@ export default function ShoutCake() {
   const [koalaTier, setKoalaTier] = useState<0 | 1 | 2>(2);
   const [micHint, setMicHint] = useState<string | null>(null);
   const [needsTap, setNeedsTap] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
-  const [gameOverData, setGameOverData] = useState<{
-    winnerId: string;
-    myScore: number;
-    opponentScore: number;
-  } | null>(null);
+  const [score, setScore] = useState(0);
 
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -56,7 +50,7 @@ export default function ShoutCake() {
   const userIdRef = useRef<string>("");
   const characterIdRef = useRef<string>("mochi");
   const maxRmsRef = useRef(0);
-  const lastEmitRef = useRef(0);
+  const canFireRef = useRef(true);
 
   // Socket connection — reuse from WaitingRoom or create new
   useEffect(() => {
@@ -87,18 +81,35 @@ export default function ShoutCake() {
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
 
-    socket.on("game_timer_tick", (data: { remaining: number }) => {
-      if (!cancelled) setTimeRemaining(data.remaining);
+    socket.on("game_action", (data: { userId: string; action: string; payload?: { score?: number } }) => {
+      if (cancelled) return;
+      if (data.action === "score_update") {
+        const newScore = data.payload?.score ?? 0;
+        if (data.userId === userIdRef.current) {
+          setScore(newScore);
+        }
+      }
     });
 
     socket.on("game_over", (payload: GameOverPayload) => {
       if (cancelled) return;
-      const myId = userIdRef.current;
-      const myScore = payload.scores[myId] ?? 0;
-      const opponentScore = Object.entries(payload.scores).find(
-        ([id]) => id !== myId,
-      )?.[1] ?? 0;
-      setGameOverData({ winnerId: payload.winnerId, myScore, opponentScore });
+      const isWinner = payload.winnerId === userIdRef.current;
+      if (isWinner) {
+        const timeoutId = setTimeout(() => {
+          if (!cancelled) navigate('/winner', { replace: true });
+        }, 5000);
+        const onReward = (rewardPayload: { userId: string; rewardId: string }) => {
+          clearTimeout(timeoutId);
+          if (!cancelled && rewardPayload.userId === userIdRef.current) {
+            navigate(`/unlocked-reward?rewardId=${encodeURIComponent(rewardPayload.rewardId)}`, {
+              state: { fromGame: true }
+            });
+          }
+        };
+        socket.on("reward_assigned", onReward);
+      } else {
+        navigate('/loser', { replace: true });
+      }
     });
 
     return () => {
@@ -156,26 +167,25 @@ export default function ShoutCake() {
       const tier = tierFromFilled(clamped);
       setKoalaTier((t) => (t !== tier ? tier : t));
 
-      // Track max RMS and emit score to server
-      if (target > maxRmsRef.current) maxRmsRef.current = target;
+      // Fire catapult when bar fills
+      if (clamped === TOTAL_SEGMENTS && canFireRef.current) {
+        canFireRef.current = false;
+        const socket = socketRef.current;
+        if (socket && userIdRef.current && roomId) {
+          socket.emit("player_action", {
+            userId: userIdRef.current,
+            characterId: characterIdRef.current,
+            action: "catapult_fire",
+            timestamp: Date.now(),
+            roomId,
+          });
+        }
+        levelRef.current = 0;
+        maxRmsRef.current = 0;
+      }
 
-      const now = Date.now();
-      const socket = socketRef.current;
-      if (socket && userIdRef.current && roomId && now - lastEmitRef.current > 500) {
-        lastEmitRef.current = now;
-        const currentScore = Math.round((clamped / TOTAL_SEGMENTS) * POINTS_MAX);
-        socket.emit("player_action", {
-          userId: userIdRef.current,
-          characterId: characterIdRef.current,
-          action: "score_update",
-          timestamp: now,
-          roomId,
-          payload: {
-            maxRms: maxRmsRef.current,
-            avgRms: levelRef.current,
-            currentScore,
-          },
-        });
+      if (clamped < 5) {
+        canFireRef.current = true;
       }
 
       rafRef.current = requestAnimationFrame(loop);
@@ -235,33 +245,10 @@ export default function ShoutCake() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // If game is over, show results overlay
-  if (gameOverData) {
-    const isWinner = gameOverData.winnerId === userIdRef.current;
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-[#ed1c24] p-8 text-center">
-        <h1 className="text-5xl font-extrabold text-white" style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}>
-          {isWinner ? "You Win!" : "You Lose"}
-        </h1>
-        <div className="rounded-2xl bg-white/20 p-6 text-white">
-          <p className="text-2xl font-bold">Your Score: {gameOverData.myScore}</p>
-          <p className="text-xl">Opponent: {gameOverData.opponentScore}</p>
-        </div>
-        <button
-          onClick={() => navigate("/home-phone")}
-          className="rounded-full bg-white px-8 py-3 text-lg font-bold text-[#ed1c24]"
-        >
-          Go Home
-        </button>
-      </div>
-    );
-  }
+
 
   const fillFromIndex = TOTAL_SEGMENTS - filledSegments;
   const koalaSrc = KOALA_BY_TIER[koalaTier];
-  const displayPoints = Math.round(
-    (filledSegments / TOTAL_SEGMENTS) * POINTS_MAX,
-  );
 
   return (
     <>
@@ -279,15 +266,6 @@ export default function ShoutCake() {
           draggable={false}
           aria-hidden
         />
-
-        {/* Timer */}
-        {timeRemaining !== null && (
-          <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
-            <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ed1c24] shadow-md">
-              {timeRemaining}s
-            </span>
-          </div>
-        )}
 
         {/* Red header dome */}
         <header className="relative z-10 shrink-0 px-6 pb-14 pt-[max(3rem,env(safe-area-inset-top))] text-center">
@@ -366,7 +344,7 @@ export default function ShoutCake() {
             className="mt-3 text-[35px] leading-[37px] tracking-[-1px] text-[#583921]"
             style={{ fontFamily: "'Baloo Da 2', system-ui, sans-serif" }}
           >
-            {displayPoints} pts
+            {score} pts
           </p>
         </footer>
       </div>
