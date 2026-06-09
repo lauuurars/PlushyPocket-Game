@@ -5,7 +5,7 @@
 
 @theme {
     --font-sans: "Nunito", sans-serif;
-    --breakpoint-3xl: 160rem; /* 2560px */
+    --breakpoint-3xl: 120rem; /* 1920px */
 }
 
 :root {

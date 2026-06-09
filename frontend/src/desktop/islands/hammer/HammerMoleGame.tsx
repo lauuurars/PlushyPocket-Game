@@ -293,6 +293,13 @@ const HammerMoleGame: React.FC = () => {
                     transition: filter 0.1s ease-in-out;
                 }
 
+                /* Ajuste de escala para personajes en 3xl */
+                @media (min-width: 120rem) {
+                    .char-container-3xl {
+                        height: 320px !important;
+                        min-width: 320px !important;
+                    }
+
                 @keyframes float-up {
                     0%   { opacity: 1; transform: translateY(0)     scale(1);   }
                     100% { opacity: 0; transform: translateY(-80px) scale(1.2); }
@@ -304,15 +311,15 @@ const HammerMoleGame: React.FC = () => {
 
             {!showInstructions && (
                 <>
-                    <div className="fixed top-6 left-20 z-30">
+                    <div className="fixed top-6 left-20 z-30 3xl:top-12 3xl:left-32 3xl:scale-150 transform-gpu">
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
-                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30">
+                    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-30 3xl:top-12 3xl:scale-150 transform-gpu">
                         {gameEndTime && (
                             <Timer initialSeconds={60} remaining={timeRemaining} />
                         )}
                     </div>
-                    <div className="fixed top-6 right-20 z-30">
+                    <div className="fixed top-6 right-20 z-30 3xl:top-12 3xl:right-32 3xl:scale-150 transform-gpu">
                         <GamePoints points={p2Score} playerRole="P2" />
                     </div>
                 </>
@@ -327,12 +334,13 @@ const HammerMoleGame: React.FC = () => {
                 return (
                     <div
                         key={active.id}
-                        className="absolute char-anim flex items-center justify-center"
+                        className="absolute char-anim flex items-center justify-center char-container-3xl"
                         style={{
                             ...active.position,
                             width: 'auto',
-                            height: '180px',
-                            minWidth: '180px',
+                            // Usamos clamp para que escale suavemente hacia el tamaño 3xl
+                            height: 'clamp(180px, 15vh, 320px)',
+                            minWidth: 'clamp(180px, 15vh, 320px)',
                             zIndex: 5,
                             animationName: config.anim,
                             transformOrigin: 'center',
@@ -352,7 +360,7 @@ const HammerMoleGame: React.FC = () => {
             {pointPopups.map(popup => (
                 <div
                     key={popup.id}
-                    className="absolute z-40 flex flex-col items-center pointer-events-none animate-float-up"
+                    className="absolute z-40 flex flex-col items-center pointer-events-none animate-float-up 3xl:scale-150"
                     style={{
                         ...popup.position,
                         transform: 'translateX(-50%)',
@@ -362,10 +370,10 @@ const HammerMoleGame: React.FC = () => {
                         <img
                             src={popup.forP1 ? Point1 : Poin2}
                             alt=""
-                            className="w-40 h-40 object-contain"
+                            className="w-40 h-40 3xl:w-64 3xl:h-64 object-contain"
                         />
                         <span
-                            className="absolute pb-1 text-3xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                            className="absolute pb-1 text-3xl 3xl:text-5xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
                             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
                         >
                             +5
@@ -374,9 +382,22 @@ const HammerMoleGame: React.FC = () => {
                 </div>
             ))}
 
-            <img src={partedearriba} alt="Marco Superior" className="fixed -top-35 left-0 w-screen h-auto z-20 pointer-events-none" />
-            <img src={partedeabajo} alt="Marco Inferior" className="fixed -bottom-30 left-0 w-screen h-auto z-20 pointer-events-none" />
-            <img src={ladoizquierdo} alt="Marco Izquierdo" className="fixed top-0 -left-2.5 h-screen w-auto z-10 pointer-events-none" />
+            {/* Marcos decorativos: usamos vh para asegurar que cubran proporcionalmente el alto en 3xl */}
+            <img
+                src={partedearriba}
+                alt="Marco Superior"
+                className="fixed -top-35 left-0 w-screen h-auto z-20 pointer-events-none 3xl:-top-48 3xl:scale-110"
+            />
+            <img
+                src={partedeabajo}
+                alt="Marco Inferior"
+                className="fixed -bottom-30 left-0 w-screen h-auto z-20 pointer-events-none 3xl:-bottom-44 3xl:scale-110"
+            />
+            <img
+                src={ladoizquierdo}
+                alt="Marco Izquierdo"
+                className="fixed top-0 -left-2.5 h-screen w-auto z-10 pointer-events-none 3xl:-left-6"
+            />
 
             <iframe
                 width="0" height="0"

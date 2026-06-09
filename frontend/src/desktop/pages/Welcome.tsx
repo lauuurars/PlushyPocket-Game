@@ -61,7 +61,7 @@ export default function Welcome() {
 
     return (
         <>
-            
+
             <style>{`
         @keyframes floatY {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -134,12 +134,12 @@ export default function Welcome() {
                         position: "absolute", top: "10%", left: "15%",
                         width: 320, height: 320, borderRadius: "50%",
                         background: "rgba(255,255,255,0.06)", filter: "blur(40px)"
-                    }} />
+                    }} className="3xl:w-125 3xl:h-125 3xl:blur-[60px]" />
                     <div style={{
                         position: "absolute", bottom: "20%", right: "10%",
                         width: 260, height: 260, borderRadius: "50%",
                         background: "rgba(255,255,255,0.05)", filter: "blur(50px)"
-                    }} />
+                    }} className="3xl:w-100 3xl:h-100 3xl:blur-[70px]" />
                 </div>
 
                 {/* botón mute */}
@@ -162,60 +162,61 @@ export default function Welcome() {
                         justifyContent: "center",
                         backdropFilter: "blur(6px)",
                     }}
+                    className="3xl:top-10 3xl:right-15 3xl:w-15 3xl:h-15"
                 >
                     {!startedMusic ? (
-                        <Music4 className="h-5 w-5 text-white" />
+                        <Music4 className="h-5 w-5 text-white 3xl:h-7 3xl:w-7" />
                     ) : isMuted ? (
-                        <VolumeX className="h-5 w-5 text-white" />
+                        <VolumeX className="h-5 w-5 text-white 3xl:h-7 3xl:w-7" />
                     ) : (
-                        <Volume2 className="h-5 w-5 text-white" />
+                        <Volume2 className="h-5 w-5 text-white 3xl:h-7 3xl:w-7" />
                     )}
                 </button>
 
 
                 {/* ── elementos decorativossss ── */}
-                <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+                <div aria-hidden className="absolute inset-0 pointer-events-none 3xl:transform-gpu" style={{ zIndex: 2 }}>
 
                     {/* rayo moradito */}
                     <FloatingElement src={Rayo} alt="" size={60}
                         style={{ top: "7%", left: "20%" }}
-                        animationClass={`float-a anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[60px] 3xl:w-[6vh] float-a anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.2s" />
 
                     {/* estrella azul*/}
                     <FloatingElement src={Estrella2} alt="" size={34}
                         style={{ top: "33%", left: "20%" }}
-                        animationClass={`float-b anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[34px] 3xl:w-[3.4vh] float-b anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.35s" />
 
                     {/* coronaaa */}
                     <FloatingElement src={Corona} alt="" size={48}
                         style={{ top: "10%", right: "23%" }}
-                        animationClass={`float-a anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[48px] 3xl:w-[4.8vh] float-a anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.25s" />
 
                     {/* estrella morada */}
                     <FloatingElement src={Estrella1} alt="" size={36}
                         style={{ top: "35%", right: "18%" }}
-                        animationClass={`spin-s anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[36px] 3xl:w-[3.6vh] spin-s anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.5s" />
 
                     {/* estrella amarilla */}
                     <FloatingElement src={Estrella3} alt="" size={50}
                         style={{ top: "55%", left: "15%" }}
-                        animationClass={`float-b anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[50px] 3xl:w-[5vh] float-b anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.4s" />
 
                     {/* flor rosada */}
                     <FloatingElement src={Flor} alt="" size={38}
                         style={{ bottom: "40%", right: "25%" }}
-                        animationClass={`float-a anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[38px] 3xl:w-[3.8vh] float-a anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.55s" />
 
                     {/* corazón */}
                     <FloatingElement src={Corazon} alt="" size={35}
                         style={{ top: "55%", left: "32%" }}
-                        animationClass={`pulse-s anim-scatter ${ready ? "" : "opacity-0"}`}
+                        animationClass={`w-[35px] 3xl:w-[3.5vh] pulse-s anim-scatter ${ready ? "" : "opacity-0"}`}
                         delay="0.6s" />
                 </div>
 
@@ -232,7 +233,8 @@ export default function Welcome() {
                             src={Logo}
                             alt="Plushy Pocket"
                             style={{
-                                width: "clamp(260px, 45vw, 520px)",
+                                // Añadido un tope más alto para 3xl en el tercer argumento del clamp (de 520px a 780px)
+                                width: "clamp(260px, 45vw, 780px)",
                                 filter: "drop-shadow(0 8px 24px rgba(0,0,0,0.25))",
                             }}
                         />
@@ -240,13 +242,10 @@ export default function Welcome() {
 
                     {/* texto by miniso */}
                     <p
-                        className={`anim-fade-up ${ready ? "" : "opacity-0"}`}
+                        className={`anim-fade-up ${ready ? "" : "opacity-0"} text-[20px] 3xl:text-[40px] mt-[10px] mb-[clamp(20px, 4vh, 36px)] 3xl:mt-[20px] 3xl:mb-[4vh]`}
                         style={{
                             fontWeight: 700,
                             color: "rgba(255,255,255)",
-                            fontSize: "20px",
-                            marginTop: "10px",
-                            marginBottom: "clamp(20px, 4vh, 36px)",
                             animationDelay: "0.4s",
                         }}
                     >
@@ -255,7 +254,7 @@ export default function Welcome() {
 
                     {/* Botón */}
                     <div
-                        className={`anim-fade-up ${ready ? "" : "opacity-0"}`}
+                        className={`anim-fade-up ${ready ? "" : "opacity-0"} 3xl:scale-200`}
                         style={{ animationDelay: "0.55s" }}
                     >
                         <VioletButton
@@ -284,9 +283,8 @@ export default function Welcome() {
                     <img
                         src={Characters}
                         alt="Plushy Pocket characters"
-                        className={`anim-chars ${ready ? "" : "opacity-0"}`}
+                        className={`w-[clamp(280px, 70vw, 700px)] 3xl:w-[70vw] anim-chars ${ready ? "" : "opacity-0"}`}
                         style={{
-                            width: "clamp(280px, 70vw, 700px)",
                             display: "block",
                             filter: "drop-shadow(0 -8px 30px rgba(0,0,0,0.15))",
                             animationDelay: "0.1s",
