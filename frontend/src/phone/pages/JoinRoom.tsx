@@ -46,6 +46,9 @@ export default function JoinRoom() {
 
         const socket = createRealtimeSocket();
 
+        /* Store the socket in roomStore so WaitingRoom can reuse it */
+        updateRoomState({ socket, roomId, minigameId });
+
         const onRoomNotFound = (p: { message?: string }) => {
             setJoinError(p?.message ?? "Sala no encontrada");
         };
@@ -55,12 +58,17 @@ export default function JoinRoom() {
         const onConnectError = () => {
             setJoinError("No se pudo conectar al servidor. Verifica que el servidor esté corriendo.");
         };
-        const onPlayerJoined = (p: { userId: string }) => {
+        const onPlayerJoined = (p: { userId: string; playersInRoom?: number }) => {
             const myId = userIdRef.current;
             if (!myId || p.userId !== myId) return;
             if (joinedRef.current) return;
             joinedRef.current = true;
             socket.emit("player__rematch_ready", { roomId });
+
+            if (p.playersInRoom && p.playersInRoom >= 2) {
+                return;
+            }
+
             timerRef.current = setTimeout(() => {
                 if (navigatedRef.current) return;
                 navigate(
@@ -110,9 +118,6 @@ export default function JoinRoom() {
 
             socket.emit("player__join", payload);
         })();
-
-        /* Store the socket in roomStore so WaitingRoom can reuse it */
-        updateRoomState({ socket, roomId, minigameId });
 
         return () => {
             if (timerRef.current) {

@@ -5,7 +5,7 @@ import BgResults from "../../assets/results/BgResults.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 
-import type { GameStartPayload, PartyResultsNavState } from "../../lib/api";
+import type { GameStartPayload, PartyResultsNavState, PlayerInfoPayload, RoomUpdatePayload } from "../../lib/api";
 import { getRoomState, resetRoomState } from "../../lib/roomStore";
 import { supabase } from "../../lib/supabaseClient";
 import { profilePicturePublicUrl } from "../../lib/api";
@@ -80,6 +80,37 @@ export default function Results() {
     const p1CharacterId = party?.player1CharacterId || p1?.characterId;
     const p2UserId = party?.player2UserId || p2?.userId;
     const p2CharacterId = party?.player2CharacterId || p2?.characterId;
+
+    const [currentPlayers, setCurrentPlayers] = useState<PlayerInfoPayload[]>(() => {
+        return getRoomState().players;
+    });
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        const handleRoomUpdate = (payload: RoomUpdatePayload) => {
+            setCurrentPlayers(payload.players);
+
+            // Check if both players have left
+            const activeP1 = payload.players.some(p => p.userId === p1UserId);
+            const activeP2 = payload.players.some(p => p.userId === p2UserId);
+
+            if (!activeP1 && !activeP2) {
+                handleExit();
+                navigate("/home");
+            }
+        };
+
+        socket.on("room_update", handleRoomUpdate);
+
+        return () => {
+            socket.off("room_update", handleRoomUpdate);
+        };
+    }, [navigate, p1UserId, p2UserId]);
+
+    const isP1Connected = !!p1UserId && currentPlayers.some(p => p.userId === p1UserId);
+    const isP2Connected = !!p2UserId && currentPlayers.some(p => p.userId === p2UserId);
 
     const getPlayerAvatar = async (userId: string, characterId: string | null | undefined): Promise<string> => {
         try {
@@ -274,58 +305,114 @@ export default function Results() {
                                             zIndex: 10,
                                         }}
                                     />
+                                {isP1Connected ? (
+                                    <>
+                                        {winnerPlayer === 1 && (
+                                            <img
+                                                src={Corona}
+                                                alt=""
+                                                aria-hidden
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-18px",
+                                                    left: "-12px",
+                                                    width: "62px",
+                                                    height: "auto",
+                                                    transform: "rotate(-18deg)",
+                                                    zIndex: 10,
+                                                }}
+                                            />
+                                        )}
+
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                                border: "12px solid #FAFAFA",
+                                            }}
+                                        >
+                                            <img
+                                                src={p1Avatar || avatarFor(p1CharacterId, "P1")}
+                                                alt=""
+                                                className="h-full w-full object-cover"
+                                                draggable={false}
+                                            />
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 1
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "35px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            {player1Name}
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1 text-center text-[#FFD700]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {p1Score} pts
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-[#3e3e3e]/20 flex items-center justify-center border-12 border-dashed border-[#FAFAFA]/30"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                            }}
+                                        >
+                                            <span className="text-[#FAFAFA]/40 font-bold text-lg">Disconnected</span>
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FAFAFA]/40"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 1
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FAFAFA]/30 italic"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "30px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            Left the room
+                                        </p>
+                                    </>
                                 )}
-
-                                <div
-                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
-                                    style={{
-                                        width: "350px",
-                                        height: "350px",
-                                        border: "12px solid #FAFAFA",
-                                    }}
-                                >
-                                    <img
-                                        src={p1Avatar || avatarFor(p1CharacterId, "P1")}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                        draggable={false}
-                                    />
-                                </div>
-
-                                <p
-                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "41px",
-                                        letterSpacing: "-0.77px",
-                                        lineHeight: "61px",
-                                    }}
-                                >
-                                    Player 1
-                                </p>
-                                <p
-                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 600,
-                                        fontSize: "35px",
-                                        letterSpacing: "-0.43px",
-                                        lineHeight: "34px",
-                                    }}
-                                >
-                                    {player1Name}
-                                </p>
-                                <p
-                                    className="m-0 mt-1 text-center text-[#FFD700]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "20px",
-                                    }}
-                                >
-                                    {p1Score} pts
-                                </p>
                             </div>
 
                             <p
@@ -359,58 +446,114 @@ export default function Results() {
                                             zIndex: 10,
                                         }}
                                     />
+                                {isP2Connected ? (
+                                    <>
+                                        {winnerPlayer === 2 && (
+                                            <img
+                                                src={Corona}
+                                                alt=""
+                                                aria-hidden
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-18px",
+                                                    left: "-12px",
+                                                    width: "80px",
+                                                    height: "auto",
+                                                    transform: "rotate(-18deg)",
+                                                    zIndex: 10,
+                                                }}
+                                            />
+                                        )}
+
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                                border: "12px solid #FAFAFA",
+                                            }}
+                                        >
+                                            <img
+                                                src={p2Avatar || avatarFor(p2CharacterId, "P2")}
+                                                alt=""
+                                                className="h-full w-full object-cover"
+                                                draggable={false}
+                                            />
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 2
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "35px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            {player2Name}
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1 text-center text-[#FFD700]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {p2Score} pts
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-[#3e3e3e]/20 flex items-center justify-center border-12 border-dashed border-[#FAFAFA]/30"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                            }}
+                                        >
+                                            <span className="text-[#FAFAFA]/40 font-bold text-lg">Disconnected</span>
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FAFAFA]/40"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 2
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FAFAFA]/30 italic"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "30px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            Left the room
+                                        </p>
+                                    </>
                                 )}
-
-                                <div
-                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
-                                    style={{
-                                        width: "350px",
-                                        height: "350px",
-                                        border: "12px solid #FAFAFA",
-                                    }}
-                                >
-                                    <img
-                                        src={p2Avatar || avatarFor(p2CharacterId, "P2")}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                        draggable={false}
-                                    />
-                                </div>
-
-                                <p
-                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "41px",
-                                        letterSpacing: "-0.77px",
-                                        lineHeight: "61px",
-                                    }}
-                                >
-                                    Player 2
-                                </p>
-                                <p
-                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 600,
-                                        fontSize: "35px",
-                                        letterSpacing: "-0.43px",
-                                        lineHeight: "34px",
-                                    }}
-                                >
-                                    {player2Name}
-                                </p>
-                                <p
-                                    className="m-0 mt-1 text-center text-[#FFD700]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "20px",
-                                    }}
-                                >
-                                    {p2Score} pts
-                                </p>
                             </div>
                         </div>
 
