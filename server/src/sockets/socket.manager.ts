@@ -150,6 +150,40 @@ const processGameEnd = async (io: socketio.Server, roomId: string, winnerId: str
     }
 }
 
+const beginGame = async (io: socketio.Server, room: Room, requestSocket?: socketio.Socket) => {
+    const p1 = room.players.find(p => p.role === "P1")
+    const p2 = room.players.find(p => p.role === "P2")
+    if (!p1 || !p2) {
+        const errorMsg = "Error al asignar roles de jugadores"
+        if (requestSocket) requestSocket.emit("game_error", { message: errorMsg })
+        else io.to(room.roomId).emit("game_error", { message: errorMsg })
+        return
+    }
+
+    try {
+        room.scores = {}
+        room.playerData = {}
+        room.rematchReady = []
+
+        await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
+        room.status = "IN_GAME"
+
+        if (room.minigameId === "hammer-mole") {
+            // El clock lo arranca la pantalla con start_game_clock
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+        } else {
+            const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
+            room.gameEndTime = Date.now() + durationMs
+            io.to(room.roomId).emit("game_start", toGameStartPayload(room))
+            emitRoomUpdate(io, room)
+            startGameClock(io, room)
+        }
+    } catch (error: any) {
+        io.to(room.roomId).emit("game_error", { message: error.message ?? "Error al iniciar partida" })
+    }
+}
+
 export const initializeSockets = (rawServer: HttpServer) => {
     const io = new socketio.Server(rawServer, {
         path: "/real-time",
@@ -174,6 +208,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 players: [],
                 scores: {},
                 playerData: {},
+                rematchReady: [],
             }
 
             rooms[roomId] = room
@@ -241,7 +276,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             }
 
             if (room.status === "CREATED") room.status = "WAITING_PLAYERS"
-            if (room.players.length === 2 && room.status !== "IN_GAME") room.status = "READY"
+            if (room.players.length === 2 && room.status !== "IN_GAME" && room.status !== "RESULTS") room.status = "READY"
 
             io.to(roomId).emit("player__joined", {
                 userId,
@@ -254,30 +289,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             emitRoomUpdate(io, room)
 
             if (room.players.length === 2 && room.status === "READY") {
-                const p1 = room.players.find(p => p.role === "P1")
-                const p2 = room.players.find(p => p.role === "P2")
-                if (!p1 || !p2) {
-                    socket.emit("game_error", { message: "Error al asignar roles de jugadores" })
-                    return
-                }
-
-                try {
-                    await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
-                    room.status = "IN_GAME"
-                    
-                    if (room.minigameId === "hammer-mole") {
-                        io.to(room.roomId).emit("game_start", toGameStartPayload(room))
-                        emitRoomUpdate(io, room)
-                    } else {
-                        const durationMs = (GAME_DURATION[room.minigameId] ?? 60) * 1000
-                        room.gameEndTime = Date.now() + durationMs
-                        io.to(room.roomId).emit("game_start", toGameStartPayload(room))
-                        emitRoomUpdate(io, room)
-                        startGameClock(io, room)
-                    }
-                } catch (error: any) {
-                    io.to(room.roomId).emit("game_error", { message: error.message ?? "Error al iniciar partida" })
-                }
+                await beginGame(io, room, socket)
             }
         })
 
@@ -341,6 +353,7 @@ export const initializeSockets = (rawServer: HttpServer) => {
             if (!room) return
 
             room.players = room.players.filter(p => p.userId !== userId)
+            room.rematchReady = room.rematchReady.filter(id => id !== userId)
             if (room.status !== "RESULTS") room.status = room.players.length === 2 ? "READY" : "WAITING_PLAYERS"
 
             socket.leave(roomId)
@@ -394,6 +407,33 @@ export const initializeSockets = (rawServer: HttpServer) => {
             await processGameEnd(io, roomId, winnerId, loserId)
         })
 
+        // 8. player rematch ready
+        socket.on("player__rematch_ready", (data: { roomId: string }) => {
+            const session = sessions[socket.id]
+            if (!session || session.clientType !== "player") return
+
+            const userId = session.userId
+            if (!userId) return
+
+            const roomId = data.roomId ?? session.roomId
+            if (!roomId) return
+
+            const room = rooms[roomId]
+            if (!room) return
+            if (room.status !== "RESULTS") return
+
+            if (!room.rematchReady.includes(userId)) {
+                room.rematchReady.push(userId)
+            }
+
+            const allPlayersReady = room.players.length === 2 &&
+                room.players.every(p => room.rematchReady.includes(p.userId))
+
+            if (allPlayersReady) {
+                void beginGame(io, room)
+            }
+        })
+
         // 9. disconnect
         socket.on("disconnect", () => {
             console.log(`Jugador desconectado: ${socket.id}`)
@@ -424,10 +464,16 @@ export const initializeSockets = (rawServer: HttpServer) => {
 
             const disconnectedUserId = session.userId
             if (disconnectedUserId) {
-                room.players = room.players.filter(p => p.userId !== disconnectedUserId)
-                if (room.status !== "RESULTS") room.status = room.players.length === 2 ? "READY" : "WAITING_PLAYERS"
-                io.to(roomId).emit("player_disconnected", { userId: disconnectedUserId })
-                emitRoomUpdate(io, room)
+                const currentEntry = room.players.find(p => p.userId === disconnectedUserId)
+                // Si el jugador ya se reconectó con otro socket (room.players tiene socketId diferente),
+                // no lo removemos del room — solo limpiamos la sesión vieja.
+                if (!currentEntry || currentEntry.socketId === socket.id) {
+                    room.players = room.players.filter(p => p.userId !== disconnectedUserId)
+                    room.rematchReady = room.rematchReady.filter(id => id !== disconnectedUserId)
+                    if (room.status !== "RESULTS") room.status = room.players.length === 2 ? "READY" : "WAITING_PLAYERS"
+                    io.to(roomId).emit("player_disconnected", { userId: disconnectedUserId })
+                    emitRoomUpdate(io, room)
+                }
             }
 
             if (room.players.length === 0 && !room.screenSocketId) delete rooms[roomId]

@@ -95,6 +95,7 @@ export type Room = {
     scores: Record<string, number>       // userId -> score acumulado durante la partida
     playerData: Record<string, Record<string, unknown>>  // userId -> datos crudos del juego
     gameEndTime?: number                  // timestamp de cuando termina el juego
+    rematchReady: string[]               // userIds de jugadores listos para rematch
 }
 
 export const GAME_DURATION: Record<string, number> = {
