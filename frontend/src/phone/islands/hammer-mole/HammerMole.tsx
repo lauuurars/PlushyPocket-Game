@@ -123,11 +123,24 @@ export default function HammerMole() {
         socket.on("game_over", (payload: GameOverPayload) => {
             if (cancelled) return;
             const myId = userIdRef.current;
-            const myScore = payload.scores[myId] ?? 0;
-            const opponentScore = Object.entries(payload.scores).find(
-                ([id]) => id !== myId,
-            )?.[1] ?? 0;
-            setGameOverData({ winnerId: payload.winnerId, myScore, opponentScore });
+            const isWinner = payload.winnerId === myId;
+
+            if (isWinner) {
+                const timeoutId = setTimeout(() => {
+                    if (!cancelled) navigate('/winner', { replace: true });
+                }, 5000);
+
+                socket.on("reward_assigned", (rewardPayload: { userId: string; rewardId: string }) => {
+                    clearTimeout(timeoutId);
+                    if (!cancelled && rewardPayload.userId === myId) {
+                        navigate(`/unlocked-reward?rewardId=${encodeURIComponent(rewardPayload.rewardId)}`, {
+                            state: { fromGame: true }
+                        });
+                    }
+                });
+            } else {
+                navigate('/loser', { replace: true });
+            }
         });
 
         socket.on("hit_confirmed", (data: { userId: string; points: number }) => {
