@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import BgResults from "../../assets/results/BgResults.svg?url";
 import Rayo from "../../assets/welcome/Rayo.svg";
 import Corona from "../../assets/welcome/Corona.svg";
 
-import type { GameStartPayload, PartyResultsNavState } from "../../lib/api";
+import type { GameStartPayload, PartyResultsNavState, PlayerInfoPayload, RoomUpdatePayload } from "../../lib/api";
 import { getRoomState, resetRoomState } from "../../lib/roomStore";
 import { supabase } from "../../lib/supabaseClient";
 import { profilePicturePublicUrl } from "../../lib/api";
@@ -14,11 +14,11 @@ import MochiIcon from "../../assets/profile-pic/Mochi-Icon.svg";
 import MisuIcon from "../../assets/profile-pic/Misu-Icon.svg";
 import YukiIcon from "../../assets/profile-pic/Yuki-Icon.svg";
 
-function isValidPartyNavState(s: unknown): s is PartyResultsNavState {
+// Se actualizó la interfaz de validación para aceptar la propiedad isDraw y flexibilizar winnerPlayer
+function isValidPartyNavState(s: unknown): s is PartyResultsNavState & { isDraw?: boolean } {
     if (!s || typeof s !== "object") return false;
     const o = s as Record<string, unknown>;
-    if (o.winnerPlayer !== 1 && o.winnerPlayer !== 2) return false;
-    if (typeof o.winnerName !== "string") return false;
+    if (o.isDraw !== true && o.winnerPlayer !== 1 && o.winnerPlayer !== 2) return false;
     if (typeof o.player1Name !== "string") return false;
     if (typeof o.player2Name !== "string") return false;
     return true;
@@ -32,7 +32,6 @@ export default function Results() {
         const { socket } = getRoomState();
         if (socket) {
             socket.emit("room__close", { roomId: roomCode });
-            // Add a brief timeout to ensure the emit is sent over WebSocket before connection closes
             setTimeout(() => {
                 socket.disconnect();
             }, 100);
@@ -56,16 +55,18 @@ export default function Results() {
 
     const navState = location.state as unknown;
     const [scale, setScale] = useState(1);
-    const [party] = useState<PartyResultsNavState | null>(() =>
+    const [party] = useState<(PartyResultsNavState & { isDraw?: boolean }) | null>(() =>
         isValidPartyNavState(navState) ? navState : null,
     );
 
     const [p1Avatar, setP1Avatar] = useState<string>("");
     const [p2Avatar, setP2Avatar] = useState<string>("");
 
+    // Extracción de variables considerando el estado de Empate (isDraw)
     const roomCode = party?.roomCode ?? "----";
-    const winnerPlayer = party?.winnerPlayer ?? 1;
-    const winnerName = party?.winnerName ?? "Player 1";
+    const isDraw = party?.isDraw ?? false;
+    const winnerPlayer = party?.winnerPlayer;
+    const winnerName = party?.winnerName ?? "";
     const player1Name = party?.player1Name ?? "Player 1";
     const player2Name = party?.player2Name ?? "Player 2";
     const p1Score = party?.player1Score ?? 0;
@@ -80,6 +81,54 @@ export default function Results() {
     const p2UserId = party?.player2UserId || p2?.userId;
     const p2CharacterId = party?.player2CharacterId || p2?.characterId;
 
+    const [currentPlayers, setCurrentPlayers] = useState<PlayerInfoPayload[]>(() => {
+        return getRoomState().players;
+    });
+
+    const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        const handleRoomUpdate = (payload: RoomUpdatePayload) => {
+            setCurrentPlayers(payload.players);
+
+            // Check if both players have left
+            const activeP1 = payload.players.some(p => p.userId === p1UserId);
+            const activeP2 = payload.players.some(p => p.userId === p2UserId);
+
+            if (activeP1 || activeP2) {
+                // If at least one player is present, cancel any pending room closure
+                if (closeTimeoutRef.current) {
+                    clearTimeout(closeTimeoutRef.current);
+                    closeTimeoutRef.current = null;
+                }
+            } else {
+                // If both players have left, schedule room closure after a 3-second delay
+                // to allow them to reconnect if they chose "Play Again"
+                if (!closeTimeoutRef.current) {
+                    closeTimeoutRef.current = setTimeout(() => {
+                        handleExit();
+                        navigate("/home");
+                    }, 3000);
+                }
+            }
+        };
+
+        socket.on("room_update", handleRoomUpdate);
+
+        return () => {
+            socket.off("room_update", handleRoomUpdate);
+            if (closeTimeoutRef.current) {
+                clearTimeout(closeTimeoutRef.current);
+            }
+        };
+    }, [navigate, p1UserId, p2UserId]);
+
+    const isP1Connected = !!p1UserId && currentPlayers.some(p => p.userId === p1UserId);
+    const isP2Connected = !!p2UserId && currentPlayers.some(p => p.userId === p2UserId);
+
     const getPlayerAvatar = async (userId: string, characterId: string | null | undefined): Promise<string> => {
         try {
             const { data, error } = await supabase
@@ -91,7 +140,7 @@ export default function Results() {
             if (!error && data?.profile_picture_path) {
                 const pathLower = data.profile_picture_path.toLowerCase();
                 const isDefaultChar = pathLower.includes("mochi.svg") || pathLower.includes("misu.svg") || pathLower.includes("yuki.svg") ||
-                                      pathLower.includes("mochi.png") || pathLower.includes("misu.png") || pathLower.includes("yuki.png");
+                    pathLower.includes("mochi.png") || pathLower.includes("misu.png") || pathLower.includes("yuki.png");
                 if (!isDefaultChar) {
                     const url = profilePicturePublicUrl(data.profile_picture_path);
                     if (url) return url;
@@ -168,7 +217,6 @@ export default function Results() {
                         transformOrigin: "top left",
                     }}
                 >
-
                     <div className="relative w-full" style={{ zIndex: 2, height: 982 }}>
                         <div
                             className="absolute text-[#FAFAFA]"
@@ -199,6 +247,7 @@ export default function Results() {
                             }}
                         />
 
+                        {/* Título condicional dinámico según si es empate o victoria */}
                         <h1
                             className="absolute m-0 text-center text-[#FAFAFA]"
                             style={{
@@ -213,31 +262,34 @@ export default function Results() {
                                 lineHeight: "72px",
                             }}
                         >
-                            The winner is...
+                            {isDraw ? "It's a tie!" : "The winner is..."}
                         </h1>
 
-                        <p
-                            className="absolute m-0 text-center text-[#FFFDF6]"
-                            style={{
-                                top: "190px",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                width: "500px",
-                                fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                fontWeight: 700,
-                                fontSize: "55px",
-                                letterSpacing: "-1.04px",
-                                lineHeight: "83px",
-                            }}
-                        >
-                            {winnerName}
-                        </p>
+                        {/* Solo muestra el nombre del ganador si NO hay un empate */}
+                        {!isDraw && (
+                            <p
+                                className="absolute m-0 text-center text-[#FFFDF6]"
+                                style={{
+                                    top: "190px",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    width: "500px",
+                                    fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                    fontWeight: 700,
+                                    fontSize: "55px",
+                                    letterSpacing: "-1.04px",
+                                    height: "83px",
+                                }}
+                            >
+                                {winnerName}
+                            </p>
+                        )}
 
                         {rewardName ? (
                             <p
                                 className="absolute m-0 text-center text-[#FFD700]"
                                 style={{
-                                    top: "265px",
+                                    top: isDraw ? "210px" : "265px", // Ajuste de posición si no está el nombre del ganador
                                     left: "50%",
                                     transform: "translateX(-50%)",
                                     fontFamily: "'Nunito', system-ui, sans-serif",
@@ -253,74 +305,116 @@ export default function Results() {
                             className="absolute left-1/2 flex -translate-x-1/2 items-start justify-between"
                             style={{ top: "280px", width: "min(1050px, 80vw)" }}
                         >
+                            {/* JUGADOR 1 */}
                             <div className="relative flex flex-col items-center">
-                                {winnerPlayer === 1 && (
-                                    <img
-                                        src={Corona}
-                                        alt=""
-                                        aria-hidden
-                                        style={{
-                                            position: "absolute",
-                                            top: "-18px",
-                                            left: "-12px",
-                                            width: "62px",
-                                            height: "auto",
-                                            transform: "rotate(-18deg)",
-                                            zIndex: 10,
-                                        }}
-                                    />
+                                {isP1Connected ? (
+                                    <>
+                                        {!isDraw && winnerPlayer === 1 && (
+                                            <img
+                                                src={Corona}
+                                                alt=""
+                                                aria-hidden
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-18px",
+                                                    left: "-12px",
+                                                    width: "62px",
+                                                    height: "auto",
+                                                    transform: "rotate(-18deg)",
+                                                    zIndex: 10,
+                                                }}
+                                            />
+                                        )}
+
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                                border: "12px solid #FAFAFA",
+                                            }}
+                                        >
+                                            <img
+                                                src={p1Avatar || avatarFor(p1CharacterId, "P1")}
+                                                alt=""
+                                                className="h-full w-full object-cover"
+                                                draggable={false}
+                                            />
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 1
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "35px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            {player1Name}
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1 text-center text-[#FFD700]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {p1Score} pts
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-[#3e3e3e]/20 flex items-center justify-center border-12 border-dashed border-[#FAFAFA]/30"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                            }}
+                                        >
+                                            <span className="text-[#FAFAFA]/40 font-bold text-lg">Disconnected</span>
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FAFAFA]/40"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 1
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FAFAFA]/30 italic"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "30px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            Left the room
+                                        </p>
+                                    </>
                                 )}
-
-                                <div
-                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
-                                    style={{
-                                        width: "350px",
-                                        height: "350px",
-                                        border: "12px solid #FAFAFA",
-                                    }}
-                                >
-                                    <img
-                                        src={p1Avatar || avatarFor(p1CharacterId, "P1")}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                        draggable={false}
-                                    />
-                                </div>
-
-                                <p
-                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "41px",
-                                        letterSpacing: "-0.77px",
-                                        lineHeight: "61px",
-                                    }}
-                                >
-                                    Player 1
-                                </p>
-                                <p
-                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 600,
-                                        fontSize: "35px",
-                                        letterSpacing: "-0.43px",
-                                        lineHeight: "34px",
-                                    }}
-                                >
-                                    {player1Name}
-                                </p>
-                                <p
-                                    className="m-0 mt-1 text-center text-[#FFD700]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "20px",
-                                    }}
-                                >
-                                    {p1Score} pts
-                                </p>
                             </div>
 
                             <p
@@ -337,74 +431,116 @@ export default function Results() {
                                 VS
                             </p>
 
+                            {/* JUGADOR 2 */}
                             <div className="relative flex flex-col items-center">
-                                {winnerPlayer === 2 && (
-                                    <img
-                                        src={Corona}
-                                        alt=""
-                                        aria-hidden
-                                        style={{
-                                            position: "absolute",
-                                            top: "-18px",
-                                            left: "-12px",
-                                            width: "80px",
-                                            height: "auto",
-                                            transform: "rotate(-18deg)",
-                                            zIndex: 10,
-                                        }}
-                                    />
+                                {isP2Connected ? (
+                                    <>
+                                        {!isDraw && winnerPlayer === 2 && (
+                                            <img
+                                                src={Corona}
+                                                alt=""
+                                                aria-hidden
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-18px",
+                                                    left: "-12px",
+                                                    width: "80px",
+                                                    height: "auto",
+                                                    transform: "rotate(-18deg)",
+                                                    zIndex: 10,
+                                                    }}
+                                            />
+                                        )}
+
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                                border: "12px solid #FAFAFA",
+                                            }}
+                                        >
+                                            <img
+                                                src={p2Avatar || avatarFor(p2CharacterId, "P2")}
+                                                alt=""
+                                                className="h-full w-full object-cover"
+                                                draggable={false}
+                                            />
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 2
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FFFDF6]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "35px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            {player2Name}
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1 text-center text-[#FFD700]"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "20px",
+                                            }}
+                                        >
+                                            {p2Score} pts
+                                        </p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div
+                                            className="relative overflow-hidden rounded-full bg-[#3e3e3e]/20 flex items-center justify-center border-12 border-dashed border-[#FAFAFA]/30"
+                                            style={{
+                                                width: "350px",
+                                                height: "350px",
+                                            }}
+                                        >
+                                            <span className="text-[#FAFAFA]/40 font-bold text-lg">Disconnected</span>
+                                        </div>
+
+                                        <p
+                                            className="m-0 mt-4.5 text-center text-[#FAFAFA]/40"
+                                            style={{
+                                                fontFamily: "'Baloo 2', system-ui, sans-serif",
+                                                fontWeight: 700,
+                                                fontSize: "41px",
+                                                letterSpacing: "-0.77px",
+                                                lineHeight: "61px",
+                                            }}
+                                        >
+                                            Player 2
+                                        </p>
+                                        <p
+                                            className="m-0 mt-1.5 text-center text-[#FAFAFA]/30 italic"
+                                            style={{
+                                                fontFamily: "'Nunito', system-ui, sans-serif",
+                                                fontWeight: 600,
+                                                fontSize: "30px",
+                                                letterSpacing: "-0.43px",
+                                                lineHeight: "34px",
+                                            }}
+                                        >
+                                            Left the room
+                                        </p>
+                                    </>
                                 )}
-
-                                <div
-                                    className="relative overflow-hidden rounded-full bg-white flex items-center justify-center"
-                                    style={{
-                                        width: "350px",
-                                        height: "350px",
-                                        border: "12px solid #FAFAFA",
-                                    }}
-                                >
-                                    <img
-                                        src={p2Avatar || avatarFor(p2CharacterId, "P2")}
-                                        alt=""
-                                        className="h-full w-full object-cover"
-                                        draggable={false}
-                                    />
-                                </div>
-
-                                <p
-                                    className="m-0 mt-4.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Baloo 2', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "41px",
-                                        letterSpacing: "-0.77px",
-                                        lineHeight: "61px",
-                                    }}
-                                >
-                                    Player 2
-                                </p>
-                                <p
-                                    className="m-0 mt-1.5 text-center text-[#FFFDF6]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 600,
-                                        fontSize: "35px",
-                                        letterSpacing: "-0.43px",
-                                        lineHeight: "34px",
-                                    }}
-                                >
-                                    {player2Name}
-                                </p>
-                                <p
-                                    className="m-0 mt-1 text-center text-[#FFD700]"
-                                    style={{
-                                        fontFamily: "'Nunito', system-ui, sans-serif",
-                                        fontWeight: 700,
-                                        fontSize: "20px",
-                                    }}
-                                >
-                                    {p2Score} pts
-                                </p>
                             </div>
                         </div>
 

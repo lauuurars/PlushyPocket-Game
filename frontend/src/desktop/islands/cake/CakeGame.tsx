@@ -9,7 +9,9 @@ import CatapultaFour from '../../../assets/cake/Catapulta4.svg';
 import pastelazo from '../../../assets/cake/pastelazo.svg';
 import Point1 from '../../../assets/cake/Point1.svg';
 import Poin2 from '../../../assets/cake/Poin2.svg';
-import { getRoomState, setRoomCallbacks, clearRoomCallbacks } from '../../../lib/roomStore';
+import { getRoomState, setRoomCallbacks, clearRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
+import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
+import { globalAudio } from '../../../lib/audioManager';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 
 import { fetchPartyRoomUserProfile } from '../../../lib/api';
@@ -54,6 +56,14 @@ const CakeGame: React.FC = () => {
     const [flyingCakes, setFlyingCakes] = useState<Array<{ id: number; fromP1: boolean }>>([]);
     const [pointPopups, setPointPopups] = useState<Array<{ id: number; forP1: boolean }>>([]);
     const cakeIdRef = useRef(0);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
+
+    useEffect(() => {
+        globalAudio.pause();
+        return () => {
+            globalAudio.play();
+        };
+    }, []);
 
     useEffect(() => {
         void fetchPartyRoomUserProfile().then((profile) => {
@@ -88,6 +98,36 @@ const CakeGame: React.FC = () => {
         };
         startCamera();
         document.body.style.overflow = 'hidden';
+        return () => {
+            if (stream) stream.getTracks().forEach(track => track.stop());
+            document.body.style.overflow = 'auto';
+        };
+    }, []);
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+
+        const handlePlayerDisconnect = () => {
+            setShowDisconnectAlert(true);
+            setGamePhase("instructions"); // Stop any active game updates / phases
+
+            const roomId = getRoomState().roomId;
+            setTimeout(() => {
+                if (socket) {
+                    socket.emit("room__close", { roomId });
+                    setTimeout(() => {
+                        socket.disconnect();
+                    }, 100);
+                }
+                resetRoomState();
+                navigate("/home");
+            }, 3000);
+        };
+
+        if (socket) {
+            socket.on("player_left", handlePlayerDisconnect);
+            socket.on("player_disconnected", handlePlayerDisconnect);
+        }
 
         setRoomCallbacks({
             onScoreUpdate: (userId, score) => {
@@ -150,6 +190,7 @@ const CakeGame: React.FC = () => {
                     replace: true,
                     state: {
                         roomCode: payload.roomId,
+                        isDraw: payload.isDraw ?? false,
                         winnerPlayer: (p1 && payload.winnerId === p1.userId ? 1 : 2) as 1 | 2,
                         winnerName: (p1 && payload.winnerId === p1.userId ? p1 : p2)?.username ?? "Player",
                         player1Name: p1?.username ?? "Player 1",
@@ -169,17 +210,20 @@ const CakeGame: React.FC = () => {
                 const p2 = room.players.find(p => p.role === "P2");
                 const winnerPlayer = (p1 && payload.userId === p1.userId ? 1 : 2) as 1 | 2;
                 const winnerName = (p1 && payload.userId === p1.userId ? p1 : p2)?.username ?? "Player";
+                const p1Score = room.scores[p1?.userId ?? ""] ?? 0;
+                const p2Score = room.scores[p2?.userId ?? ""] ?? 0;
 
                 navigate('/results', {
                     replace: true,
                     state: {
                         roomCode: room.roomId,
+                        isDraw: p1Score === p2Score,
                         winnerPlayer,
                         winnerName,
                         player1Name: p1?.username ?? "Player 1",
                         player2Name: p2?.username ?? "Player 2",
-                        player1Score: room.scores[p1?.userId ?? ""] ?? 0,
-                        player2Score: room.scores[p2?.userId ?? ""] ?? 0,
+                        player1Score: p1Score,
+                        player2Score: p2Score,
                         rewardName: payload.rewardName,
                         player1UserId: p1?.userId,
                         player2UserId: p2?.userId,
@@ -191,8 +235,10 @@ const CakeGame: React.FC = () => {
         });
 
         return () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            document.body.style.overflow = 'auto';
+            if (socket) {
+                socket.off("player_left", handlePlayerDisconnect);
+                socket.off("player_disconnected", handlePlayerDisconnect);
+            }
             clearRoomCallbacks();
         };
     }, [navigate]);
@@ -399,6 +445,12 @@ const CakeGame: React.FC = () => {
                 alt="Catapulta P1"
                 className="fixed bottom-0 left-10 z-20 w-110 pointer-events-none"
             />
+            <iframe
+                width="0" height="0"
+                src="https://www.youtube.com/embed/kYmZ64g3s3E?autoplay=1&loop=1&playlist=kYmZ64g3s3E"
+                allow="autoplay" className="hidden" title="Background Music"
+            />
+            <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>
     );
 };

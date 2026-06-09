@@ -164,6 +164,7 @@ const beginGame = async (io: socketio.Server, room: Room, requestSocket?: socket
         room.scores = {}
         room.playerData = {}
         room.rematchReady = []
+        room.gameEndTime = undefined
 
         await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
         room.status = "IN_GAME"

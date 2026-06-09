@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Ocean from './Ocean';
 import type { ObstacleData, Column } from '../../../types/flappyTypes';
-import { getRoomState, setRoomCallbacks, clearRoomCallbacks } from '../../../lib/roomStore';
+import { getRoomState, setRoomCallbacks, clearRoomCallbacks, resetRoomState } from '../../../lib/roomStore';
+import PlayerDisconnectAlert from '../../../components/PlayerDisconnectAlert';
+import { globalAudio } from '../../../lib/audioManager';
 import type { GameOverPayload, RewardAssignedPayload } from '../../../lib/api';
 
 // Assets
@@ -79,6 +81,16 @@ const FlappyGame: React.FC = () => {
     const passedColumnsP2 = useRef<Set<number>>(new Set());
 
     const [showInstructions, setShowInstructions] = useState(true);
+    const [showDisconnectAlert, setShowDisconnectAlert] = useState(false);
+    const disconnectAlertActiveRef = useRef(false);
+
+    // Pausar música de fondo del home al entrar y reanudar al salir
+    useEffect(() => {
+        globalAudio.pause();
+        return () => {
+            globalAudio.play();
+        };
+    }, []);
 
     // Configuración Estricta
     const SPEED = 2;
@@ -203,6 +215,7 @@ const FlappyGame: React.FC = () => {
     };
 
     const animate = () => {
+        if (disconnectAlertActiveRef.current) return;
         setColumns(prev => {
             const rightmostX = Math.max(...prev.map(c => c.x));
             const lastCol = prev.reduce((p, c) => (p.x > c.x ? p : c));
@@ -379,6 +392,31 @@ const FlappyGame: React.FC = () => {
 
     // Set Socket Callbacks & Listeners
     useEffect(() => {
+        const { socket } = getRoomState();
+
+        const handlePlayerDisconnect = () => {
+            disconnectAlertActiveRef.current = true;
+            setShowDisconnectAlert(true);
+            if (requestRef.current) cancelAnimationFrame(requestRef.current);
+
+            const roomId = getRoomState().roomId;
+            setTimeout(() => {
+                if (socket) {
+                    socket.emit("room__close", { roomId });
+                    setTimeout(() => {
+                        socket.disconnect();
+                    }, 100);
+                }
+                resetRoomState();
+                navigate("/home");
+            }, 3000);
+        };
+
+        if (socket) {
+            socket.on("player_left", handlePlayerDisconnect);
+            socket.on("player_disconnected", handlePlayerDisconnect);
+        }
+
         setRoomCallbacks({
             onScoreUpdate: (userId, score) => {
                 const room = getRoomState();
@@ -431,6 +469,7 @@ const FlappyGame: React.FC = () => {
                     replace: true,
                     state: {
                         roomCode: payload.roomId,
+                        isDraw: payload.isDraw ?? false,
                         winnerPlayer: (player1 && payload.winnerId === player1.userId ? 1 : 2) as 1 | 2,
                         winnerName: (player1 && payload.winnerId === player1.userId ? player1 : player2)?.username ?? "Player",
                         player1Name: player1?.username ?? "Player 1",
@@ -450,17 +489,20 @@ const FlappyGame: React.FC = () => {
                 const player2 = room.players.find(p => p.role === "P2");
                 const winnerPlayer = (player1 && payload.userId === player1.userId ? 1 : 2) as 1 | 2;
                 const winnerName = (player1 && payload.userId === player1.userId ? player1 : player2)?.username ?? "Player";
+                const p1Score = room.scores[player1?.userId ?? ""] ?? 0;
+                const p2Score = room.scores[player2?.userId ?? ""] ?? 0;
 
                 navigate('/results', {
                     replace: true,
                     state: {
                         roomCode: room.roomId,
+                        isDraw: p1Score === p2Score,
                         winnerPlayer,
                         winnerName,
                         player1Name: player1?.username ?? "Player 1",
                         player2Name: player2?.username ?? "Player 2",
-                        player1Score: room.scores[player1?.userId ?? ""] ?? 0,
-                        player2Score: room.scores[player2?.userId ?? ""] ?? 0,
+                        player1Score: p1Score,
+                        player2Score: p2Score,
                         rewardName: payload.rewardName,
                         player1UserId: player1?.userId,
                         player2UserId: player2?.userId,
@@ -472,6 +514,10 @@ const FlappyGame: React.FC = () => {
         });
 
         return () => {
+            if (socket) {
+                socket.off("player_left", handlePlayerDisconnect);
+                socket.off("player_disconnected", handlePlayerDisconnect);
+            }
             clearRoomCallbacks();
         };
     }, [navigate]);
@@ -502,6 +548,7 @@ const FlappyGame: React.FC = () => {
     // Periodic scoring: +5 every 2 seconds for surviving
     useEffect(() => {
         const interval = setInterval(() => {
+            if (disconnectAlertActiveRef.current) return;
             const room = getRoomState();
             const player1 = room.players.find(p => p.role === "P1");
             const player2 = room.players.find(p => p.role === "P2");
@@ -714,17 +761,12 @@ const FlappyGame: React.FC = () => {
                     )}
                 </React.Fragment>
             ))}
-
-            {/* Le agregue musiquita jajaaj */}
             <iframe
-                width="0"
-                height="0"
-                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04&"
-                frameBorder="0"
-                allow="autoplay"
-                className="hidden"
-                title="Background Music"
-            ></iframe>
+                width="0" height="0"
+                src="https://www.youtube.com/embed/kEa7el_Tr04?autoplay=1&loop=1&playlist=kEa7el_Tr04"
+                allow="autoplay" className="hidden" title="Background Music"
+            />
+            <PlayerDisconnectAlert isOpen={showDisconnectAlert} />
         </div>
     );
 };

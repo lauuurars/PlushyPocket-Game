@@ -13,8 +13,6 @@ interface Character {
     bg_color?: string;
 }
 
-const CHARACTER_COLORS = ["#76D6FF", "#FF7BE2", "#FFE23F", "#925FDF"];
-
 const getImageUrl = (char: any) => {
 
 
@@ -27,11 +25,6 @@ const getImageUrl = (char: any) => {
     const projectId = "rnuuksshouctvcpebsbg";
     const bucket = "characters";
     return `https://${projectId}.supabase.co/storage/v1/object/public/${bucket}/${path}`;
-};
-
-const getRandomColor = (id: string) => {
-    const charSum = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return CHARACTER_COLORS[charSum % CHARACTER_COLORS.length];
 };
 
 export default function BlockedCharacters() {

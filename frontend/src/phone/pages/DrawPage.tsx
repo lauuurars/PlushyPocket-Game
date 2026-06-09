@@ -30,7 +30,7 @@ function FloatingElement({ src, alt, style, animationClass, size, delay = "0s" }
     );
 }
 
-const WinnerPage: React.FC = () => {
+const DrawPage: React.FC = () => {
     const navigate = useNavigate();
     const [ready, setReady] = useState(false);
 
@@ -193,4 +193,4 @@ const WinnerPage: React.FC = () => {
     );
 };
 
-export default WinnerPage;
+export default DrawPage;
