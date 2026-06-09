@@ -60,6 +60,7 @@ export default function JoinRoom() {
             if (!myId || p.userId !== myId) return;
             if (joinedRef.current) return;
             joinedRef.current = true;
+            socket.emit("player__rematch_ready", { roomId });
             timerRef.current = setTimeout(() => {
                 if (navigatedRef.current) return;
                 navigate(
