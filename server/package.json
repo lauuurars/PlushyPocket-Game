@@ -4,6 +4,8 @@
   "description": "PlushyPocket Game Server",
   "main": "main.ts",
   "scripts": {
+    "build": "tsc",
+    "start-prod": "node dist/main.js",
     "start": "nodemon main.ts"
   },
   "dependencies": {
