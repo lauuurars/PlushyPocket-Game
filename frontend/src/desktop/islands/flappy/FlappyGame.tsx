@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Ocean from './Ocean';
 import type { ObstacleData, Column } from '../../../types/flappyTypes';
@@ -56,7 +56,10 @@ const FlappyGame: React.FC = () => {
     const [p2Score, setP2Score] = useState(() => (p2 ? (roomState.scores[p2.userId] ?? 0) : 0));
     const p1ScoreRef = useRef(p1 ? (roomState.scores[p1.userId] ?? 0) : 0);
     const p2ScoreRef = useRef(p2 ? (roomState.scores[p2.userId] ?? 0) : 0);
-    const [serverRemaining, setServerRemaining] = useState<number | undefined>(undefined);
+
+    // NUEVOS ESTADOS DEL TIMER (Sincronizados con el Servidor al igual que HammerMole)
+    const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+    const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
 
     // Physics state
     const [p1Y, setP1Y] = useState(400);
@@ -390,6 +393,32 @@ const FlappyGame: React.FC = () => {
         };
     }, []);
 
+    // Sincronización de Ticks del Servidor (Igual a Hammer Mole)
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        const syncEndTime = (endTime?: number) => {
+            if (endTime) setGameEndTime(endTime);
+        };
+
+        if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
+
+        const onGameStart = (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime);
+        const onTimerTick = (data: { remaining: number; gameEndTime?: number }) => {
+            setTimeRemaining(data.remaining);
+            syncEndTime(data.gameEndTime);
+        };
+
+        socket.on('game_start', onGameStart);
+        socket.on('game_timer_tick', onTimerTick);
+
+        return () => {
+            socket.off('game_start', onGameStart);
+            socket.off('game_timer_tick', onTimerTick);
+        };
+    }, []);
+
     // Set Socket Callbacks & Listeners
     useEffect(() => {
         const { socket } = getRoomState();
@@ -432,7 +461,7 @@ const FlappyGame: React.FC = () => {
                 }
             },
             onTimerTick: (remaining) => {
-                setServerRemaining(remaining);
+                // Mantiene compatibilidad con callbacks antiguos si fuese necesario
                 const room = getRoomState();
                 const player1 = room.players.find(p => p.role === "P1");
                 const player2 = room.players.find(p => p.role === "P2");
@@ -571,6 +600,15 @@ const FlappyGame: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // Función modificada al iniciar para encender el reloj en el servidor
+    const handleStart = useCallback(() => {
+        setShowInstructions(false);
+        const { socket, roomId } = getRoomState();
+        if (socket && roomId) {
+            socket.emit("start_game_clock", { roomId });
+        }
+    }, []);
+
     return (
         <div className="relative w-screen h-screen overflow-hidden bg-black">
             <video
@@ -593,47 +631,52 @@ const FlappyGame: React.FC = () => {
             `}</style>
 
             {showInstructions && (
-            <>
-            {/* Player 1 info */}
-            <div className="fixed top-8 left-8 z-30 flex items-center">
-                <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                    <img
-                        src={CHARACTER_MAP[p1?.characterId?.toLowerCase() ?? ''] ?? Mochi}
-                        alt={p1?.username ?? "P1"}
-                        className="h-10 w-10 rounded-full border-2 border-white object-cover bg-white"
-                    />
-                    <span className="text-sm font-bold text-white whitespace-nowrap">{p1?.username ?? "Player 1"}</span>
-                    <span className="text-2xl font-bold text-white ml-2">{p1Score}</span>
-                </div>
-            </div>
+                <>
+                    {/* Player 1 info */}
+                    <div className="fixed top-8 left-8 z-30 flex items-center">
+                        <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                            <img
+                                src={CHARACTER_MAP[p1?.characterId?.toLowerCase() ?? ''] ?? Mochi}
+                                alt={p1?.username ?? "P1"}
+                                className="h-10 w-10 rounded-full border-2 border-white object-cover bg-white"
+                            />
+                            <span className="text-sm font-bold text-white whitespace-nowrap">{p1?.username ?? "Player 1"}</span>
+                            <span className="text-2xl font-bold text-white ml-2">{p1Score}</span>
+                        </div>
+                    </div>
 
-            {/* Timer */}
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                <Timer initialSeconds={60} serverRemaining={serverRemaining} />
-            </div>
-            
-            {/* Player 2 info */}
-            <div className="fixed top-8 right-8 z-30 flex items-center">
-                <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
-                    <span className="text-2xl font-bold text-white mr-2">{p2Score}</span>
-                    <span className="text-sm font-bold text-white whitespace-nowrap">{p2?.username ?? "Player 2"}</span>
-                    <img
-                        src={CHARACTER_MAP[p2?.characterId?.toLowerCase() ?? ''] ?? Mochi}
-                        alt={p2?.username ?? "P2"}
-                        className="h-10 w-10 rounded-full border-2 border-white object-cover bg-white"
-                    />
-                </div>
-            </div>
-            </>
+                    {/* Timer en pantalla de Instrucciones */}
+                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                        {gameEndTime && (
+                            <Timer initialSeconds={60} remaining={timeRemaining} />
+                        )}
+                    </div>
+
+                    {/* Player 2 info */}
+                    <div className="fixed top-8 right-8 z-30 flex items-center">
+                        <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
+                            <span className="text-2xl font-bold text-white mr-2">{p2Score}</span>
+                            <span className="text-sm font-bold text-white whitespace-nowrap">{p2?.username ?? "Player 2"}</span>
+                            <img
+                                src={CHARACTER_MAP[p2?.characterId?.toLowerCase() ?? ''] ?? Mochi}
+                                alt={p2?.username ?? "P2"}
+                                className="h-10 w-10 rounded-full border-2 border-white object-cover bg-white"
+                            />
+                        </div>
+                    </div>
+                </>
             )}
-            {/* Contadores de puntos*/}
+
+            {/* Contadores de puntos en Gameplay activo */}
             {!showInstructions && (
                 <>
                     <div className="fixed top-8 left-[80px] z-30">
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} serverRemaining={serverRemaining} />
+                        {gameEndTime && (
+                            <Timer initialSeconds={60} remaining={timeRemaining} />
+                        )}
                     </div>
                     <div className="fixed top-8 right-[80px] z-30">
                         <GamePoints points={p2Score} playerRole="P2" />
@@ -642,7 +685,7 @@ const FlappyGame: React.FC = () => {
             )}
 
             {showInstructions && (
-                <FlappyInstructionsModal onStart={() => setShowInstructions(false)} />
+                <FlappyInstructionsModal onStart={handleStart} />
             )}
 
             <div className="z-30 relative">

@@ -12,6 +12,8 @@ export default function FlappyGame() {
 
   const [score, setScore] = useState(0);
   const [tapFeedback, setTapFeedback] = useState(false);
+  const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+  const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
 
   // Gyroscope
   const [gyroPermission, setGyroPermission] = useState<boolean | null>(null);
@@ -38,6 +40,22 @@ export default function FlappyGame() {
       })();
 
     socketRef.current = socket;
+
+    // LÓGICA DE SINCRONIZACIÓN DEL TIMER (Igual a Hammer Mole)
+    const syncEndTime = (endTime?: number) => {
+      if (!cancelled && endTime) setGameEndTime(endTime);
+    };
+
+    if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
+
+    socket.on("game_start", (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime));
+
+    socket.on("game_timer_tick", (data: { remaining: number; gameEndTime?: number }) => {
+      if (!cancelled) {
+        setTimeRemaining(data.remaining);
+        syncEndTime(data.gameEndTime);
+      }
+    });
 
     void (async () => {
       const profile = await fetchPartyRoomUserProfile();
@@ -217,6 +235,15 @@ export default function FlappyGame() {
       className="relative h-svh w-screen overflow-hidden bg-[#FAFAFA] select-none"
       style={{ touchAction: "manipulation" }}
     >
+      {/* RENDERIZADO DEL TIMER IGUAL A HAMMER MOLE */}
+      {gameEndTime !== null && (
+        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2">
+          <span className="rounded-full bg-white/90 px-4 py-1 text-lg font-bold text-[#ED1C24] shadow-md">
+            {timeRemaining}s
+          </span>
+        </div>
+      )}
+
       <div
         aria-hidden
         className="absolute inset-0"
