@@ -92,7 +92,7 @@ const startGameClock = (io: socketio.Server, room: Room) => {
             }
         }
 
-        if (room.minigameId !== "hammer-mole") {
+        if (room.minigameId !== "hammer-mole" ) {
             for (const player of room.players) {
                 const data = room.playerData[player.userId] ?? {}
                 const score = calculateScore(room.minigameId, { score: 0, payload: data })
@@ -169,7 +169,7 @@ const beginGame = async (io: socketio.Server, room: Room, requestSocket?: socket
         await GameService.startGame({ player1_id: p1.userId, player2_id: p2.userId })
         room.status = "IN_GAME"
 
-        if (room.minigameId === "hammer-mole") {
+        if (room.minigameId === "hammer-mole" || room.minigameId === "flappy-boat") {
             // El clock lo arranca la pantalla con start_game_clock
             io.to(room.roomId).emit("game_start", toGameStartPayload(room))
             emitRoomUpdate(io, room)

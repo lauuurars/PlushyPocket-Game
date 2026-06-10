@@ -60,6 +60,7 @@ const FlappyGame: React.FC = () => {
     // NUEVOS ESTADOS DEL TIMER (Sincronizados con el Servidor al igual que HammerMole)
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
     const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
+    const [serverRemaining, setServerRemaining] = useState<number | undefined>(60);
 
     // Physics state
     const [p1Y, setP1Y] = useState(400);
