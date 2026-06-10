@@ -85,7 +85,7 @@ export default function HammerMole() {
         socketRef.current = socket;
         addLog("🔌 Socket conectado", "#4ade80");
 
-        void (async () => {
+        const joinRoom = async () => {
             const profile = await fetchPartyRoomUserProfile();
             if (cancelled) return;
 
@@ -97,7 +97,10 @@ export default function HammerMole() {
             characterIdRef.current = characterId;
             socket.emit("player__join", { userId: id, username, roomId, characterId });
             addLog(`👤 Join: ${username}`, "#60a5fa");
-        })();
+        };
+
+        void joinRoom();
+        socket.on("connect", joinRoom);
 
         const syncEndTime = (endTime?: number) => {
             if (!cancelled && endTime) setGameEndTime(endTime);
@@ -149,6 +152,7 @@ export default function HammerMole() {
 
         return () => {
             cancelled = true;
+            socket.off("connect", joinRoom);
             socketRef.current = null;
         };
     }, [roomId, addLog]);

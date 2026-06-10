@@ -290,7 +290,7 @@ const CakeGame: React.FC = () => {
     const p2 = roomState.players.find(p => p.role === "P2");
 
     return (
-        <div className="relative w-screen h-screen overflow-hidden bg-black">
+        <div className="relative w-screen h-screen overflow-hidden bg-black" >
             <video
                 ref={videoRef}
                 autoPlay
@@ -345,136 +345,152 @@ const CakeGame: React.FC = () => {
                 }
             `}</style>
 
-            {gamePhase === "instructions" && (
-                <CakeInstructionsModal onStart={handleStart} />
-            )}
+            {
+                gamePhase === "instructions" && (
+                    <CakeInstructionsModal onStart={handleStart} />
+                )
+            }
 
-            {gamePhase === "alert" && (
-                <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 px-5" style={{ fontFamily: "'Nunito', system-ui, sans-serif" }}>
+            {
+                gamePhase === "alert" && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 px-5" style={{ fontFamily: "'Nunito', system-ui, sans-serif" }
+                    }>
+                        <div
+                            className="flex w-full max-w-140 flex-col items-center rounded-[40px] bg-[#FAFAFA] p-10 pb-12 text-center shadow-2xl"
+                            style={{ animation: "alert-anim 5s forwards" }}
+                        >
+                            <div className="mb-8 flex items-center justify-center gap-8" >
+                                <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-[#71D0FF]" >
+                                    <img src={profileIcon} alt="Player 1" className="h-full w-full object-cover" />
+                                </div>
+                                < div className="h-35 w-1 shrink-0 rounded-full bg-[#ED1C24]" />
+                                <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-[#8E44AD]" >
+                                    <img src={profileIcon} alt="Player 2" className="h-full w-full object-cover" />
+                                </div>
+                            </div>
+                            < h2 className="mb-5 text-[34px] font-extrabold text-[#ED1C24] leading-tight" style={{ fontFamily: "'Baloo 2', cursive" }}> Keep Your Distance </h2>
+                            < p className="text-[20px] font-semibold text-[#583921] leading-[1.4]" >
+                                Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+            {
+                gamePhase === "line" && (
                     <div
-                        className="flex w-full max-w-140 flex-col items-center rounded-[40px] bg-[#FAFAFA] p-10 pb-12 text-center shadow-2xl"
-                        style={{ animation: "alert-anim 5s forwards" }}
+                        className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
+                        style={{ animation: "line-anim 3s forwards" }
+                        }
                     >
-                        <div className="mb-8 flex items-center justify-center gap-8">
-                            <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-[#71D0FF]">
-                                <img src={profileIcon} alt="Player 1" className="h-full w-full object-cover" />
+                        <div className="relative flex items-center justify-center h-[84%] w-full" >
+                            <div className="absolute right-1/2 mr-10" style={{ animation: "bounce-left 1s infinite" }}>
+                                <ArrowLeft color="#ED1C24" size={200} strokeWidth={2.5} />
                             </div>
-                            <div className="h-35 w-1 shrink-0 rounded-full bg-[#ED1C24]" />
-                            <div className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full bg-[#8E44AD]">
-                                <img src={profileIcon} alt="Player 2" className="h-full w-full object-cover" />
+
+                            < div className="w-1.25 h-full rounded-full bg-[#ED1C24]" />
+
+                            <div className="absolute left-1/2 ml-10" style={{ animation: "bounce-right 1s infinite" }}>
+                                <ArrowRight color="#ED1C24" size={200} strokeWidth={2.5} />
                             </div>
-                        </div>
-                        <h2 className="mb-5 text-[34px] font-extrabold text-[#ED1C24] leading-tight" style={{ fontFamily: "'Baloo 2', cursive" }}>Keep Your Distance</h2>
-                        <p className="text-[20px] font-semibold text-[#583921] leading-[1.4]">
-                            Take your positions on opposite sides of the screen, separated by the line, then shout into the phone.
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {gamePhase === "line" && (
-                <div
-                    className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none"
-                    style={{ animation: "line-anim 3s forwards" }}
-                >
-                    <div className="relative flex items-center justify-center h-[84%] w-full">
-                        <div className="absolute right-1/2 mr-10" style={{ animation: "bounce-left 1s infinite" }}>
-                            <ArrowLeft color="#ED1C24" size={200} strokeWidth={2.5} />
-                        </div>
-
-                        <div className="w-1.25 h-full rounded-full bg-[#ED1C24]" />
-
-                        <div className="absolute left-1/2 ml-10" style={{ animation: "bounce-right 1s infinite" }}>
-                            <ArrowRight color="#ED1C24" size={200} strokeWidth={2.5} />
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
             {/* Contadores de puntos */}
-            {gamePhase !== "instructions" && (
-                <>
-                    <div className="fixed top-8 left-[80px] z-30">
-                        <GamePoints points={p1Score} playerRole="P1" />
-                    </div>
-                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        {gameEndTime && (
-                            <Timer initialSeconds={60} remaining={timeRemaining} />
-                        )}
-                    </div>
-                    <div className="fixed top-8 right-[80px] z-30">
-                        <GamePoints points={p2Score} playerRole="P2" />
-                    </div>
-                </>
-            )}
+            {
+                gamePhase !== "instructions" && (
+                    <>
+                        <div className="fixed top-8 left-[80px] z-30" >
+                            <GamePoints points={p1Score} playerRole="P1" />
+                        </div>
+                        < div className="fixed top-8 left-1/2 -translate-x-1/2 z-30" >
+                            {gameEndTime && (
+                                <Timer initialSeconds={60} remaining={timeRemaining} />
+                            )
+                            }
+                        </div>
+                        < div className="fixed top-8 right-[80px] z-30" >
+                            <GamePoints points={p2Score} playerRole="P2" />
+                        </div>
+                    </>
+                )}
 
             {/* Línea roja durante playing */}
-            {gamePhase === "playing" && (
-                <div className="absolute inset-0 z-15 flex items-center justify-center pointer-events-none">
-                    <div className="w-1.25 h-[84%] rounded-full bg-[#ED1C24] opacity-25" />
-                </div>
-            )}
+            {
+                gamePhase === "playing" && (
+                    <div className="absolute inset-0 z-15 flex items-center justify-center pointer-events-none" >
+                        <div className="w-1.25 h-[84%] rounded-full bg-[#ED1C24] opacity-25" />
+                    </div>
+                )
+            }
 
             {/* Personajes sobre catapultas */}
-            {p1 && (
-                <div className="fixed z-25" style={{ bottom: '380px', left: '240px' }}>
-                    <img
-                        src={CHARACTER_MAP[p1.characterId?.toLowerCase() ?? ''] ?? Mochi}
-                        alt={p1.username}
-                        className="w-20 h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
-                    />
-                    <span className="block text-center text-xs font-bold text-white bg-black/50 rounded-full px-2 py-0.5 mt-1">
-                        {p1.username}
-                    </span>
-                </div>
-            )}
-            {p2 && (
-                <div className="fixed z-25" style={{ bottom: '380px', right: '240px' }}>
-                    <img
-                        src={CHARACTER_MAP[p2.characterId?.toLowerCase() ?? ''] ?? Mochi}
-                        alt={p2.username}
-                        className="w-20 h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
-                    />
-                    <span className="block text-center text-xs font-bold text-white bg-black/50 rounded-full px-2 py-0.5 mt-1">
-                        {p2.username}
-                    </span>
-                </div>
-            )}
+            {
+                p1 && (
+                    <div className="fixed z-25" style={{ bottom: '380px', left: '240px' }
+                    }>
+                        <img
+                            src={CHARACTER_MAP[p1.characterId?.toLowerCase() ?? ''] ?? Mochi}
+                            alt={p1.username}
+                            className="w-20 h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
+                        />
+                        <span className="block text-center text-xs font-bold text-white bg-black/50 rounded-full px-2 py-0.5 mt-1" >
+                            {p1.username}
+                        </span>
+                    </div>
+                )}
+            {
+                p2 && (
+                    <div className="fixed z-25" style={{ bottom: '380px', right: '240px' }
+                    }>
+                        <img
+                            src={CHARACTER_MAP[p2.characterId?.toLowerCase() ?? ''] ?? Mochi}
+                            alt={p2.username}
+                            className="w-20 h-20 object-contain drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]"
+                        />
+                        <span className="block text-center text-xs font-bold text-white bg-black/50 rounded-full px-2 py-0.5 mt-1" >
+                            {p2.username}
+                        </span>
+                    </div>
+                )}
 
             {/* Pasteles voladores */}
-            {flyingCakes.map(cake => (
-                <img
-                    key={cake.id}
-                    src={pastelazo}
-                    alt=""
-                    className={`fixed z-30 w-24 h-24 pointer-events-none ${cake.fromP1 ? 'animate-cake-p1' : 'animate-cake-p2'}`}
-                />
-            ))}
+            {
+                flyingCakes.map(cake => (
+                    <img
+                        key={cake.id}
+                        src={pastelazo}
+                        alt=""
+                        className={`fixed z-30 w-24 h-24 pointer-events-none ${cake.fromP1 ? 'animate-cake-p1' : 'animate-cake-p2'}`}
+                    />
+                ))}
 
             {/* Popups de puntos flotando */}
-            {pointPopups.map(popup => (
-                <div
-                    key={popup.id}
-                    className="fixed z-40 flex flex-col items-center pointer-events-none animate-float-up"
-                    style={{
-                        bottom: '360px',
-                        left: popup.forP1 ? '220px' : 'auto',
-                        right: popup.forP1 ? 'auto' : '220px',
-                    }}
-                >
-                    <img
-                        src={popup.forP1 ? Point1 : Poin2}
-                        alt=""
-                        className="w-14 h-14 object-contain"
-                    />
-                    <span
-                        className="text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
-                        style={{ marginTop: '-6px', fontFamily: "'Baloo 2', system-ui, sans-serif" }}
+            {
+                pointPopups.map(popup => (
+                    <div
+                        key={popup.id}
+                        className="fixed z-40 flex flex-col items-center pointer-events-none animate-float-up"
+                        style={{
+                            bottom: '360px',
+                            left: popup.forP1 ? '220px' : 'auto',
+                            right: popup.forP1 ? 'auto' : '220px',
+                        }}
                     >
-                        +10
-                    </span>
-                </div>
-            ))}
+                        <img
+                            src={popup.forP1 ? Point1 : Poin2}
+                            alt=""
+                            className="w-14 h-14 object-contain"
+                        />
+                        <span
+                            className="text-2xl font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                            style={{ marginTop: '-6px', fontFamily: "'Baloo 2', system-ui, sans-serif" }}
+                        >
+                            +10
+                        </span>
+                    </div>
+                ))}
 
             {/* Catapulta derecha (P2) — normal: Catapulta, disparando: Catapulta3 */}
             <img
@@ -484,7 +500,7 @@ const CakeGame: React.FC = () => {
             />
 
             {/* Catapulta izquierda (P1) — normal: Catapulta2, disparando: Catapulta4 */}
-            <img
+            < img
                 src={firingP1 ? CatapultaFour : CatapultaTwo}
                 alt="Catapulta P1"
                 className="fixed bottom-0 left-10 z-20 w-110 pointer-events-none"

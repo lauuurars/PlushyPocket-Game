@@ -56,8 +56,7 @@ export default function FlappyGame() {
         syncEndTime(data.gameEndTime);
       }
     });
-
-    void (async () => {
+    const joinRoom = async () => {
       const profile = await fetchPartyRoomUserProfile();
       if (cancelled) return;
 
@@ -69,7 +68,10 @@ export default function FlappyGame() {
       userIdRef.current = userId;
       characterIdRef.current = characterId;
       socket.emit("player__join", { userId, username, roomId, characterId });
-    })();
+    };
+
+    void joinRoom();
+    socket.on("connect", joinRoom);
 
 
 
@@ -113,6 +115,7 @@ export default function FlappyGame() {
 
     return () => {
       cancelled = true;
+      socket.off("connect", joinRoom);
       socketRef.current = null;
     };
   }, [roomId]);
