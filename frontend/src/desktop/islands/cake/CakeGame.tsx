@@ -125,6 +125,7 @@ const CakeGame: React.FC = () => {
         };
 
         if (socket) {
+            socket.emit("screen__join_room", { roomId: getRoomState().roomId });
             socket.on("player_left", handlePlayerDisconnect);
             socket.on("player_disconnected", handlePlayerDisconnect);
         }

@@ -176,6 +176,7 @@ const HammerMoleGame: React.FC = () => {
         if (!socket) return;
 
         socketRef.current = socket as unknown as Socket;
+        socket.emit("screen__join_room", { roomId: getRoomState().roomId });
 
         const handleGameAction = (data: {
             userId: string;

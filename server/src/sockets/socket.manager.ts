@@ -456,7 +456,9 @@ export const initializeSockets = (rawServer: HttpServer) => {
 
             if (session.clientType === "screen") {
                 room.screenSocketId = null
-                cleanupGameTimers(roomId)
+                if (room.status !== "IN_GAME" && room.status !== "RESULTS") {
+                    cleanupGameTimers(roomId)
+                }
                 io.to(roomId).emit("screen_disconnected", { roomId })
                 if (room.players.length === 0) delete rooms[roomId]
                 delete sessions[socket.id]
@@ -469,9 +471,11 @@ export const initializeSockets = (rawServer: HttpServer) => {
                 // Si el jugador ya se reconectó con otro socket (room.players tiene socketId diferente),
                 // no lo removemos del room — solo limpiamos la sesión vieja.
                 if (!currentEntry || currentEntry.socketId === socket.id) {
-                    room.players = room.players.filter(p => p.userId !== disconnectedUserId)
-                    room.rematchReady = room.rematchReady.filter(id => id !== disconnectedUserId)
-                    if (room.status !== "RESULTS") room.status = room.players.length === 2 ? "READY" : "WAITING_PLAYERS"
+                    if (room.status !== "IN_GAME" && room.status !== "RESULTS") {
+                        room.players = room.players.filter(p => p.userId !== disconnectedUserId)
+                        room.rematchReady = room.rematchReady.filter(id => id !== disconnectedUserId)
+                        room.status = room.players.length === 2 ? "READY" : "WAITING_PLAYERS"
+                    }
                     io.to(roomId).emit("player_disconnected", { userId: disconnectedUserId })
                     emitRoomUpdate(io, room)
                 }

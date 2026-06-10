@@ -68,6 +68,15 @@ export function attachRoomListeners(socket: Socket) {
   // Prevent duplicate listeners
   detachRoomListeners(socket);
 
+  socket.on("connect", () => {
+    if (state.roomId) {
+      const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+      if (!isMobile) {
+        socket.emit("screen__join_room", { roomId: state.roomId });
+      }
+    }
+  });
+
   socket.on("game_start", (payload: { gameEndTime?: number }) => {
     if (payload.gameEndTime) {
       state.gameEndTime = payload.gameEndTime;
@@ -112,6 +121,7 @@ export function attachRoomListeners(socket: Socket) {
 }
 
 export function detachRoomListeners(socket: Socket) {
+  socket.off("connect");
   socket.off("game_start");
   socket.off("game_action");
   socket.off("game_timer_tick");
