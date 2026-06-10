@@ -39,6 +39,7 @@ export default function ShoutCake() {
   const [micHint, setMicHint] = useState<string | null>(null);
   const [needsTap, setNeedsTap] = useState(false);
   const [score, setScore] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -81,6 +82,12 @@ export default function ShoutCake() {
       socket.emit("player__join", { userId, username, roomId, characterId });
     })();
 
+    socket.on("game_start", () => {
+      if (!cancelled) {
+        setIsPlaying(true);
+      }
+    });
+
     socket.on("game_action", (data: { userId: string; action: string; payload?: { score?: number } }) => {
       if (cancelled) return;
       if (data.action === "score_update") {
@@ -122,7 +129,7 @@ export default function ShoutCake() {
       cancelled = true;
       socketRef.current = null;
     };
-  }, [roomId]);
+  }, [roomId, navigate]);
 
   const resumeAudio = useCallback(async () => {
     const ctx = audioCtxRef.current;
@@ -137,6 +144,8 @@ export default function ShoutCake() {
   }, []);
 
   useEffect(() => {
+    if (!isPlaying) return;
+
     let cancelled = false;
 
     const loop = () => {
@@ -249,9 +258,7 @@ export default function ShoutCake() {
       levelRef.current = 0;
       maxRmsRef.current = 0;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-
+  }, [isPlaying, roomId]);
 
   const fillFromIndex = TOTAL_SEGMENTS - filledSegments;
   const koalaSrc = KOALA_BY_TIER[koalaTier];

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { Socket } from 'socket.io-client';
 import GamePoints from '../../../components/GamePoints';
 import Timer from '../../../components/Timer';
 import Catapulta from '../../../assets/cake/Catapulta.svg';
@@ -46,11 +47,13 @@ const CHARACTER_MAP: Record<string, string> = {
 const CakeGame: React.FC = () => {
     const navigate = useNavigate();
     const videoRef = useRef<HTMLVideoElement>(null);
+    const socketRef = useRef<Socket | null>(null);
     const [p1Score, setP1Score] = useState(0);
     const [p2Score, setP2Score] = useState(0);
     const [gamePhase, setGamePhase] = useState<"instructions" | "alert" | "line" | "playing">("instructions");
     const [profileIcon, setProfileIcon] = useState<string>(MochiIcon);
-    const [serverRemaining, setServerRemaining] = useState<number | undefined>(undefined);
+    const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
+    const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
     const [firingP1, setFiringP1] = useState(false);
     const [firingP2, setFiringP2] = useState(false);
     const [flyingCakes, setFlyingCakes] = useState<Array<{ id: number; fromP1: boolean }>>([]);
@@ -104,8 +107,37 @@ const CakeGame: React.FC = () => {
         };
     }, []);
 
+    // Sync gameEndTime from server (survives screen lock / tab throttling)
     useEffect(() => {
         const { socket } = getRoomState();
+        if (!socket) return;
+
+        const syncEndTime = (endTime?: number) => {
+            if (endTime) setGameEndTime(endTime);
+        };
+
+        if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
+
+        const onGameStart = (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime);
+        const onTimerTick = (data: { remaining: number; gameEndTime?: number }) => {
+            setTimeRemaining(data.remaining);
+            syncEndTime(data.gameEndTime);
+        };
+
+        socket.on('game_start', onGameStart);
+        socket.on('game_timer_tick', onTimerTick);
+
+        return () => {
+            socket.off('game_start', onGameStart);
+            socket.off('game_timer_tick', onTimerTick);
+        };
+    }, []);
+
+    useEffect(() => {
+        const { socket } = getRoomState();
+        if (!socket) return;
+
+        socketRef.current = socket as unknown as Socket;
 
         const handlePlayerDisconnect = () => {
             setShowDisconnectAlert(true);
@@ -138,7 +170,8 @@ const CakeGame: React.FC = () => {
                 if (p2 && userId === p2.userId) setP2Score(score);
             },
             onTimerTick: (remaining) => {
-                setServerRemaining(remaining);
+                // Sincronización alternativa vía callback global por si acaso
+                setTimeRemaining(remaining);
                 const room = getRoomState();
                 const p1 = room.players.find(p => p.role === "P1");
                 const p2 = room.players.find(p => p.role === "P2");
@@ -243,6 +276,15 @@ const CakeGame: React.FC = () => {
         };
     }, [navigate]);
 
+    const handleStart = useCallback(() => {
+        setGamePhase("alert");
+        const socket = socketRef.current;
+        const { roomId } = getRoomState();
+        if (socket && roomId) {
+            socket.emit("start_game_clock", { roomId });
+        }
+    }, []);
+
     const roomState = getRoomState();
     const p1 = roomState.players.find(p => p.role === "P1");
     const p2 = roomState.players.find(p => p.role === "P2");
@@ -304,7 +346,7 @@ const CakeGame: React.FC = () => {
             `}</style>
 
             {gamePhase === "instructions" && (
-                <CakeInstructionsModal onStart={() => setGamePhase("alert")} />
+                <CakeInstructionsModal onStart={handleStart} />
             )}
 
             {gamePhase === "alert" && (
@@ -356,7 +398,9 @@ const CakeGame: React.FC = () => {
                         <GamePoints points={p1Score} playerRole="P1" />
                     </div>
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} serverRemaining={serverRemaining} />
+                        {gameEndTime && (
+                            <Timer initialSeconds={60} remaining={timeRemaining} />
+                        )}
                     </div>
                     <div className="fixed top-8 right-[80px] z-30">
                         <GamePoints points={p2Score} playerRole="P2" />
