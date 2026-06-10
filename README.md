@@ -59,13 +59,13 @@ Customer scans QR code  →  Phone becomes a controller  →  Game appears on st
 ### Sensor & Interaction Technologies
  
 #### 📱 Mobile Sensors (Accelerometer & Gyroscope)
-The phone acts as a physical controller. Using the **DeviceMotion** and **DeviceOrientation** Web APIs, the game reads tilt, shake, and rotation data to control in-game actions — no app installation needed.
+The phone acts as a physical controller. Using the **DeviceMotion** and **DeviceOrientation** Web APIs, the game reads tilt, shake, and rotation data to control in-game actions.
  
 #### 🎤 Web Audio API
 Detects **sound input from the microphone** on the player's phone. Used for actions triggered by shouting, clapping, or other audio cues during specific minigames.
  
 #### 📷 getUserMedia API
-Accesses the **camera on the main display** (PC or store screen) to feed video into MediaPipe for real-time facial recognition and augmented reality-style interactions.
+Allows access to the **device's camera** to capture real-time video. On the home screen, it's used to display players during gameplay, enhancing interaction and the overall gaming experience. In the mobile app, it facilitates QR code scanning for linking to game sessions and unlocking content within the platform.
  
 #### 🔌 Socket.io
 Handles all **real-time synchronization** between the mobile controller and the main display. Sensor data from the phone is streamed to the server and broadcast to the main canvas with minimal latency.
