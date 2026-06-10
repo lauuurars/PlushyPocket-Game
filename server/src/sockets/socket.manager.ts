@@ -11,6 +11,7 @@ const gameTimers: Record<string, NodeJS.Timeout> = {}
 const tickerIntervals: Record<string, NodeJS.Timeout> = {}
 
 const cleanupGameTimers = (roomId: string) => {
+    console.log(`[cleanupGameTimers] Cleaning timers for room ${roomId}`);
     if (tickerIntervals[roomId]) {
         clearInterval(tickerIntervals[roomId])
         delete tickerIntervals[roomId]
@@ -59,9 +60,14 @@ const calcRemainingSeconds = (gameEndTime: number) =>
     Math.max(0, Math.ceil((gameEndTime - Date.now()) / 1000))
 
 const emitGameTimerTick = (io: socketio.Server, room: Room, target?: socketio.Socket) => {
-    if (!room.gameEndTime) return
+    if (!room.gameEndTime) {
+        console.log(`[emitGameTimerTick] No gameEndTime for room ${room.roomId}`);
+        return;
+    }
+    const remaining = calcRemainingSeconds(room.gameEndTime);
+    console.log(`[emitGameTimerTick] Room ${room.roomId} remaining: ${remaining}s (target: ${target ? 'specific socket' : 'all'})`);
     const payload = {
-        remaining: calcRemainingSeconds(room.gameEndTime),
+        remaining,
         gameEndTime: room.gameEndTime,
     }
     if (target) target.emit("game_timer_tick", payload)
@@ -76,9 +82,13 @@ const toGameStartPayload = (room: Room): GameStartPayload => ({
 })
 
 const startGameClock = (io: socketio.Server, room: Room) => {
-    if (!room.gameEndTime) return
+    if (!room.gameEndTime) {
+        console.log(`[startGameClock] Aborting: No gameEndTime for room ${room.roomId}`);
+        return;
+    }
 
     const durationMs = Math.max(0, room.gameEndTime - Date.now())
+    console.log(`[startGameClock] Starting clock for room ${room.roomId} with duration ${durationMs}ms`);
     emitGameTimerTick(io, room)
 
     tickerIntervals[room.roomId] = setInterval(() => {
@@ -86,6 +96,7 @@ const startGameClock = (io: socketio.Server, room: Room) => {
     }, 1000)
 
     gameTimers[room.roomId] = setTimeout(() => {
+        console.log(`[startGameClock] Game timeout reached for room ${room.roomId}`);
         for (const player of room.players) {
             if (!(player.userId in room.scores)) {
                 room.scores[player.userId] = 0;

@@ -124,10 +124,21 @@ const CakeGame: React.FC = () => {
             }, 3000);
         };
 
+        const handleTimerTick = (data: { remaining: number }) => {
+            console.log("CakeGame received direct timer tick:", data.remaining);
+            setServerRemaining(data.remaining);
+            const room = getRoomState();
+            const p1 = room.players.find(p => p.role === "P1");
+            const p2 = room.players.find(p => p.role === "P2");
+            if (p1) setP1Score(room.scores[p1.userId] ?? 0);
+            if (p2) setP2Score(room.scores[p2.userId] ?? 0);
+        };
+
         if (socket) {
             socket.emit("screen__join_room", { roomId: getRoomState().roomId });
             socket.on("player_left", handlePlayerDisconnect);
             socket.on("player_disconnected", handlePlayerDisconnect);
+            socket.on("game_timer_tick", handleTimerTick);
         }
 
         setRoomCallbacks({
@@ -139,6 +150,7 @@ const CakeGame: React.FC = () => {
                 if (p2 && userId === p2.userId) setP2Score(score);
             },
             onTimerTick: (remaining) => {
+                console.log("CakeGame received timer tick callback:", remaining);
                 setServerRemaining(remaining);
                 const room = getRoomState();
                 const p1 = room.players.find(p => p.role === "P1");
@@ -239,6 +251,7 @@ const CakeGame: React.FC = () => {
             if (socket) {
                 socket.off("player_left", handlePlayerDisconnect);
                 socket.off("player_disconnected", handlePlayerDisconnect);
+                socket.off("game_timer_tick", handleTimerTick);
             }
             clearRoomCallbacks();
         };
@@ -351,19 +364,17 @@ const CakeGame: React.FC = () => {
             )}
 
             {/* Contadores de puntos */}
-            {gamePhase !== "instructions" && (
-                <>
-                    <div className="fixed top-8 left-[80px] z-30">
-                        <GamePoints points={p1Score} playerRole="P1" />
-                    </div>
-                    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        <Timer initialSeconds={60} serverRemaining={serverRemaining} />
-                    </div>
-                    <div className="fixed top-8 right-[80px] z-30">
-                        <GamePoints points={p2Score} playerRole="P2" />
-                    </div>
-                </>
-            )}
+            <div style={{ display: gamePhase === 'instructions' ? 'none' : 'block' }}>
+                <div className="fixed top-8 left-[80px] z-30">
+                    <GamePoints points={p1Score} playerRole="P1" />
+                </div>
+                <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
+                    <Timer initialSeconds={60} serverRemaining={serverRemaining} />
+                </div>
+                <div className="fixed top-8 right-[80px] z-30">
+                    <GamePoints points={p2Score} playerRole="P2" />
+                </div>
+            </div>
 
             {/* Línea roja durante playing */}
             {gamePhase === "playing" && (

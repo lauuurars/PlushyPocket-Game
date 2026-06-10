@@ -71,6 +71,7 @@ export default function StartGame() {
 
         const handleCreated = (payload: RoomCreatedPayload) => {
             setRoomId(payload.roomId);
+            (window as any).currentRoomId = payload.roomId;
         };
 
         const handleRoomUpdate = (payload: RoomUpdatePayload) => {
