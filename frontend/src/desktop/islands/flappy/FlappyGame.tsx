@@ -57,10 +57,9 @@ const FlappyGame: React.FC = () => {
     const p1ScoreRef = useRef(p1 ? (roomState.scores[p1.userId] ?? 0) : 0);
     const p2ScoreRef = useRef(p2 ? (roomState.scores[p2.userId] ?? 0) : 0);
 
-    // NUEVOS ESTADOS DEL TIMER (Sincronizados con el Servidor al igual que HammerMole)
+    // CONTROL DEL CONTADOR POR SOCKETS (Idéntico a Hammer Mole)
     const [gameEndTime, setGameEndTime] = useState<number | null>(() => getRoomState().gameEndTime);
-    const [timeRemaining, setTimeRemaining] = useState<number>(() => getRoomState().timeRemaining || 60);
-    const [serverRemaining, setServerRemaining] = useState<number | undefined>(60);
+    const [timeRemaining, setTimeRemaining] = useState<number>(60); // Inicia en 60 estático
 
     // Physics state
     const [p1Y, setP1Y] = useState(400);
@@ -96,7 +95,7 @@ const FlappyGame: React.FC = () => {
         };
     }, []);
 
-    // Configuración Estricta
+    // Configuración del Gameplay
     const SPEED = 2;
     const MIN_HORIZONTAL_SPACING = 520;
     const OBSTACLE_COUNT = 4;
@@ -394,7 +393,7 @@ const FlappyGame: React.FC = () => {
         };
     }, []);
 
-    // Sincronización de Ticks del Servidor (Igual a Hammer Mole)
+    // Única fuente de tiempo verídica: Evento directo del Socket
     useEffect(() => {
         const { socket } = getRoomState();
         if (!socket) return;
@@ -402,8 +401,6 @@ const FlappyGame: React.FC = () => {
         const syncEndTime = (endTime?: number) => {
             if (endTime) setGameEndTime(endTime);
         };
-
-        if (getRoomState().gameEndTime) setGameEndTime(getRoomState().gameEndTime);
 
         const onGameStart = (payload: { gameEndTime?: number }) => syncEndTime(payload.gameEndTime);
         const onTimerTick = (data: { remaining: number; gameEndTime?: number }) => {
@@ -420,7 +417,7 @@ const FlappyGame: React.FC = () => {
         };
     }, []);
 
-    // Set Socket Callbacks & Listeners
+    // Set Socket Callbacks & Listeners de Sala
     useEffect(() => {
         const { socket } = getRoomState();
 
@@ -461,19 +458,9 @@ const FlappyGame: React.FC = () => {
                     p2ScoreRef.current = score;
                 }
             },
-            onTimerTick: (remaining) => {
-                // Mantiene compatibilidad con callbacks antiguos si fuese necesario
-                const room = getRoomState();
-                const player1 = room.players.find(p => p.role === "P1");
-                const player2 = room.players.find(p => p.role === "P2");
-                if (player1) {
-                    setP1Score(room.scores[player1.userId] ?? 0);
-                    p1ScoreRef.current = room.scores[player1.userId] ?? 0;
-                }
-                if (player2) {
-                    setP2Score(room.scores[player2.userId] ?? 0);
-                    p2ScoreRef.current = room.scores[player2.userId] ?? 0;
-                }
+            onTimerTick: () => {
+                // 🔴 VACÍO: Dejado vacío a propósito para forzar a usar el socket listener global
+                // Esto elimina por completo el bug de alternancia de contadores.
             },
             onGameAction: (data) => {
                 if (data.action === "jump") {
@@ -567,7 +554,7 @@ const FlappyGame: React.FC = () => {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    // Animation loop lifecycle
+    // Bucle de animación (Inicia únicamente al salir del modal)
     useEffect(() => {
         if (!showInstructions) {
             requestRef.current = requestAnimationFrame(animate);
@@ -575,8 +562,10 @@ const FlappyGame: React.FC = () => {
         return () => { if (requestRef.current) cancelAnimationFrame(requestRef.current); };
     }, [showInstructions]);
 
-    // Periodic scoring: +5 every 2 seconds for surviving
+    // Puntos automáticos por supervivencia (+5 cada 2s si el juego ya inició)
     useEffect(() => {
+        if (showInstructions) return;
+
         const interval = setInterval(() => {
             if (disconnectAlertActiveRef.current) return;
             const room = getRoomState();
@@ -599,9 +588,9 @@ const FlappyGame: React.FC = () => {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, []);
+    }, [showInstructions]);
 
-    // Función modificada al iniciar para encender el reloj en el servidor
+    // Dispara el inicio del reloj en el servidor al aceptar las instrucciones
     const handleStart = useCallback(() => {
         setShowInstructions(false);
         const { socket, roomId } = getRoomState();
@@ -633,7 +622,7 @@ const FlappyGame: React.FC = () => {
 
             {showInstructions && (
                 <>
-                    {/* Player 1 info */}
+                    {/* Player 1 Info */}
                     <div className="fixed top-8 left-8 z-30 flex items-center">
                         <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                             <img
@@ -646,14 +635,12 @@ const FlappyGame: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Timer en pantalla de Instrucciones */}
+                    {/* Mientras estén las instrucciones, el Timer muestra 60s iniciales congelados */}
                     <div className="fixed top-8 left-1/2 -translate-x-1/2 z-30">
-                        {gameEndTime && (
-                            <Timer initialSeconds={60} remaining={timeRemaining} />
-                        )}
+                        <Timer initialSeconds={60} remaining={60} />
                     </div>
 
-                    {/* Player 2 info */}
+                    {/* Player 2 Info */}
                     <div className="fixed top-8 right-8 z-30 flex items-center">
                         <div className="flex items-center gap-3 rounded-full bg-[#ED1C24] px-5 py-3 shadow-[0_4px_10px_rgba(0,0,0,0.3)]">
                             <span className="text-2xl font-bold text-white mr-2">{p2Score}</span>
@@ -668,7 +655,7 @@ const FlappyGame: React.FC = () => {
                 </>
             )}
 
-            {/* Contadores de puntos en Gameplay activo */}
+            {/* Interfaz Activa de Partida */}
             {!showInstructions && (
                 <>
                     <div className="fixed top-8 left-[80px] z-30">
@@ -693,7 +680,7 @@ const FlappyGame: React.FC = () => {
                 <Ocean />
             </div>
 
-            {/* Players */}
+            {/* Renderizado de Jugadores */}
             {p1 && (
                 <div
                     className="fixed z-20 flex flex-col items-center"
@@ -713,7 +700,6 @@ const FlappyGame: React.FC = () => {
                                 src={CHARACTER_MAP[p1?.characterId?.toLowerCase() ?? ''] ?? Mochi}
                                 alt={p1.username}
                                 className="w-full h-full object-contain"
-                                style={{ filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.3))' }}
                             />
                         </div>
                     ) : (
